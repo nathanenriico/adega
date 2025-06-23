@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adega do Tio Pancho - Bebidas Premium e Combos Especiais</title>
+    <meta name="description" content="Adega do Tio Pancho - As melhores bebidas, vinhos premium e combos especiais. Atendimento via WhatsApp. Seu rolê começa aqui!">
+    <meta name="keywords" content="adega, bebidas, vinho, cerveja, whisky, combos, delivery, whatsapp">
+    <meta name="author" content="Adega do Tio Pancho">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Adega do Tio Pancho - Bebidas Premium">
+    <meta property="og:description" content="As melhores bebidas, vinhos premium e combos especiais. Atendimento via WhatsApp.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1200&h=630">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Adega do Tio Pancho - Bebidas Premium">
+    <meta property="twitter:description" content="As melhores bebidas, vinhos premium e combos especiais. Atendimento via WhatsApp.">
+    <meta property="twitter:image" content="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1200&h=630">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4af37">
+    <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=180&h=180">
+    
+    <!-- Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-top">
+                <button class="menu-toggle" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="logo">
+                    <h1>🍷 Adega do Tio Pancho</h1>
+                </div>
+            </div>
+            <p class="slogan">Seu rolê começa aqui 🍻</p>
+        </header>
+
+        <nav class="main-nav">
+            <ul class="nav-menu">
+                <li><a href="#home" onclick="showSection('home')">Início</a></li>
+                <li><a href="#products" onclick="showSection('products')">Produtos</a></li>
+                <li><a href="#about" onclick="showSection('about')">Sobre</a></li>
+                <li><a href="#contact" onclick="showSection('contact')">Contato</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <div id="home" class="section active">
+                <div class="home-section">
+                    <div class="welcome-card">
+                        <h2>📍 Endereço</h2>
+                        <div class="address-content">
+                            <img src="../imagens/adega.webp" alt="Fachada da Adega" class="address-image">
+                            <div class="address-text">
+                                <p><strong>ADEGA DO TIO PANCHO</strong><br>
+R. Oswaldo Barreto, 708 E - Alvinópolis<br>
+Atibaia - SP, 12942-570</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-card">
+                        <h2>📞 Contato</h2>
+                        <p><strong>(11) 93394-9002</strong></p>
+                        <button class="whatsapp-btn" onclick="openWhatsApp()">
+                            Chamar no WhatsApp 🍾
+                        </button>
+                    </div>
+                    
+                    <div class="hours-card">
+                        <h2>🕒 Horário de Funcionamento</h2>
+                        <div class="hours-grid">
+                            <div class="day"><span>Domingo</span><span>09:00–18:00</span></div>
+                            <div class="day"><span>Segunda-feira</span><span>09:00–17:00</span></div>
+                            <div class="day"><span>Terça-feira</span><span>10:00–20:00</span></div>
+                            <div class="day"><span>Quarta-feira</span><span>10:00–20:00</span></div>
+                            <div class="day"><span>Quinta-feira</span><span>10:00–20:00</span></div>
+                            <div class="day"><span>Sexta-feira</span><span>10:00–22:00</span></div>
+                            <div class="day"><span>Sábado</span><span>10:00–22:00</span></div>
+                        </div>
+                        <div class="delivery-hours">
+                            <h3>🚚 Entrega: 10:00–20:00</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="reviews-card">
+                        <h2>⭐ Avaliações</h2>
+                        <div class="reviews-list">
+                            <div class="review">
+                                <div class="stars">⭐⭐⭐⭐⭐</div>
+                                <p>"Lugar muito bem organizado com muitas opções de produtos e atendimento nota 10."</p>
+                                <span class="reviewer">- Francisco Ramos</span>
+                            </div>
+                            <div class="review">
+                                <div class="stars">⭐⭐⭐⭐⭐</div>
+                                <p>"Um excelente atendimento...a entrega sempre no prazo ou até antes."</p>
+                                <span class="reviewer">- Priscilla Sammartano</span>
+                            </div>
+                            <div class="review">
+                                <div class="stars">⭐⭐⭐⭐⭐</div>
+                                <p>"Excelente atendimento e qualidade de produtos, bons preços."</p>
+                                <span class="reviewer">- Claudia Alves</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="products" class="section">
+                <div class="products-section">
+                    <h3>Nossos Produtos</h3>
+                    <div class="filters">
+                        <button class="filter-btn active" onclick="filterProducts('all')">Todos</button>
+                        <button class="filter-btn" onclick="filterProducts('bebidas')">Bebidas</button>
+                        <button class="filter-btn" onclick="filterProducts('combos')">Combos</button>
+                        <button class="filter-btn" onclick="filterProducts('promocoes')">Promoções</button>
+                    </div>
+
+                    <div class="products-grid" id="products-grid">
+                        <!-- Produtos serão carregados aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="about" class="section">
+                <div class="about-section">
+                    <h3>Sobre a Adega</h3>
+                    <p>A Adega do Tio Pancho é especializada em bebidas premium, oferecendo os melhores vinhos, cervejas artesanais e destilados.</p>
+                    <div class="features">
+                        <div class="feature">
+                            <h4>🍷 Produtos Premium</h4>
+                            <p>Seleção cuidadosa de bebidas de alta qualidade</p>
+                        </div>
+                        <div class="feature">
+                            <h4>🚚 Entrega Rápida</h4>
+                            <p>Atendimento ágil via WhatsApp</p>
+                        </div>
+                        <div class="feature">
+                            <h4>💰 Melhores Preços</h4>
+                            <p>Ofertas especiais e promoções exclusivas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contact" class="section">
+                <div class="contact-section">
+                    <div class="contact-card">
+                        <h2>📱 WhatsApp</h2>
+                        <p><strong>(11) 93394-9002</strong></p>
+                        <p>Atendimento direto pelo WhatsApp</p>
+                        <button class="whatsapp-btn" onclick="openWhatsApp()">
+                            Chamar no WhatsApp 💬
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="admin-access">
+            <button onclick="showAdminLogin()">Admin</button>
+        </div>
+    </div>
+
+    <!-- Modal de Login Admin -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAdminModal()">&times;</span>
+            <h3>Acesso Administrativo</h3>
+            <input type="password" id="admin-password" placeholder="Digite a senha">
+            <button onclick="adminLogin()">Entrar</button>
+        </div>
+    </div>
+
+    <!-- Painel Admin -->
+    <div id="admin-panel" class="admin-panel hidden">
+        <div class="admin-header">
+            <h3>Painel Administrativo</h3>
+            <button onclick="logout()">Sair</button>
+        </div>
+        
+        <div class="admin-sections">
+            <div class="admin-section">
+                <h4>Gestão</h4>
+                <button onclick="openOrdersManagement()" class="management-btn">
+                    📋 Gestão de Pedidos
+                </button>
+            </div>
+
+            <div class="admin-section">
+                <h4>Configurações Gerais</h4>
+                <input type="text" id="adega-name" placeholder="Nome da Adega">
+                <input type="text" id="whatsapp-number" placeholder="Número WhatsApp (5599999999999)">
+                <textarea id="default-message" placeholder="Mensagem padrão WhatsApp"></textarea>
+                <button onclick="saveSettings()">Salvar Configurações</button>
+            </div>
+
+            <div class="admin-section">
+                <h4>Analytics</h4>
+                <div class="analytics-grid">
+                    <div class="metric-card">
+                        <h5>Cliques WhatsApp</h5>
+                        <span id="whatsapp-clicks">0</span>
+                    </div>
+                    <div class="metric-card">
+                        <h5>Produtos Mais Vistos</h5>
+                        <div id="popular-products"></div>
+                    </div>
+                    <div class="metric-card">
+                        <h5>Visitantes Hoje</h5>
+                        <span id="daily-visitors">0</span>
+                    </div>
+                </div>
+                <button onclick="resetAnalytics()">Resetar Dados</button>
+            </div>
+
+            <div class="admin-section">
+                <h4>Gerenciar Produtos</h4>
+                <div class="product-form">
+                    <input type="text" id="product-name" placeholder="Nome do Produto">
+                    <input type="text" id="product-image" placeholder="URL da Imagem">
+                    <input type="number" id="product-price" placeholder="Preço" step="0.01">
+                    <select id="product-category">
+                        <option value="bebidas">Bebidas</option>
+                        <option value="combos">Combos</option>
+                        <option value="promocoes">Promoções</option>
+                    </select>
+                    <button onclick="addProduct()">Adicionar Produto</button>
+                </div>
+                
+                <div id="admin-products-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Adega do Tio Pancho",
+      "description": "As melhores bebidas, vinhos premium e combos especiais. Atendimento via WhatsApp.",
+      "url": "https://adegadotiopunch.com",
+      "telephone": "+55-99-99999-9999",
+      "priceRange": "$$",
+      "servesCuisine": "Bebidas",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "BR"
+      },
+      "openingHours": "Mo-Su 18:00-02:00",
+      "sameAs": [
+        "https://wa.me/5599999999999"
+      ]
+    }
+    </script>
+    
+    <!-- Menu Lateral -->
+    <div id="side-menu" class="side-menu">
+        <div class="menu-header">
+            <h3>Menu</h3>
+            <button class="menu-close" onclick="toggleMenu()">&times;</button>
+        </div>
+        <div class="menu-content">
+            <div class="menu-item" onclick="toggleCart()">
+                <div class="menu-icon">🛒</div>
+                <div class="menu-text">
+                    <span>Carrinho</span>
+                    <span class="cart-badge" id="cart-count">0</span>
+                </div>
+            </div>
+            <div class="menu-item" onclick="openWhatsApp()">
+                <div class="menu-icon">💬</div>
+                <div class="menu-text">WhatsApp</div>
+            </div>
+            <div class="menu-item" onclick="toggleChatBot()">
+                <div class="menu-icon">🤖</div>
+                <div class="menu-text">Chat Bot 24h</div>
+            </div>
+        </div>
+    </div>
+    <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()"></div>
+    
+    <!-- Carrinho Lateral -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Meu Carrinho</h3>
+            <button class="cart-close" onclick="toggleCart()">&times;</button>
+        </div>
+        <div class="cart-content">
+            <div id="cart-items"></div>
+        </div>
+        <div class="cart-footer">
+            <div class="shipping-calculator">
+                <h4>Calcular Frete</h4>
+                <div class="cep-input">
+                    <input type="text" id="cep-input" placeholder="Digite seu CEP" maxlength="9">
+                    <button onclick="calculateShipping()">Calcular</button>
+                </div>
+                <div id="shipping-result"></div>
+            </div>
+            <div class="payment-methods">
+                <h4>Forma de Pagamento</h4>
+                <div class="payment-options">
+                    <label class="payment-option">
+                        <input type="radio" name="payment" value="pix" checked>
+                        <span>💳 PIX</span>
+                    </label>
+                    <label class="payment-option">
+                        <input type="radio" name="payment" value="cartao">
+                        <span>💳 Cartão</span>
+                    </label>
+                    <label class="payment-option">
+                        <input type="radio" name="payment" value="dinheiro">
+                        <span>💰 Dinheiro</span>
+                    </label>
+                </div>
+            </div>
+            <div class="cart-total">
+                <span>Total: </span>
+                <span id="cart-total-modal">R$ 0,00</span>
+            </div>
+            <button class="checkout-btn" onclick="sendCartToWhatsApp()">
+                Finalizar Pedido
+            </button>
+        </div>
+    </div>
+    <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+    <!-- Chat Bot -->
+    <div id="chatbot-container" class="chatbot-container">
+        <div class="chatbot-header">
+            <span>🤖 Atendimento 24h</span>
+            <button onclick="toggleChatBot()">&times;</button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="bot-message">
+                Olá! Sou o assistente virtual da Adega do Tio Pancho. Como posso ajudar?
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatbot-input" placeholder="Digite sua mensagem..." onkeypress="handleChatInput(event)">
+            <button onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
