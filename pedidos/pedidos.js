@@ -3,8 +3,20 @@ let orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
 
 // Carregar pedidos ao inicializar
 document.addEventListener('DOMContentLoaded', function() {
+    // Recarregar dados do localStorage sempre que a página for aberta
+    orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
     loadOrders();
     updateStats();
+    
+    // Atualizar a cada 5 segundos para pegar novos pedidos
+    setInterval(() => {
+        const newOrders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
+        if (newOrders.length !== orders.length) {
+            orders = newOrders;
+            loadOrders();
+            updateStats();
+        }
+    }, 5000);
 });
 
 // Carregar e renderizar pedidos

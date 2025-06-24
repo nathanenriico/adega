@@ -277,8 +277,6 @@ function adminLogin() {
     }
 }
 
-
-
 // Carregar dados no admin
 function loadAdminData() {
     document.getElementById('adega-name').value = config.adegaName;
@@ -469,8 +467,6 @@ function editProduct(id) {
     refreshProductDisplay();
     alert('Produto atualizado com sucesso!');
 }
-
-
 
 // Fechar modal ao clicar fora
 window.onclick = function(event) {
@@ -666,6 +662,19 @@ function toggleCart() {
     menuOverlay.classList.remove('active');
 }
 
+function goToCheckout() {
+    if (cart.length === 0) {
+        alert('Carrinho vazio!');
+        return;
+    }
+    
+    // Salvar dados do carrinho para a página de checkout
+    localStorage.setItem('checkoutCart', JSON.stringify(cart));
+    
+    // Redirecionar para a página de checkout
+    window.location.href = 'checkout.html';
+}
+
 function sendCartToWhatsApp() {
     if (cart.length === 0) {
         alert('Carrinho vazio!');
@@ -680,14 +689,14 @@ function sendCartToWhatsApp() {
         'dinheiro': 'Dinheiro'
     };
     
-    let message = 'Olá! Gostaria de fazer este pedido:\n\n';
+    let message = 'Olá! Gostaria de fazer este pedido:\\n\\n';
     
     cart.forEach(item => {
-        message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\n`;
+        message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\\n`;
     });
     
-    message += `\nTotal: R$ ${cartTotal.toFixed(2)}`;
-    message += `\nForma de Pagamento: ${paymentText[selectedPayment]}`;
+    message += `\\nTotal: R$ ${cartTotal.toFixed(2)}`;
+    message += `\\nForma de Pagamento: ${paymentText[selectedPayment]}`;
     
     // Salvar pedido no sistema
     saveOrderToSystem(cart, cartTotal, selectedPayment);

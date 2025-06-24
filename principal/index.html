@@ -305,36 +305,11 @@ Atibaia - SP, 12942-570</p>
             <div id="cart-items"></div>
         </div>
         <div class="cart-footer">
-            <div class="shipping-calculator">
-                <h4>Calcular Frete</h4>
-                <div class="cep-input">
-                    <input type="text" id="cep-input" placeholder="Digite seu CEP" maxlength="9">
-                    <button onclick="calculateShipping()">Calcular</button>
-                </div>
-                <div id="shipping-result"></div>
-            </div>
-            <div class="payment-methods">
-                <h4>Forma de Pagamento</h4>
-                <div class="payment-options">
-                    <label class="payment-option">
-                        <input type="radio" name="payment" value="pix" checked>
-                        <span>💳 PIX</span>
-                    </label>
-                    <label class="payment-option">
-                        <input type="radio" name="payment" value="cartao">
-                        <span>💳 Cartão</span>
-                    </label>
-                    <label class="payment-option">
-                        <input type="radio" name="payment" value="dinheiro">
-                        <span>💰 Dinheiro</span>
-                    </label>
-                </div>
-            </div>
             <div class="cart-total">
                 <span>Total: </span>
                 <span id="cart-total-modal">R$ 0,00</span>
             </div>
-            <button class="checkout-btn" onclick="sendCartToWhatsApp()">
+            <button class="checkout-btn" onclick="goToCheckout()">
                 Finalizar Pedido
             </button>
         </div>
