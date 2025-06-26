@@ -21,15 +21,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Carregar e renderizar pedidos
 function loadOrders() {
+    const activeOrders = orders.filter(order => order.status !== 'entregue');
+    const deliveredOrders = orders.filter(order => order.status === 'entregue');
+    
+    renderActiveOrders(activeOrders);
+    renderDeliveredOrders(deliveredOrders);
+    updateActiveCounter(activeOrders.length);
+}
+
+// Renderizar pedidos ativos
+function renderActiveOrders(activeOrders) {
     const ordersList = document.getElementById('orders-list');
     
-    if (orders.length === 0) {
-        ordersList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido encontrado.</p>';
+    if (activeOrders.length === 0) {
+        ordersList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido ativo.</p>';
         return;
     }
     
-    ordersList.innerHTML = orders.map(order => `
-        <div class="order-item" onclick="showOrderDetails(${order.id})">
+    ordersList.innerHTML = activeOrders.map(order => `
+        <div class="order-item active-order" onclick="showOrderDetails(${order.id})">
             <div class="order-header">
                 <span class="order-id">#${order.id}</span>
                 <span class="order-status status-${order.status}">${getStatusText(order.status)}</span>
@@ -48,9 +58,6 @@ function loadOrders() {
                 <div class="order-detail">
                     <strong>Pagamento:</strong> ${order.paymentMethod || 'Não informado'}
                 </div>
-                <div class="order-detail">
-                    <strong>Itens:</strong> ${order.items.length} produto(s)
-                </div>
             </div>
             
             <div class="order-items">
@@ -64,6 +71,65 @@ function loadOrders() {
             ${order.notes ? `<div class="order-notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
         </div>
     `).join('');
+}
+
+// Renderizar histórico de entregas
+function renderDeliveredOrders(deliveredOrders) {
+    const historyList = document.getElementById('history-list');
+    
+    if (deliveredOrders.length === 0) {
+        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
+        return;
+    }
+    
+    historyList.innerHTML = deliveredOrders.map(order => `
+        <div class="order-item delivered-order">
+            <div class="order-header">
+                <span class="order-id">#${order.id}</span>
+                <span class="order-status delivered">✅ Entregue</span>
+            </div>
+            
+            <div class="order-info">
+                <div class="order-detail">
+                    <strong>Cliente:</strong> ${order.customer}
+                </div>
+                <div class="order-detail">
+                    <strong>Data:</strong> ${formatDate(order.date)}
+                </div>
+                <div class="order-detail">
+                    <strong>Total:</strong> R$ ${order.total.toFixed(2)}
+                </div>
+            </div>
+            
+            <div class="order-items">
+                <strong>Produtos:</strong> ${order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ')}
+            </div>
+            
+            <div class="order-actions">
+                <button class="action-btn btn-restore" onclick="restoreOrder(${order.id})">Restaurar</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Atualizar contador de pedidos ativos
+function updateActiveCounter(count) {
+    const counter = document.getElementById('active-counter');
+    if (counter) {
+        counter.textContent = count;
+    }
+}
+
+// Restaurar pedido do histórico
+function restoreOrder(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+        order.status = 'saindo';
+        order.updatedAt = new Date().toISOString();
+        saveOrders();
+        loadOrders();
+        updateStats();
+    }
 }
 
 // Obter texto do status
@@ -108,6 +174,11 @@ function updateOrderStatus(orderId, newStatus) {
     if (order) {
         order.status = newStatus;
         order.updatedAt = new Date().toISOString();
+        
+        if (newStatus === 'entregue') {
+            order.deliveredAt = new Date().toISOString();
+        }
+        
         saveOrders();
         loadOrders();
         updateStats();
