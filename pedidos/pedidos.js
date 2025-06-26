@@ -22,11 +22,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Carregar e renderizar pedidos
 function loadOrders() {
     const activeOrders = orders.filter(order => order.status !== 'entregue');
-    const deliveredOrders = orders.filter(order => order.status === 'entregue');
-    
     renderActiveOrders(activeOrders);
-    renderDeliveredOrders(deliveredOrders);
     updateActiveCounter(activeOrders.length);
+}
+
+// Carregar pedidos entregues
+function loadDeliveredOrders() {
+    const deliveredOrders = orders.filter(order => order.status === 'entregue');
+    renderDeliveredOrders(deliveredOrders);
 }
 
 // Renderizar pedidos ativos
@@ -73,16 +76,16 @@ function renderActiveOrders(activeOrders) {
     `).join('');
 }
 
-// Renderizar histórico de entregas
+// Renderizar pedidos entregues
 function renderDeliveredOrders(deliveredOrders) {
-    const historyList = document.getElementById('history-list');
+    const deliveredList = document.getElementById('delivered-list');
     
     if (deliveredOrders.length === 0) {
-        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
+        deliveredList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido entregue.</p>';
         return;
     }
     
-    historyList.innerHTML = deliveredOrders.map(order => `
+    deliveredList.innerHTML = deliveredOrders.map(order => `
         <div class="order-item delivered-order">
             <div class="order-header">
                 <span class="order-id">#${order.id}</span>
@@ -94,7 +97,7 @@ function renderDeliveredOrders(deliveredOrders) {
                     <strong>Cliente:</strong> ${order.customer}
                 </div>
                 <div class="order-detail">
-                    <strong>Data:</strong> ${formatDate(order.date)}
+                    <strong>Data Entrega:</strong> ${formatDate(order.deliveredAt || order.date)}
                 </div>
                 <div class="order-detail">
                     <strong>Total:</strong> R$ ${order.total.toFixed(2)}
@@ -166,6 +169,18 @@ function getActionButtons(order) {
     return buttons;
 }
 
+// Navegação entre páginas
+function showMainPage() {
+    document.getElementById('main-page').classList.add('active');
+    document.getElementById('delivered-page').classList.remove('active');
+}
+
+function showDeliveredPage() {
+    document.getElementById('main-page').classList.remove('active');
+    document.getElementById('delivered-page').classList.add('active');
+    loadDeliveredOrders();
+}
+
 // Atualizar status do pedido
 function updateOrderStatus(orderId, newStatus) {
     event.stopPropagation();
@@ -177,12 +192,39 @@ function updateOrderStatus(orderId, newStatus) {
         
         if (newStatus === 'entregue') {
             order.deliveredAt = new Date().toISOString();
+            
+            // Animação de confirmação
+            showDeliveryConfirmation();
+            
+            // Redirecionar para página de entregues após 2 segundos
+            setTimeout(() => {
+                showDeliveredPage();
+            }, 2000);
         }
         
         saveOrders();
         loadOrders();
         updateStats();
     }
+}
+
+// Mostrar confirmação de entrega
+function showDeliveryConfirmation() {
+    const notification = document.createElement('div');
+    notification.className = 'delivery-notification';
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="check-icon">✅</div>
+            <h3>Pedido Entregue!</h3>
+            <p>Redirecionando para histórico...</p>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 2500);
 }
 
 // Editar notas do pedido
