@@ -438,6 +438,17 @@ body {
     box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
 }
 
+.btn-confirmado {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #856404;
+}
+
+.btn-confirmado:hover {
+    background: linear-gradient(135deg, #e0a800, #d39e00);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+}
+
 .order-notes {
     background: rgba(255, 255, 255, 0.05);
     padding: 12px;

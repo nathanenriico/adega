@@ -171,7 +171,7 @@ function getActionButtons(order) {
     let buttons = '';
     
     if (order.status === 'novo') {
-        buttons += `<button class="action-btn btn-preparar" onclick="updateOrderStatus(${order.id}, 'preparando')">Preparar</button>`;
+        buttons += `<button class="action-btn btn-confirmado" onclick="sendOrderConfirmationAndUpdate(${order.id})">📦 Pedido Confirmado</button>`;
     } else if (order.status === 'preparando') {
         buttons += `<button class="action-btn btn-saindo" onclick="updateOrderStatus(${order.id}, 'saindo')">Saiu para Entrega</button>`;
     } else if (order.status === 'saindo') {
@@ -271,7 +271,8 @@ function showNotificationSent(orderId, status) {
     const statusText = {
         'preparando': 'Preparando',
         'saindo': 'Saindo para Entrega', 
-        'entregue': 'Entregue'
+        'entregue': 'Entregue',
+        'confirmado': 'Pedido Confirmado'
     };
     
     notification.innerHTML = `
@@ -375,6 +376,39 @@ function updateStats() {
             element.textContent = stats[status];
         }
     });
+}
+
+// Enviar confirmação de pedido e atualizar status
+function sendOrderConfirmationAndUpdate(orderId) {
+    event.stopPropagation();
+    
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const message = `🍷 Adega do Tio Pancho\n\nOlá! 👋\nRecebemos seu pedido #${order.id} com sucesso!\nEle já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅`;
+    
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const phone = '5511941716617';
+    const encodedMessage = encodeURIComponent(message);
+    
+    if (isMobile) {
+        // Mobile: Abrir app WhatsApp
+        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    } else {
+        // Desktop: Abrir WhatsApp Web
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+    }
+    
+    // Mostrar notificação
+    showNotificationSent(order.id, 'confirmado');
+    
+    // Atualizar status para preparando
+    order.status = 'preparando';
+    order.updatedAt = new Date().toISOString();
+    saveOrders();
+    loadOrders();
+    updateStats();
 }
 
 // Salvar pedidos
