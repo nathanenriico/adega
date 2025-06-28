@@ -172,6 +172,7 @@ function updateOrderStatus(orderId, newStatus) {
     
     const order = orders.find(o => o.id === orderId);
     if (order) {
+        const oldStatus = order.status;
         order.status = newStatus;
         order.updatedAt = new Date().toISOString();
         
@@ -182,7 +183,88 @@ function updateOrderStatus(orderId, newStatus) {
         saveOrders();
         loadOrders();
         updateStats();
+        
+        // Enviar notificação WhatsApp automática
+        if (oldStatus !== newStatus) {
+            sendAutomaticWhatsAppNotification(order, newStatus);
+        }
     }
+}
+
+// Enviar notificação WhatsApp automática
+function sendAutomaticWhatsAppNotification(order, newStatus) {
+    const statusMessages = {
+        'preparando': `🍷 *Adega do Tio Pancho*\n\n✅ Olá! Seu pedido #${order.id} está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\nTotal: R$ ${order.total.toFixed(2)}\n\nObrigado pela preferência! 🍻`,
+        'saindo': `🍷 *Adega do Tio Pancho*\n\n🚚 Seu pedido #${order.id} está a caminho!\n\nO entregador já saiu e chegará em breve.\n\nPrepare o pagamento: ${order.paymentMethod}\n\nAté já! 🚀`,
+        'entregue': `🍷 *Adega do Tio Pancho*\n\n🎉 Pedido #${order.id} entregue com sucesso!\n\nObrigado pela preferência!\n\n⭐ Que tal avaliar nosso atendimento?\n\nVolte sempre! 🍻`
+    };
+    
+    const message = statusMessages[newStatus];
+    if (!message) return;
+    
+    // Mostrar notificação no painel admin
+    showNotificationSent(order.id, newStatus);
+    
+    // Abrir WhatsApp Web automaticamente
+    const phone = '5511941716617'; // Formato correto com código do país
+    const encodedMessage = encodeURIComponent(message);
+    
+    // Pequeno delay para não conflitar com a atualização da tela
+    setTimeout(() => {
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+    }, 1000);
+    
+    // Registrar notificação no pedido
+    if (!order.whatsappNotifications) {
+        order.whatsappNotifications = [];
+    }
+    
+    order.whatsappNotifications.push({
+        status: newStatus,
+        message: message,
+        sentAt: new Date().toISOString()
+    });
+    
+    saveOrders();
+}
+
+// Mostrar notificação de envio
+function showNotificationSent(orderId, status) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #25D366;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    const statusText = {
+        'preparando': 'Preparando',
+        'saindo': 'Saindo para Entrega', 
+        'entregue': 'Entregue'
+    };
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">📱</span>
+            <div>
+                <div style="font-weight: bold;">WhatsApp Enviado!</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Pedido #${orderId} - ${statusText[status]}</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
 }
 
 // Editar notas do pedido

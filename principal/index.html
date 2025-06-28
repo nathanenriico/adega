@@ -35,19 +35,57 @@
 </head>
 <body>
     <div class="container">
+
+
+        <!-- Header -->
         <header class="header">
-            <div class="header-top">
-                <button class="menu-toggle" onclick="toggleMenu()">
+            <div class="logo">
+                <h1>🍷 Adega do Tio Pancho</h1>
+            </div>
+            <p class="slogan">Seu rolê começa aqui 🍻</p>
+        </header>
+
+        <!-- Menu Horizontal Fixo -->
+        <nav class="top-nav">
+            <div class="nav-container">
+                <button class="menu-toggle-top" onclick="toggleMenu()">
                     <span></span>
                     <span></span>
                     <span></span>
                 </button>
-                <div class="logo">
-                    <h1>🍷 Adega do Tio Pancho</h1>
+                
+                <div class="nav-items">
+                    <div class="nav-item" onclick="goToHome()">
+                        <div class="nav-icon">🏠</div>
+                        <span>Início</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('products')">
+                        <div class="nav-icon">🍷</div>
+                        <span>Bebidas</span>
+                    </div>
+                    <div class="nav-item" onclick="filterProducts('promocoes'); showSection('products')">
+                        <div class="nav-icon">🔥</div>
+                        <span>Promoções</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('contact')">
+                        <div class="nav-icon">📞</div>
+                        <span>Contato</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('about')">
+                        <div class="nav-icon">ℹ️</div>
+                        <span>Sobre</span>
+                    </div>
+                </div>
+                
+                <div class="cart-widget" onclick="toggleCart()">
+                    <div class="cart-icon">🛍️</div>
+                    <div class="cart-info">
+                        <span class="cart-count" id="cart-count-widget">0</span>
+                        <span class="cart-total" id="cart-total-widget">R$ 0,00</span>
+                    </div>
                 </div>
             </div>
-            <p class="slogan">Seu rolê começa aqui 🍻</p>
-        </header>
+        </nav>
 
         <nav class="main-nav">
             <ul class="nav-menu">
@@ -190,7 +228,10 @@ Atibaia - SP, 12942-570</p>
     <div id="admin-panel" class="admin-panel hidden">
         <div class="admin-header">
             <h3>Painel Administrativo</h3>
-            <button onclick="logout()">Sair</button>
+            <div class="admin-header-buttons">
+                <button onclick="backToSite()" class="back-to-site-btn">🏠 Voltar ao Site</button>
+                <button onclick="logout()">Sair</button>
+            </div>
         </div>
         
         <div class="admin-sections">
@@ -207,6 +248,28 @@ Atibaia - SP, 12942-570</p>
                 <input type="text" id="whatsapp-number" placeholder="Número WhatsApp (5599999999999)">
                 <textarea id="default-message" placeholder="Mensagem padrão WhatsApp"></textarea>
                 <button onclick="saveSettings()">Salvar Configurações</button>
+            </div>
+            
+            <div class="admin-section">
+                <h4>Chatbot IA</h4>
+                <input type="password" id="openai-api-key" placeholder="Chave da API OpenAI (opcional)">
+                <small>Para ativar o chatbot inteligente, insira sua chave da API do OpenAI</small>
+                <button onclick="saveAISettings()">Salvar Chave IA</button>
+                <button onclick="testAI()">Testar IA</button>
+            </div>
+            
+            <div class="admin-section">
+                <h4>WhatsApp Automático</h4>
+                <div style="background: rgba(37, 211, 102, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(37, 211, 102, 0.3);">
+                    <h5 style="color: #25D366; margin-bottom: 10px;">✅ Sistema Ativo</h5>
+                    <p style="margin: 0; font-size: 0.9rem; color: rgba(255,255,255,0.8);">Notificações automáticas configuradas:</p>
+                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 0.9rem; color: rgba(255,255,255,0.8);">
+                        <li>Preparando → "Seu pedido está sendo preparado"</li>
+                        <li>Saindo → "Seu pedido está a caminho"</li>
+                        <li>Entregue → "Pedido entregue com sucesso"</li>
+                    </ul>
+                    <small style="color: rgba(255,255,255,0.6);">As mensagens são enviadas automaticamente via WhatsApp Web</small>
+                </div>
             </div>
 
             <div class="admin-section">
@@ -319,17 +382,20 @@ Atibaia - SP, 12942-570</p>
     <!-- Chat Bot -->
     <div id="chatbot-container" class="chatbot-container">
         <div class="chatbot-header">
-            <span>🤖 Atendimento 24h</span>
+            <span>🤖 Assistente IA</span>
             <button onclick="toggleChatBot()">&times;</button>
         </div>
         <div class="chatbot-messages" id="chatbot-messages">
             <div class="bot-message">
-                Olá! Sou o assistente virtual da Adega do Tio Pancho. Como posso ajudar?
+                Olá! Sou o assistente inteligente da Adega do Tio Pancho. Posso ajudar com produtos, preços, entregas e muito mais!
             </div>
         </div>
         <div class="chatbot-input">
             <input type="text" id="chatbot-input" placeholder="Digite sua mensagem..." onkeypress="handleChatInput(event)">
-            <button onclick="sendChatMessage()">➤</button>
+            <button onclick="sendChatMessage()" id="send-btn">➤</button>
+        </div>
+        <div class="chatbot-footer">
+            <small>Powered by OpenAI GPT</small>
         </div>
     </div>
 

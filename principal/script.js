@@ -277,11 +277,44 @@ function adminLogin() {
     }
 }
 
+// Salvar configurações de IA
+function saveAISettings() {
+    const apiKey = document.getElementById('openai-api-key').value.trim();
+    
+    if (apiKey) {
+        localStorage.setItem('openai-api-key', apiKey);
+        alert('Chave da API salva! Chatbot inteligente ativado.');
+    } else {
+        localStorage.removeItem('openai-api-key');
+        alert('Chave removida. Chatbot usará respostas locais.');
+    }
+}
+
+// Testar IA
+async function testAI() {
+    try {
+        const response = await getAIResponse('Olá, você está funcionando?');
+        alert('IA funcionando! Resposta: ' + response);
+    } catch (error) {
+        alert('Erro na IA: ' + error.message + '. Verifique sua chave da API.');
+    }
+}
+
 // Carregar dados no admin
 function loadAdminData() {
     document.getElementById('adega-name').value = config.adegaName;
     document.getElementById('whatsapp-number').value = config.whatsappNumber;
     document.getElementById('default-message').value = config.defaultMessage;
+    
+    // Mostrar status da API
+    const apiKey = localStorage.getItem('openai-api-key');
+    const apiKeyInput = document.getElementById('openai-api-key');
+    if (apiKey && !apiKey.startsWith('***')) {
+        apiKeyInput.placeholder = 'Chave configurada (clique para alterar)';
+        apiKeyInput.value = '';
+    } else {
+        apiKeyInput.placeholder = 'Chave da API OpenAI (opcional)';
+    }
     
     updateAnalyticsDisplay();
     renderAdminProducts();
@@ -500,8 +533,29 @@ function clearAdminState() {
 // Mostrar painel admin
 function showAdminPanel() {
     document.getElementById('admin-panel').classList.remove('hidden');
-    saveAdminState();
+    // Não salvar estado automaticamente
     loadAdminData();
+}
+
+// Ir para home (ícone da casa)
+function goToHome() {
+    // Se admin estiver aberto, fechar
+    const adminPanel = document.getElementById('admin-panel');
+    if (!adminPanel.classList.contains('hidden')) {
+        adminPanel.classList.add('hidden');
+        clearAdminState();
+    }
+    
+    // Ir para seção home
+    showSection('home');
+}
+
+// Voltar ao site
+function backToSite() {
+    document.getElementById('admin-panel').classList.add('hidden');
+    // Limpar estado para não abrir automaticamente
+    clearAdminState();
+    showSection('home');
 }
 
 // Logout admin
@@ -519,10 +573,8 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSiteContent();
     }
     
-    // Verificar se admin estava aberto
-    if (localStorage.getItem('adminOpen') === 'true') {
-        showAdminPanel();
-    }
+    // Não abrir admin automaticamente - apenas se explicitamente solicitado
+    // Remover abertura automática do admin
     
     updateCartDisplay();
     
@@ -596,6 +648,17 @@ function updateCartDisplay() {
     if (cartBadge) {
         cartBadge.textContent = cartCount;
         cartBadge.style.display = cartCount > 0 ? 'flex' : 'none';
+    }
+    
+    // Atualizar widget do carrinho no menu fixo
+    const cartCountWidget = document.getElementById('cart-count-widget');
+    const cartTotalWidget = document.getElementById('cart-total-widget');
+    
+    if (cartCountWidget) {
+        cartCountWidget.textContent = `${cartCount} ${cartCount === 1 ? 'item' : 'itens'}`;
+    }
+    if (cartTotalWidget) {
+        cartTotalWidget.textContent = `R$ ${cartTotal.toFixed(2)}`;
     }
     
     // Atualizar total do modal
@@ -789,8 +852,9 @@ function handleChatInput(event) {
     }
 }
 
-function sendChatMessage() {
+async function sendChatMessage() {
     const input = document.getElementById('chatbot-input');
+    const sendBtn = document.getElementById('send-btn');
     const message = input.value.trim();
     
     if (!message) return;
@@ -799,11 +863,25 @@ function sendChatMessage() {
     addChatMessage(message, 'user');
     input.value = '';
     
-    // Simular resposta do bot
-    setTimeout(() => {
-        const response = getBotResponse(message.toLowerCase());
-        addChatMessage(response, 'bot');
-    }, 1000);
+    // Mostrar indicador de digitação
+    sendBtn.innerHTML = '⏳';
+    sendBtn.disabled = true;
+    addTypingIndicator();
+    
+    try {
+        // Tentar resposta inteligente primeiro
+        const aiResponse = await getAIResponse(message);
+        removeTypingIndicator();
+        addChatMessage(aiResponse, 'bot');
+    } catch (error) {
+        // Fallback para resposta local
+        removeTypingIndicator();
+        const fallbackResponse = getBotResponse(message.toLowerCase());
+        addChatMessage(fallbackResponse, 'bot');
+    }
+    
+    sendBtn.innerHTML = '➤';
+    sendBtn.disabled = false;
 }
 
 function addChatMessage(message, sender) {
@@ -816,30 +894,178 @@ function addChatMessage(message, sender) {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
+// Coletar dados do site
+function getSiteData() {
+    const siteData = {
+        products: products.map(p => `${p.name} - R$ ${p.price.toFixed(2)} (${p.category})`).join('\n'),
+        cart: cart.length > 0 ? cart.map(item => `${item.name} x${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}`).join('\n') : 'Carrinho vazio',
+        cartTotal: cart.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2)
+    };
+    return siteData;
+}
+
+// Resposta IA usando OpenAI API
+async function getAIResponse(message) {
+    const apiKey = localStorage.getItem('openai-api-key');
+    
+    if (!apiKey) {
+        throw new Error('API key não configurada');
+    }
+    
+    // Limpar chave se estiver mascarada
+    if (apiKey.startsWith('***')) {
+        throw new Error('Chave mascarada - insira a chave real');
+    }
+    
+    const siteData = getSiteData();
+    
+    // Detectar mensagem de acompanhamento de pedido
+    const orderTrackingPattern = /pedido #(\d+)/i;
+    const orderMatch = message.match(orderTrackingPattern);
+    
+    if (orderMatch && (message.includes('acompanhar') || message.includes('andamento'))) {
+        const orderId = orderMatch[1];
+        return `Olá! 👋\nRecebemos seu pedido #${orderId} com sucesso!\nEle já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅`;
+    }
+    
+    const context = `Você é um assistente virtual da Adega do Tio Pancho, uma loja de bebidas premium em Atibaia, SP.
+
+Informações da empresa:
+- Nome: Adega do Tio Pancho
+- Endereço: R. Oswaldo Barreto, 708 E - Alvinópolis, Atibaia - SP, 12942-570
+- WhatsApp: (11) 93394-9002
+- Horário: Domingo 09:00-18:00, Segunda 09:00-17:00, Terça-Quinta 10:00-20:00, Sexta-Sábado 10:00-22:00
+- Entregas: 10:00-20:00
+- Especialidade: Bebidas premium com entrega rápida
+
+PRODUTOS DISPONÍVEIS:
+${siteData.products}
+
+CARRINHO ATUAL DO CLIENTE:
+${siteData.cart}
+Total do carrinho: R$ ${siteData.cartTotal}
+
+Instrucções:
+- Se a mensagem contiver "pedido #" e "acompanhar", responda: "Olá! 👋 Recebemos seu pedido #[número] com sucesso! Ele já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅"
+- Use APENAS os produtos listados acima
+- Se perguntarem sobre preços, use os valores exatos
+- Se perguntarem sobre o carrinho, use as informações atuais
+- Recomende produtos baseado no que temos
+- Sempre direcione para WhatsApp para finalizar pedidos
+- Seja útil e conciso`;
+    
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    { role: 'system', content: context },
+                    { role: 'user', content: message }
+                ],
+                max_tokens: 150,
+                temperature: 0.7
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            
+            if (response.status === 401) {
+                throw new Error('Chave da API inválida ou expirada');
+            } else if (response.status === 429) {
+                throw new Error('Limite de uso excedido - tente novamente em alguns minutos');
+            } else if (response.status === 403) {
+                throw new Error('Acesso negado - verifique se sua conta OpenAI tem créditos');
+            } else {
+                throw new Error(`Erro ${response.status}: ${errorData.error?.message || 'Erro desconhecido'}`);
+            }
+        }
+        
+        const data = await response.json();
+        
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Resposta inválida da API');
+        }
+        
+        return data.choices[0].message.content.trim();
+        
+    } catch (error) {
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Erro de conexão - verifique sua internet');
+        }
+        throw error;
+    }
+}
+
+// Indicador de digitação
+function addTypingIndicator() {
+    const messagesContainer = document.getElementById('chatbot-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'bot-message typing-indicator';
+    typingDiv.innerHTML = '<span></span><span></span><span></span>';
+    typingDiv.id = 'typing-indicator';
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function removeTypingIndicator() {
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
 function getBotResponse(message) {
-    // Respostas automáticas baseadas em palavras-chave
+    const siteData = getSiteData();
+    
+    console.log('Mensagem recebida:', message);
+    
+    // Detectar mensagem de acompanhamento de pedido
+    if (message.includes('pedido') && message.includes('#')) {
+        const orderMatch = message.match(/#(\d+)/);
+        const orderId = orderMatch ? orderMatch[1] : '123456';
+        console.log('Pedido detectado:', orderId);
+        return `Olá! 👋\nRecebemos seu pedido #${orderId} com sucesso!\nEle já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅`;
+    }
+    
+    // Respostas com dados reais do site
+    if (message.includes('produto') || message.includes('bebida') || message.includes('o que tem')) {
+        return `Temos estes produtos disponíveis:\n\n${siteData.products}\n\nQual produto te interessa? Posso adicionar ao seu carrinho!`;
+    }
+    if (message.includes('preço') || message.includes('valor') || message.includes('quanto custa')) {
+        const productMentioned = products.find(p => message.toLowerCase().includes(p.name.toLowerCase().split(' ')[0]));
+        if (productMentioned) {
+            return `${productMentioned.name} custa R$ ${productMentioned.price.toFixed(2)}. Quer adicionar ao carrinho?`;
+        }
+        return `Nossos preços:\n\n${siteData.products}\n\nQual produto te interessa?`;
+    }
+    if (message.includes('carrinho') || message.includes('pedido')) {
+        if (cart.length === 0) {
+            return 'Seu carrinho está vazio. Que tal ver nossos produtos? Posso recomendar algo!';
+        }
+        return `Seu carrinho atual:\n\n${siteData.cart}\n\nTotal: R$ ${siteData.cartTotal}\n\nQuer finalizar pelo WhatsApp?`;
+    }
     if (message.includes('horário') || message.includes('funcionamento')) {
-        return 'Funcionamos de Segunda a Domingo: 09:00-22:00. Entregas até 20:00.';
+        return 'Horários:\n• Domingo: 09:00-18:00\n• Segunda: 09:00-17:00\n• Terça-Quinta: 10:00-20:00\n• Sexta-Sábado: 10:00-22:00\n\n🚚 Entregas: 10:00-20:00';
     }
     if (message.includes('endereço') || message.includes('localização')) {
         return 'Estamos na R. Oswaldo Barreto, 708 E - Alvinópolis, Atibaia - SP, 12942-570.';
     }
     if (message.includes('entrega') || message.includes('frete')) {
-        return 'Fazemos entregas! Use nossa calculadora de frete no carrinho para ver preços e prazos.';
-    }
-    if (message.includes('produto') || message.includes('bebida')) {
-        return 'Temos vinhos, cervejas artesanais, destilados e combos especiais. Veja nossa seção de produtos!';
-    }
-    if (message.includes('preço') || message.includes('valor')) {
-        return 'Nossos preços são competitivos! Veja todos os valores na seção de produtos.';
+        return 'Fazemos entregas das 10:00 às 20:00! Use nossa calculadora de frete no carrinho para ver preços e prazos.';
     }
     if (message.includes('whatsapp') || message.includes('contato')) {
         return 'Nosso WhatsApp: (11) 93394-9002. Ou use os botões do site para contato direto!';
     }
     if (message.includes('oi') || message.includes('olá') || message.includes('bom dia') || message.includes('boa tarde')) {
-        return 'Olá! Como posso ajudar você hoje? Posso falar sobre produtos, entregas, horários ou localização.';
+        return 'Olá! Como posso ajudar? Posso falar sobre nossos produtos, preços, seu carrinho, entregas ou horários!';
     }
     
     // Resposta padrão
-    return 'Desculpe, não entendi. Posso ajudar com: produtos, entregas, horários, endereço ou contato. Ou fale direto no WhatsApp: (11) 93394-9002';
+    return 'Desculpe, não consegui processar sua pergunta. Posso ajudar com produtos, preços, carrinho, entregas ou horários. WhatsApp: (11) 93394-9002';
 }

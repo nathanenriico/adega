@@ -157,9 +157,11 @@ function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         'card-delivery': 'Cartão na Entrega'
     };
     
+    const orderId = Date.now();
     const newOrder = {
-        id: Date.now(),
+        id: orderId,
         customer: 'Cliente Checkout',
+        phone: '11941716617', // Número do cliente para WhatsApp
         date: new Date().toISOString(),
         status: 'novo',
         total: total,
@@ -176,11 +178,15 @@ function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         deliveryFee: deliveryFee,
         notes: '',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        whatsappNotifications: [] // Histórico de notificações
     };
     
     orders.push(newOrder);
     localStorage.setItem('adegaOrders', JSON.stringify(orders));
+    
+    // Salvar ID do pedido para acompanhamento
+    localStorage.setItem('currentOrderId', orderId);
     
     // Limpar carrinho após salvar pedido
     localStorage.removeItem('adegaCart');
@@ -257,9 +263,91 @@ function closeSuccessModal() {
 }
 
 function goToWhatsApp() {
-    const message = encodeURIComponent('Olá! Gostaria de acompanhar meu pedido. Valor: R$ 177,20');
-    window.open(`https://wa.me/5511933949002?text=${message}`, '_blank');
+    const orderId = localStorage.getItem('currentOrderId');
+    const message = encodeURIComponent(`🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId}.\n\nGostaria de acompanhar o andamento pelo WhatsApp.\n\nObrigado!`);
+    
+    // Abrir WhatsApp Web
+    window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${message}`, '_blank');
+    
+    // Iniciar sistema de notificações
+    initWhatsAppNotifications(orderId);
+    
     closeSuccessModal();
+}
+
+// Sistema de notificações WhatsApp
+function initWhatsAppNotifications(orderId) {
+    // Salvar configuração de notificações
+    const notificationConfig = {
+        orderId: orderId,
+        enabled: true,
+        lastCheck: new Date().toISOString()
+    };
+    localStorage.setItem('whatsappNotifications', JSON.stringify(notificationConfig));
+    
+    // Iniciar monitoramento de mudanças de status
+    startOrderStatusMonitoring();
+}
+
+// Monitorar mudanças de status do pedido
+function startOrderStatusMonitoring() {
+    const checkInterval = setInterval(() => {
+        const config = JSON.parse(localStorage.getItem('whatsappNotifications'));
+        if (!config || !config.enabled) {
+            clearInterval(checkInterval);
+            return;
+        }
+        
+        checkOrderStatusChange(config.orderId);
+    }, 5000); // Verificar a cada 5 segundos
+}
+
+function checkOrderStatusChange(orderId) {
+    const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    const order = orders.find(o => o.id == orderId);
+    
+    if (!order) return;
+    
+    const lastNotification = order.whatsappNotifications?.slice(-1)[0];
+    const currentStatus = order.status;
+    
+    // Se status mudou, enviar notificação
+    if (!lastNotification || lastNotification.status !== currentStatus) {
+        sendWhatsAppNotification(order, currentStatus);
+    }
+}
+
+function sendWhatsAppNotification(order, newStatus) {
+    const statusMessages = {
+        'preparando': `🍷 *Pedido #${order.id}*\n\n✅ Seu pedido está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\n_Adega do Tio Pancho_`,
+        'saindo': `🍷 *Pedido #${order.id}*\n\n🚚 Seu pedido está a caminho!\n\nO entregador já saiu e chegará em breve.\n\n_Adega do Tio Pancho_`,
+        'entregue': `🍷 *Pedido #${order.id}*\n\n🎉 Pedido entregue com sucesso!\n\nObrigado pela preferência!\n\n⭐ Avalie nosso atendimento\n\n_Adega do Tio Pancho_`
+    };
+    
+    const message = statusMessages[newStatus];
+    if (!message) return;
+    
+    // Abrir WhatsApp Web com mensagem automática
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://web.whatsapp.com/send?phone=${order.phone}&text=${encodedMessage}`, '_blank');
+    
+    // Registrar notificação enviada
+    const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    const orderIndex = orders.findIndex(o => o.id === order.id);
+    
+    if (orderIndex !== -1) {
+        if (!orders[orderIndex].whatsappNotifications) {
+            orders[orderIndex].whatsappNotifications = [];
+        }
+        
+        orders[orderIndex].whatsappNotifications.push({
+            status: newStatus,
+            message: message,
+            sentAt: new Date().toISOString()
+        });
+        
+        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+    }
 }
 
 function showMessage(text) {
@@ -306,6 +394,8 @@ document.getElementById('cpf-cnpj').addEventListener('input', function(e) {
 
 // Formatação de cartão
 document.addEventListener('DOMContentLoaded', function() {
+    loadCartData();
+    
     const cardNumberInput = document.getElementById('card-number');
     const cardExpiryInput = document.getElementById('card-expiry');
     
@@ -338,11 +428,6 @@ document.addEventListener('change', function(e) {
             changeInput.style.display = 'none';
         }
     }
-});
-
-// Inicializar página
-document.addEventListener('DOMContentLoaded', function() {
-    loadCartData();
 });
 
 // Fechar modal ao clicar fora
