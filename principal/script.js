@@ -111,9 +111,12 @@ function openWhatsApp(productName = null) {
     saveAnalytics();
     
     const encodedMessage = encodeURIComponent(message);
+    
+    // Detectar se é mobile para usar URL apropriada
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const whatsappUrl = `https://wa.me/${currentNumber}?text=${encodedMessage}`;
     
-    console.log('WhatsApp URL:', whatsappUrl); // Para debug
+    console.log('WhatsApp URL:', whatsappUrl, 'Mobile:', isMobile);
     window.open(whatsappUrl, '_blank');
 }
 

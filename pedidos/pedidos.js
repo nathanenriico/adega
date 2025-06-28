@@ -22,14 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // Carregar e renderizar pedidos
 function loadOrders() {
     const activeOrders = orders.filter(order => order.status !== 'entregue');
-    renderActiveOrders(activeOrders);
-    updateActiveCounter(activeOrders.length);
-}
-
-// Carregar pedidos entregues
-function loadDeliveredOrders() {
     const deliveredOrders = orders.filter(order => order.status === 'entregue');
+    
+    renderActiveOrders(activeOrders);
     renderDeliveredOrders(deliveredOrders);
+    updateActiveCounter(activeOrders.length);
 }
 
 // Renderizar pedidos ativos
@@ -76,16 +73,16 @@ function renderActiveOrders(activeOrders) {
     `).join('');
 }
 
-// Renderizar pedidos entregues
+// Renderizar histórico de entregas
 function renderDeliveredOrders(deliveredOrders) {
-    const deliveredList = document.getElementById('delivered-list');
+    const historyList = document.getElementById('history-list');
     
     if (deliveredOrders.length === 0) {
-        deliveredList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido entregue.</p>';
+        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
         return;
     }
     
-    deliveredList.innerHTML = deliveredOrders.map(order => `
+    historyList.innerHTML = deliveredOrders.map(order => `
         <div class="order-item delivered-order">
             <div class="order-header">
                 <span class="order-id">#${order.id}</span>
@@ -97,7 +94,7 @@ function renderDeliveredOrders(deliveredOrders) {
                     <strong>Cliente:</strong> ${order.customer}
                 </div>
                 <div class="order-detail">
-                    <strong>Data Entrega:</strong> ${formatDate(order.deliveredAt || order.date)}
+                    <strong>Data:</strong> ${formatDate(order.date)}
                 </div>
                 <div class="order-detail">
                     <strong>Total:</strong> R$ ${order.total.toFixed(2)}
@@ -169,18 +166,6 @@ function getActionButtons(order) {
     return buttons;
 }
 
-// Navegação entre páginas
-function showMainPage() {
-    document.getElementById('main-page').classList.add('active');
-    document.getElementById('delivered-page').classList.remove('active');
-}
-
-function showDeliveredPage() {
-    document.getElementById('main-page').classList.remove('active');
-    document.getElementById('delivered-page').classList.add('active');
-    loadDeliveredOrders();
-}
-
 // Atualizar status do pedido
 function updateOrderStatus(orderId, newStatus) {
     event.stopPropagation();
@@ -193,14 +178,6 @@ function updateOrderStatus(orderId, newStatus) {
         
         if (newStatus === 'entregue') {
             order.deliveredAt = new Date().toISOString();
-            
-            // Animação de confirmação
-            showDeliveryConfirmation();
-            
-            // Redirecionar para página de entregues após 2 segundos
-            setTimeout(() => {
-                showDeliveredPage();
-            }, 2000);
         }
         
         saveOrders();
@@ -214,7 +191,6 @@ function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-<<<<<<< HEAD
 // Enviar notificação WhatsApp automática
 function sendAutomaticWhatsAppNotification(order, newStatus) {
     const statusMessages = {
@@ -229,13 +205,20 @@ function sendAutomaticWhatsAppNotification(order, newStatus) {
     // Mostrar notificação no painel admin
     showNotificationSent(order.id, newStatus);
     
-    // Abrir WhatsApp Web automaticamente
-    const phone = '5511941716617'; // Formato correto com código do país
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const phone = '5511941716617';
     const encodedMessage = encodeURIComponent(message);
     
     // Pequeno delay para não conflitar com a atualização da tela
     setTimeout(() => {
-        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+        if (isMobile) {
+            // Mobile: Abrir app WhatsApp
+            window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+        } else {
+            // Desktop: Abrir WhatsApp Web
+            window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+        }
     }, 1000);
     
     // Registrar notificação no pedido
@@ -281,17 +264,6 @@ function showNotificationSent(orderId, status) {
                 <div style="font-weight: bold;">WhatsApp Enviado!</div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">Pedido #${orderId} - ${statusText[status]}</div>
             </div>
-=======
-// Mostrar confirmação de entrega
-function showDeliveryConfirmation() {
-    const notification = document.createElement('div');
-    notification.className = 'delivery-notification';
-    notification.innerHTML = `
-        <div class="notification-content">
-            <div class="check-icon">✅</div>
-            <h3>Pedido Entregue!</h3>
-            <p>Redirecionando para histórico...</p>
->>>>>>> b042e48d6b265b2eeb27f0c77a799d4c32ee3e82
         </div>
     `;
     
@@ -299,11 +271,7 @@ function showDeliveryConfirmation() {
     
     setTimeout(() => {
         notification.remove();
-<<<<<<< HEAD
     }, 4000);
-=======
-    }, 2500);
->>>>>>> b042e48d6b265b2eeb27f0c77a799d4c32ee3e82
 }
 
 // Editar notas do pedido
@@ -369,52 +337,6 @@ function closeOrderModal() {
     document.getElementById('order-modal').style.display = 'none';
 }
 
-// Filtrar pedidos
-function filterOrders() {
-    const searchTerm = document.getElementById('search-input').value.toLowerCase();
-    const dateFilter = document.getElementById('date-filter').value;
-    const statusFilter = document.getElementById('status-filter').value;
-    
-    let filteredOrders = orders;
-    
-    if (searchTerm) {
-        filteredOrders = filteredOrders.filter(order => 
-            order.customer.toLowerCase().includes(searchTerm) ||
-            order.id.toString().includes(searchTerm) ||
-            order.items.some(item => item.name.toLowerCase().includes(searchTerm))
-        );
-    }
-    
-    if (dateFilter) {
-        filteredOrders = filteredOrders.filter(order => 
-            order.date.startsWith(dateFilter)
-        );
-    }
-    
-    if (statusFilter) {
-        filteredOrders = filteredOrders.filter(order => 
-            order.status === statusFilter
-        );
-    }
-    
-    renderFilteredOrders(filteredOrders);
-}
-
-// Renderizar pedidos filtrados
-function renderFilteredOrders(filteredOrders) {
-    const ordersList = document.getElementById('orders-list');
-    
-    if (filteredOrders.length === 0) {
-        ordersList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido encontrado com os filtros aplicados.</p>';
-        return;
-    }
-    
-    // Usar a mesma lógica de renderização
-    orders = filteredOrders;
-    loadOrders();
-    orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
-}
-
 // Atualizar estatísticas
 function updateStats() {
     const stats = {
@@ -441,34 +363,4 @@ function updateStats() {
 // Salvar pedidos
 function saveOrders() {
     localStorage.setItem('adegaOrders', JSON.stringify(orders));
-}
-
-// Adicionar pedido de exemplo (para teste)
-function addSampleOrder() {
-    const sampleOrder = {
-        id: Date.now(),
-        customer: 'João Silva',
-        date: new Date().toISOString(),
-        status: 'novo',
-        total: 89.90,
-        items: [
-            { name: 'Vinho Tinto Premium', quantity: 1, price: 89.90 }
-        ],
-        notes: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-    
-    orders.push(sampleOrder);
-    saveOrders();
-    loadOrders();
-    updateStats();
-}
-
-// Fechar modal ao clicar fora
-window.onclick = function(event) {
-    const modal = document.getElementById('order-modal');
-    if (event.target === modal) {
-        closeOrderModal();
-    }
 }

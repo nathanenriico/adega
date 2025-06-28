@@ -266,8 +266,16 @@ function goToWhatsApp() {
     const orderId = localStorage.getItem('currentOrderId');
     const message = encodeURIComponent(`🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId}.\n\nGostaria de acompanhar o andamento pelo WhatsApp.\n\nObrigado!`);
     
-    // Abrir WhatsApp Web
-    window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${message}`, '_blank');
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Mobile: Abrir app WhatsApp
+        window.open(`https://wa.me/5511941716617?text=${message}`, '_blank');
+    } else {
+        // Desktop: Abrir WhatsApp Web
+        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${message}`, '_blank');
+    }
     
     // Iniciar sistema de notificações
     initWhatsAppNotifications(orderId);
