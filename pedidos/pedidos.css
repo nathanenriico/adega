@@ -145,6 +145,7 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+<<<<<<< HEAD
 .orders-sections {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -165,11 +166,58 @@ body {
 .history-section h2 {
     color: #d4af37;
     margin-bottom: 25px;
+=======
+.delivered-btn {
+    background: #28a745 !important;
+    color: white !important;
+}
+
+.delivered-btn:hover {
+    background: #218838 !important;
+}
+
+.page {
+    display: none;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.page.active {
+    display: block;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.page-header h2 {
+    color: #d4af37;
+>>>>>>> b042e48d6b265b2eeb27f0c77a799d4c32ee3e82
     display: flex;
     align-items: center;
     gap: 12px;
     font-size: 1.4rem;
     font-weight: 600;
+}
+
+.back-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.back-btn:hover {
+    background: #5a6268;
 }
 
 .counter {
@@ -436,7 +484,57 @@ body {
     color: #d4af37;
 }
 
+.delivery-notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.notification-content {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.5s ease;
+}
+
+.check-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.notification-content h3 {
+    color: #28a745;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.notification-content p {
+    color: #666;
+    font-size: 1rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
 @media (max-width: 768px) {
+<<<<<<< HEAD
     .orders-container {
         padding: 15px;
     }
@@ -446,6 +544,8 @@ body {
         gap: 20px;
     }
     
+=======
+>>>>>>> b042e48d6b265b2eeb27f0c77a799d4c32ee3e82
     .orders-filters {
         flex-direction: column;
         gap: 12px;
@@ -488,5 +588,10 @@ body {
     .action-btn {
         padding: 8px 14px;
         font-size: 0.8rem;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
