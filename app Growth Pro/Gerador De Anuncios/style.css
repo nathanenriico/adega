@@ -1,0 +1,173 @@
+/* Estilos gerais */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #1c1e21;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+h1 {
+    color: #1877f2;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #65676b;
+    margin-bottom: 30px;
+}
+
+/* Formulário */
+.form-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #050505;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 10px 0;
+}
+
+.image-preview-container {
+    margin-top: 10px;
+    text-align: center;
+}
+
+#image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+}
+
+button {
+    background-color: #1877f2;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #166fe5;
+}
+
+#generate-btn {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Resultados */
+.results-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.results-container h2 {
+    color: #1877f2;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.ad-preview, .ad-copy, .ad-tips {
+    margin-bottom: 30px;
+}
+
+.ad-frame {
+    border: 1px solid #dddfe2;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    background-color: #f0f2f5;
+}
+
+.copy-section {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f7f8fa;
+    border-radius: 6px;
+}
+
+.copy-section h4 {
+    margin-bottom: 8px;
+    color: #050505;
+}
+
+.copy-section p {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: white;
+    border: 1px solid #dddfe2;
+    border-radius: 4px;
+}
+
+.copy-btn {
+    background-color: #e4e6eb;
+    color: #050505;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.copy-btn:hover {
+    background-color: #d8dadf;
+}
+
+#ad-tips-list li {
+    margin-bottom: 10px;
+    list-style-type: none;
+    padding-left: 20px;
+    position: relative;
+}
+
+#ad-tips-list li:before {
+    content: "✓";
+    color: #1877f2;
+    position: absolute;
+    left: 0;
+}
+
+#new-ad-btn {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+}

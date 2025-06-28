@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Públicos - Growth Pro</title>
+    <link rel="stylesheet" href="../dashboard/dashboard.css">
+    <link rel="stylesheet" href="publicos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../dashboard/dashboard.html">Dashboard</a>
+            <a href="../campanhas/nova-campanha.html">Campanhas</a>
+            <a href="publicos.html" class="active">Públicos</a>
+            <a href="../relatorios/relatorios.html">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard/dashboard.html"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li><a href="../campanhas/nova-campanha.html"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li class="active"><a href="publicos.html"><i class="fas fa-users"></i> Públicos</a></li>
+                <li><a href="../criativos/criativos.html"><i class="fas fa-images"></i> Criativos</a></li>
+                <li><a href="../relatorios/relatorios.html"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li><a href="../configurações/configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Públicos</h1>
+                <p>Gerencie seus públicos-alvo para campanhas</p>
+                <button id="create-audience-btn" class="primary-btn"><i class="fas fa-plus"></i> Criar Novo Público</button>
+            </div>
+
+            <div class="audience-filters">
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar públicos..." id="search-audience">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-options">
+                    <select id="platform-filter">
+                        <option value="all">Todas as plataformas</option>
+                        <option value="meta">Meta Ads</option>
+                        <option value="google">Google Ads</option>
+                    </select>
+                    <select id="type-filter">
+                        <option value="all">Todos os tipos</option>
+                        <option value="custom">Personalizado</option>
+                        <option value="lookalike">Semelhante</option>
+                        <option value="retargeting">Retargeting</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="audience-list">
+                <div class="audience-card">
+                    <div class="audience-info">
+                        <h3>Interessados em Tecnologia</h3>
+                        <div class="audience-meta">
+                            <span class="audience-platform"><i class="fab fa-facebook"></i> Meta Ads</span>
+                            <span class="audience-type">Personalizado</span>
+                            <span class="audience-size">~1.2M pessoas</span>
+                        </div>
+                        <p class="audience-description">Pessoas interessadas em tecnologia, gadgets e inovação.</p>
+                    </div>
+                    <div class="audience-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div class="audience-card">
+                    <div class="audience-info">
+                        <h3>Visitantes do Site (30 dias)</h3>
+                        <div class="audience-meta">
+                            <span class="audience-platform"><i class="fab fa-google"></i> Google Ads</span>
+                            <span class="audience-type">Retargeting</span>
+                            <span class="audience-size">~5.4K pessoas</span>
+                        </div>
+                        <p class="audience-description">Pessoas que visitaram o site nos últimos 30 dias.</p>
+                    </div>
+                    <div class="audience-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div class="audience-card">
+                    <div class="audience-info">
+                        <h3>Semelhante a Compradores</h3>
+                        <div class="audience-meta">
+                            <span class="audience-platform"><i class="fab fa-facebook"></i> Meta Ads</span>
+                            <span class="audience-type">Semelhante</span>
+                            <span class="audience-size">~2.8M pessoas</span>
+                        </div>
+                        <p class="audience-description">Público semelhante aos clientes que já realizaram compras.</p>
+                    </div>
+                    <div class="audience-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para criar/editar público -->
+            <div class="modal" id="audience-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Criar Novo Público</h2>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="audience-form">
+                            <div class="form-group">
+                                <label for="audience-name">Nome do Público</label>
+                                <input type="text" id="audience-name" placeholder="Ex: Interessados em Tecnologia">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="audience-platform">Plataforma</label>
+                                <select id="audience-platform">
+                                    <option value="meta">Meta Ads</option>
+                                    <option value="google">Google Ads</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="audience-type">Tipo de Público</label>
+                                <select id="audience-type">
+                                    <option value="custom">Personalizado</option>
+                                    <option value="lookalike">Semelhante</option>
+                                    <option value="retargeting">Retargeting</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="audience-description">Descrição</label>
+                                <textarea id="audience-description" placeholder="Descreva este público-alvo..."></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Critérios de Segmentação</label>
+                                <div class="segmentation-options">
+                                    <div class="segmentation-section">
+                                        <h4>Demografia</h4>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="age-min">Idade Mínima</label>
+                                                <select id="age-min">
+                                                    <option value="13">13</option>
+                                                    <option value="18" selected>18</option>
+                                                    <option value="25">25</option>
+                                                    <option value="35">35</option>
+                                                    <option value="45">45</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="age-max">Idade Máxima</label>
+                                                <select id="age-max">
+                                                    <option value="24">24</option>
+                                                    <option value="34">34</option>
+                                                    <option value="44">44</option>
+                                                    <option value="54">54</option>
+                                                    <option value="65" selected>65+</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Gênero</label>
+                                            <div class="checkbox-group">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" name="gender" value="male" checked> Masculino
+                                                </label>
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" name="gender" value="female" checked> Feminino
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="segmentation-section">
+                                        <h4>Localização</h4>
+                                        <div class="form-group">
+                                            <input type="text" id="location" placeholder="Ex: Brasil, São Paulo">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="segmentation-section">
+                                        <h4>Interesses</h4>
+                                        <div class="form-group">
+                                            <input type="text" id="interests" placeholder="Ex: Tecnologia, Esportes, Moda">
+                                            <small>Separe os interesses por vírgula</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="secondary-btn cancel-btn">Cancelar</button>
+                                <button type="submit" class="primary-btn">Salvar Público</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="publicos.js"></script>
+</body>
+</html>

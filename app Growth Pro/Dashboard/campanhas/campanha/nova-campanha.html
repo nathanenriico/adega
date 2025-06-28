@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Campanha - Growth Pro</title>
+    <link rel="stylesheet" href="../../pagina inicial/dashboard/dashboard.css">
+    <link rel="stylesheet" href="nova-campanha.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../../pagina inicial/dashboard/dashboard.html">Dashboard</a>
+            <a href="nova-campanha.html" class="active">Campanhas</a>
+            <a href="../../pagina inicial/criativos/criativos.html">Anúncios</a>
+            <a href="../../pagina inicial/relatorios/relatorios.html">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="../../pagina inicial/dashboard/dashboard.html"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li class="active"><a href="#"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li><a href="../../pagina inicial/publicos/publicos.html"><i class="fas fa-users"></i> Públicos</a></li>
+                <li><a href="../../pagina inicial/criativos/criativos.html"><i class="fas fa-images"></i> Criativos</a></li>
+                <li><a href="../../pagina inicial/relatorios/relatorios.html"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li><a href="../../pagina inicial/configurações/configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Nova Campanha</h1>
+                <p>Configure sua campanha de anúncios</p>
+            </div>
+
+            <div class="campaign-wizard">
+                <div class="wizard-steps">
+                    <div class="wizard-step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Informações da Campanha</div>
+                    </div>
+                    <div class="wizard-step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">Segmentação de Público</div>
+                    </div>
+                    <div class="wizard-step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Criação de Anúncios</div>
+                    </div>
+                </div>
+
+                <div class="wizard-content">
+                    <!-- Etapa 1: Informações da Campanha -->
+                    <div class="wizard-panel active" id="step-1">
+                        <h2>Informações da Campanha</h2>
+                        <p>Configure os detalhes básicos da sua campanha</p>
+                        
+                        <div class="form-group">
+                            <label for="campaign-name">Nome da Campanha</label>
+                            <input type="text" id="campaign-name" placeholder="Ex: Campanha de Verão 2025">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="campaign-objective">Objetivo da Campanha</label>
+                            <select id="campaign-objective">
+                                <option value="">Selecione um objetivo</option>
+                                <option value="traffic">Tráfego</option>
+                                <option value="conversions">Conversões</option>
+                                <option value="awareness">Reconhecimento de Marca</option>
+                                <option value="leads">Geração de Leads</option>
+                                <option value="sales">Vendas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="campaign-budget">Orçamento Diário (R$)</label>
+                                <input type="number" id="campaign-budget" placeholder="Ex: 50,00" min="10">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="campaign-duration">Duração</label>
+                                <select id="campaign-duration">
+                                    <option value="continuous">Contínua</option>
+                                    <option value="7days">7 dias</option>
+                                    <option value="14days">14 dias</option>
+                                    <option value="30days">30 dias</option>
+                                    <option value="custom">Personalizada</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="campaign-platform">Plataformas</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="platform" value="meta" checked> Meta Ads
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="platform" value="google" checked> Google Ads
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="wizard-buttons">
+                            <button class="secondary-btn" disabled>Voltar</button>
+                            <button class="primary-btn next-step" data-next="2">Próximo: Segmentação de Público</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Etapa 2: Segmentação de Público -->
+                    <div class="wizard-panel" id="step-2">
+                        <h2>Segmentação de Público</h2>
+                        <p>Defina o público-alvo para sua campanha</p>
+                        
+                        <div class="form-group">
+                            <label for="audience-type">Tipo de Público</label>
+                            <select id="audience-type">
+                                <option value="new">Novo Público</option>
+                                <option value="saved">Público Salvo</option>
+                                <option value="lookalike">Público Semelhante</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="audience-age-min">Idade Mínima</label>
+                                <select id="audience-age-min">
+                                    <option value="13">13</option>
+                                    <option value="18" selected>18</option>
+                                    <option value="25">25</option>
+                                    <option value="35">35</option>
+                                    <option value="45">45</option>
+                                    <option value="55">55</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="audience-age-max">Idade Máxima</label>
+                                <select id="audience-age-max">
+                                    <option value="24">24</option>
+                                    <option value="34">34</option>
+                                    <option value="44">44</option>
+                                    <option value="54">54</option>
+                                    <option value="65" selected>65+</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="audience-gender">Gênero</label>
+                            <select id="audience-gender">
+                                <option value="all" selected>Todos</option>
+                                <option value="male">Masculino</option>
+                                <option value="female">Feminino</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="audience-location">Localização</label>
+                            <input type="text" id="audience-location" placeholder="Ex: Brasil">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="audience-interests">Interesses</label>
+                            <input type="text" id="audience-interests" placeholder="Ex: Esportes, Fitness, Tecnologia">
+                            <small>Separe os interesses por vírgula</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Posicionamentos</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="placement" value="feed" checked> Feed
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="placement" value="stories" checked> Stories
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="placement" value="search"> Pesquisa
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="placement" value="display"> Display
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="placement" value="youtube"> YouTube
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="wizard-buttons">
+                            <button class="secondary-btn prev-step" data-prev="1">Voltar</button>
+                            <button class="primary-btn next-step" data-next="3">Próximo: Criação de Anúncios</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Etapa 3: Criação de Anúncios -->
+                    <div class="wizard-panel" id="step-3">
+                        <h2>Criação de Anúncios</h2>
+                        <p>Crie os anúncios para sua campanha</p>
+                        
+                        <div class="ad-creator">
+                            <div class="ad-preview">
+                                <div class="ad-preview-header">
+                                    <h3>Prévia do Anúncio</h3>
+                                    <div class="ad-platform-tabs">
+                                        <button class="ad-platform-tab active" data-platform="meta">Meta</button>
+                                        <button class="ad-platform-tab" data-platform="google">Google</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="ad-preview-content">
+                                    <div class="ad-preview-frame">
+                                        <div class="ad-preview-placeholder">
+                                            <i class="fas fa-image"></i>
+                                            <p>A prévia do anúncio aparecerá aqui</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="ad-form">
+                                <div class="form-group">
+                                    <label for="ad-headline">Título do Anúncio</label>
+                                    <input type="text" id="ad-headline" placeholder="Ex: Oferta Especial de Verão!">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ad-description">Descrição do Anúncio</label>
+                                    <textarea id="ad-description" placeholder="Ex: Aproveite nossos produtos com 30% OFF. Promoção por tempo limitado!"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ad-image">Imagem do Anúncio</label>
+                                    <div class="file-upload">
+                                        <input type="file" id="ad-image" accept="image/*">
+                                        <label for="ad-image" class="file-upload-label">
+                                            <i class="fas fa-upload"></i>
+                                            <span>Escolher Imagem</span>
+                                        </label>
+                                    </div>
+                                    <small>Recomendado: 1200 x 628 pixels</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ad-cta">Chamada para Ação</label>
+                                    <select id="ad-cta">
+                                        <option value="shop_now">Comprar Agora</option>
+                                        <option value="learn_more">Saiba Mais</option>
+                                        <option value="sign_up">Cadastre-se</option>
+                                        <option value="contact_us">Entre em Contato</option>
+                                        <option value="download">Baixar</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ad-url">URL de Destino</label>
+                                    <input type="url" id="ad-url" placeholder="Ex: https://seusite.com.br/promocao">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="wizard-buttons">
+                            <button class="secondary-btn prev-step" data-prev="2">Voltar</button>
+                            <a href="../revisao/revisao-publicacao.html" class="primary-btn" id="go-to-review">Próximo: Revisão e Publicação</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="nova-campanha.js"></script>
+</body>
+</html>

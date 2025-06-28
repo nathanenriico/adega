@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revisão e Publicação - Growth Pro</title>
+    <link rel="stylesheet" href="../../pagina inicial/dashboard/dashboard.css">
+    <link rel="stylesheet" href="revisao-publicacao.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../../pagina inicial/dashboard/dashboard.html">Dashboard</a>
+            <a href="../campanha/nova-campanha.html" class="active">Campanhas</a>
+            <a href="../../pagina inicial/criativos/criativos.html">Anúncios</a>
+            <a href="../../pagina inicial/relatorios/relatorios.html">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="../../pagina inicial/dashboard/dashboard.html"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li class="active"><a href="../campanha/nova-campanha.html"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li><a href="../../pagina inicial/publicos/publicos.html"><i class="fas fa-users"></i> Públicos</a></li>
+                <li><a href="../../pagina inicial/criativos/criativos.html"><i class="fas fa-images"></i> Criativos</a></li>
+                <li><a href="../../pagina inicial/relatorios/relatorios.html"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li><a href="../../pagina inicial/configurações/configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Revisão e Publicação</h1>
+                <p>Revise os detalhes da sua campanha antes de publicar</p>
+            </div>
+
+            <div class="review-container">
+                <div class="review-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-steps">
+                        <div class="progress-step completed" data-step="1">
+                            <div class="step-icon"><i class="fas fa-check"></i></div>
+                            <div class="step-label">Informações</div>
+                        </div>
+                        <div class="progress-step completed" data-step="2">
+                            <div class="step-icon"><i class="fas fa-check"></i></div>
+                            <div class="step-label">Segmentação</div>
+                        </div>
+                        <div class="progress-step completed" data-step="3">
+                            <div class="step-icon"><i class="fas fa-check"></i></div>
+                            <div class="step-label">Anúncios</div>
+                        </div>
+                        <div class="progress-step active" data-step="4">
+                            <div class="step-icon"><i class="fas fa-eye"></i></div>
+                            <div class="step-label">Revisão</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-content">
+                    <div class="review-section">
+                        <div class="section-header">
+                            <h2>Informações da Campanha</h2>
+                            <button class="edit-btn" data-section="info"><i class="fas fa-edit"></i> Editar</button>
+                        </div>
+                        <div class="section-content">
+                            <div class="review-item">
+                                <span class="review-label">Nome da Campanha:</span>
+                                <span class="review-value" id="campaign-name-value">Campanha de Verão 2025</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Objetivo:</span>
+                                <span class="review-value" id="campaign-objective-value">Conversões</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Orçamento Diário:</span>
+                                <span class="review-value" id="campaign-budget-value">R$ 100,00</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Duração:</span>
+                                <span class="review-value" id="campaign-duration-value">30 dias</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Plataformas:</span>
+                                <span class="review-value" id="campaign-platforms-value">Meta Ads, Google Ads</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-section">
+                        <div class="section-header">
+                            <h2>Segmentação de Público</h2>
+                            <button class="edit-btn" data-section="audience"><i class="fas fa-edit"></i> Editar</button>
+                        </div>
+                        <div class="section-content">
+                            <div class="review-item">
+                                <span class="review-label">Tipo de Público:</span>
+                                <span class="review-value" id="audience-type-value">Novo Público</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Idade:</span>
+                                <span class="review-value" id="audience-age-value">18 a 65+ anos</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Gênero:</span>
+                                <span class="review-value" id="audience-gender-value">Todos</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Localização:</span>
+                                <span class="review-value" id="audience-location-value">Brasil</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Interesses:</span>
+                                <span class="review-value" id="audience-interests-value">Esportes, Fitness, Tecnologia</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Posicionamentos:</span>
+                                <span class="review-value" id="audience-placements-value">Feed, Stories</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-section">
+                        <div class="section-header">
+                            <h2>Anúncios</h2>
+                            <button class="edit-btn" data-section="ads"><i class="fas fa-edit"></i> Editar</button>
+                        </div>
+                        <div class="section-content">
+                            <div class="ad-preview-container">
+                                <div class="ad-preview-card">
+                                    <div class="ad-preview-header">
+                                        <span class="ad-platform"><i class="fab fa-facebook"></i> Meta Ads</span>
+                                    </div>
+                                    <div class="ad-preview-image">
+                                        <img src="https://via.placeholder.com/600x400/4285f4/ffffff?text=Oferta+Especial" alt="Prévia do anúncio">
+                                    </div>
+                                    <div class="ad-preview-content">
+                                        <h3 id="ad-headline-value">Oferta Especial de Verão!</h3>
+                                        <p id="ad-description-value">Aproveite nossos produtos com 30% OFF. Promoção por tempo limitado!</p>
+                                        <button class="ad-cta-btn" id="ad-cta-value">Comprar Agora</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="ad-details">
+                                    <div class="review-item">
+                                        <span class="review-label">URL de Destino:</span>
+                                        <span class="review-value" id="ad-url-value">https://seusite.com.br/promocao</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-section">
+                        <div class="section-header">
+                            <h2>Estimativas de Desempenho</h2>
+                        </div>
+                        <div class="section-content">
+                            <div class="performance-estimates">
+                                <div class="estimate-card">
+                                    <div class="estimate-icon"><i class="fas fa-eye"></i></div>
+                                    <div class="estimate-info">
+                                        <h3>Impressões</h3>
+                                        <p class="estimate-value">10.000 - 30.000</p>
+                                        <p class="estimate-period">por dia</p>
+                                    </div>
+                                </div>
+                                <div class="estimate-card">
+                                    <div class="estimate-icon"><i class="fas fa-mouse-pointer"></i></div>
+                                    <div class="estimate-info">
+                                        <h3>Cliques</h3>
+                                        <p class="estimate-value">200 - 600</p>
+                                        <p class="estimate-period">por dia</p>
+                                    </div>
+                                </div>
+                                <div class="estimate-card">
+                                    <div class="estimate-icon"><i class="fas fa-shopping-cart"></i></div>
+                                    <div class="estimate-info">
+                                        <h3>Conversões</h3>
+                                        <p class="estimate-value">5 - 15</p>
+                                        <p class="estimate-period">por dia</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="estimate-disclaimer">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Estimativas baseadas em campanhas similares. Os resultados reais podem variar.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-actions">
+                        <button class="secondary-btn" id="back-btn">Voltar para Edição</button>
+                        <button class="primary-btn" id="publish-btn">Publicar Campanha</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="publish-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Campanha Publicada!</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <p>Sua campanha foi publicada com sucesso e começará a ser veiculada em breve.</p>
+                <div class="next-steps">
+                    <h3>Próximos Passos</h3>
+                    <ul>
+                        <li><i class="fas fa-chart-line"></i> Acompanhe o desempenho no painel de relatórios</li>
+                        <li><i class="fas fa-sliders-h"></i> Otimize sua campanha com base nos resultados</li>
+                        <li><i class="fas fa-bullhorn"></i> Crie variações de anúncios para testar diferentes abordagens</li>
+                    </ul>
+                </div>
+                <div class="modal-actions">
+                    <button class="secondary-btn" id="view-campaign-btn">Ver Detalhes da Campanha</button>
+                    <button class="primary-btn" id="go-dashboard-btn">Ir para Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="revisao-publicacao.js"></script>
+</body>
+</html>

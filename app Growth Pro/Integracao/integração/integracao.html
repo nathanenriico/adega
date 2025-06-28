@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Como Funciona a Integração - Growth Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../home/home.html">Início</a>
+            <a href="#">Dashboard</a>
+            <a href="#">Anúncios</a>
+            <a href="#">Públicos</a>
+            <a href="#">ROI</a>
+            <button class="login-btn">Login/Cadastro</button>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Como Funciona a Integração</h1>
+        <p>Entenda como o Growth Pro se conecta com Meta Ads e Google Ads para automatizar suas campanhas</p>
+    </section>
+
+    <section class="integration-steps">
+        <div class="step" id="step1">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <h2>Usuário loga no Growth Pro</h2>
+                <p>Autenticação via OAuth para acessar a conta de anúncios.</p>
+                <p>O app recebe um token que permite interagir com os gerenciadores de anúncios.</p>
+                <div class="step-image">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="step2">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <h2>Criação de campanha</h2>
+                <p>Usuário preenche Nome da Campanha, Orçamento, Objetivo (Tráfego, Conversões, etc.).</p>
+                <p>O sistema chama a API Meta Ads ou Google Ads para criar a campanha automaticamente.</p>
+                <div class="step-image">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="step3">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <h2>Criação de conjunto de anúncios</h2>
+                <p>Usuário define segmentação de público (interesses, idade, localização).</p>
+                <p>Escolhe posicionamentos (Feed, Stories, Display, YouTube, Pesquisa).</p>
+                <p>O sistema cria e vincula um conjunto de anúncios à campanha via API.</p>
+                <div class="step-image">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="step4">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <h2>Criação de anúncios (criativos)</h2>
+                <p>Usuário faz upload de imagem/vídeo e insere texto do anúncio.</p>
+                <p>O app valida o anúncio conforme as diretrizes da Meta/Google.</p>
+                <p>O anúncio é publicado automaticamente na campanha vinculada.</p>
+                <div class="step-image">
+                    <i class="fas fa-images"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="step" id="step5">
+            <div class="step-number">5</div>
+            <div class="step-content">
+                <h2>Monitoramento e otimização</h2>
+                <p>Growth Pro exibe dados em tempo real via API (cliques, CPC, conversões).</p>
+                <p>Sugere otimizações com base em desempenho, como:</p>
+                <ul>
+                    <li>Ajuste de orçamento</li>
+                    <li>Alteração de segmentação</li>
+                    <li>Teste A/B para variação de criativos</li>
+                </ul>
+                <div class="step-image">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-section">
+        <h2>Veja a integração em ação</h2>
+        <p>Clique no botão abaixo para ver uma demonstração interativa</p>
+        <button id="demo-btn" class="cta">Ver Demonstração</button>
+        
+        <div id="demo-container" class="demo-container">
+            <!-- O conteúdo da demonstração será carregado aqui via JavaScript -->
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <h2>Pronto para automatizar suas campanhas?</h2>
+        <p>Experimente o Growth Pro gratuitamente por 14 dias e veja a diferença.</p>
+        <a href="../Cadastro/cadastro/cadastro.html" class="cta">Começar Agora</a>
+    </section>
+
+    <footer>
+        <p>© 2025 Growth Pro - Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

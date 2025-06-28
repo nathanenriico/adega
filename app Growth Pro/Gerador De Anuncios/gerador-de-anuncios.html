@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Anúncios Rápido</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerador de Anúncios Rápido</h1>
+        <p class="subtitle">Crie anúncios otimizados para Facebook Ads em segundos</p>
+        
+        <div class="form-container">
+            <div class="form-group">
+                <label for="product-name">Nome do Produto</label>
+                <input type="text" id="product-name" placeholder="Ex: Tênis Esportivo Ultra Conforto">
+            </div>
+            
+            <div class="form-group">
+                <label for="product-price">Preço (R$)</label>
+                <input type="text" id="product-price" placeholder="Ex: 199,90">
+            </div>
+            
+            <div class="form-group">
+                <label for="product-image">Imagem do Produto</label>
+                <input type="file" id="product-image" accept="image/*">
+                <div class="image-preview-container">
+                    <img id="image-preview" src="#" alt="Prévia da imagem" style="display: none;">
+                </div>
+            </div>
+            
+            <button id="generate-btn">Gerar Anúncio</button>
+        </div>
+        
+        <div class="results-container" id="results-container" style="display: none;">
+            <h2>Seu Anúncio Está Pronto!</h2>
+            
+            <div class="ad-preview">
+                <h3>Prévia do Anúncio</h3>
+                <div class="ad-frame" id="ad-preview">
+                    <!-- Prévia do anúncio será inserida aqui -->
+                </div>
+            </div>
+            
+            <div class="ad-copy">
+                <h3>Textos do Anúncio</h3>
+                <div class="copy-section">
+                    <h4>Título Principal</h4>
+                    <p id="main-title"></p>
+                    <button class="copy-btn" data-target="main-title">Copiar</button>
+                </div>
+                
+                <div class="copy-section">
+                    <h4>Descrição</h4>
+                    <p id="description"></p>
+                    <button class="copy-btn" data-target="description">Copiar</button>
+                </div>
+                
+                <div class="copy-section">
+                    <h4>Chamada para Ação</h4>
+                    <p id="cta"></p>
+                    <button class="copy-btn" data-target="cta">Copiar</button>
+                </div>
+            </div>
+            
+            <div class="ad-tips">
+                <h3>Dicas para Otimização</h3>
+                <ul id="ad-tips-list">
+                    <!-- Dicas serão inseridas aqui -->
+                </ul>
+            </div>
+            
+            <button id="new-ad-btn">Criar Novo Anúncio</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

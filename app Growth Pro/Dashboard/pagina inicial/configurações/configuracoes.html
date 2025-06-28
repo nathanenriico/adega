@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Growth Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="configuracoes.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="../campanhas/nova-campanha.html">Campanhas</a>
+            <a href="publicos.html">Públicos</a>
+            <a href="relatorios.html">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li><a href="../campanhas/nova-campanha.html"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li><a href="publicos.html"><i class="fas fa-users"></i> Públicos</a></li>
+                <li><a href="criativos.html"><i class="fas fa-images"></i> Criativos</a></li>
+                <li><a href="relatorios.html"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li class="active"><a href="configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Configurações</h1>
+                <p>Gerencie suas preferências e conexões</p>
+            </div>
+
+            <div class="settings-container">
+                <div class="settings-nav">
+                    <ul>
+                        <li class="active" data-tab="account">Conta</li>
+                        <li data-tab="connections">Conexões</li>
+                        <li data-tab="notifications">Notificações</li>
+                        <li data-tab="billing">Faturamento</li>
+                        <li data-tab="api">API</li>
+                    </ul>
+                </div>
+                
+                <div class="settings-content">
+                    <!-- Aba de Conta -->
+                    <div class="settings-tab active" id="account-tab">
+                        <h2>Informações da Conta</h2>
+                        
+                        <div class="profile-section">
+                            <div class="profile-avatar">
+                                <img src="https://via.placeholder.com/100" alt="Avatar" class="user-avatar-large">
+                                <button class="change-avatar-btn"><i class="fas fa-camera"></i></button>
+                            </div>
+                            
+                            <div class="profile-info">
+                                <form id="profile-form">
+                                    <div class="form-group">
+                                        <label for="user-name">Nome</label>
+                                        <input type="text" id="user-name" value="Usuário Demo">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="user-email">E-mail</label>
+                                        <input type="email" id="user-email" value="usuario@exemplo.com">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="user-company">Empresa</label>
+                                        <input type="text" id="user-company" value="Empresa Demo">
+                                    </div>
+                                    
+                                    <div class="form-actions">
+                                        <button type="submit" class="primary-btn">Salvar Alterações</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <h2>Alterar Senha</h2>
+                        <form id="password-form">
+                            <div class="form-group">
+                                <label for="current-password">Senha Atual</label>
+                                <input type="password" id="current-password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="new-password">Nova Senha</label>
+                                <input type="password" id="new-password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirm-password">Confirmar Nova Senha</label>
+                                <input type="password" id="confirm-password">
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="primary-btn">Alterar Senha</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Aba de Conexões -->
+                    <div class="settings-tab" id="connections-tab">
+                        <h2>Plataformas Conectadas</h2>
+                        
+                        <div class="connection-card">
+                            <div class="connection-info">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                                <div>
+                                    <h3>Meta Ads</h3>
+                                    <p>Conectado como Usuário Demo</p>
+                                    <p class="connection-status connected">Conectado</p>
+                                </div>
+                            </div>
+                            <div class="connection-actions">
+                                <button class="secondary-btn">Reconectar</button>
+                                <button class="danger-btn">Desconectar</button>
+                            </div>
+                        </div>
+                        
+                        <div class="connection-card">
+                            <div class="connection-info">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                                <div>
+                                    <h3>Google Ads</h3>
+                                    <p>Conectado como usuario@exemplo.com</p>
+                                    <p class="connection-status connected">Conectado</p>
+                                </div>
+                            </div>
+                            <div class="connection-actions">
+                                <button class="secondary-btn">Reconectar</button>
+                                <button class="danger-btn">Desconectar</button>
+                            </div>
+                        </div>
+                        
+                        <div class="connection-card">
+                            <div class="connection-info">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Twitter-logo.svg/2491px-Twitter-logo.svg.png" alt="Twitter">
+                                <div>
+                                    <h3>Twitter Ads</h3>
+                                    <p>Não conectado</p>
+                                    <p class="connection-status disconnected">Desconectado</p>
+                                </div>
+                            </div>
+                            <div class="connection-actions">
+                                <button class="primary-btn">Conectar</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aba de Notificações -->
+                    <div class="settings-tab" id="notifications-tab">
+                        <h2>Preferências de Notificação</h2>
+                        
+                        <div class="notification-settings">
+                            <div class="notification-option">
+                                <div>
+                                    <h3>Relatórios Semanais</h3>
+                                    <p>Receba um resumo semanal do desempenho das suas campanhas</p>
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="notification-option">
+                                <div>
+                                    <h3>Alertas de Desempenho</h3>
+                                    <p>Seja notificado quando houver mudanças significativas no desempenho</p>
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="notification-option">
+                                <div>
+                                    <h3>Atualizações de Produto</h3>
+                                    <p>Receba informações sobre novos recursos e atualizações</p>
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="notification-option">
+                                <div>
+                                    <h3>Dicas de Otimização</h3>
+                                    <p>Receba sugestões para melhorar suas campanhas</p>
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="primary-btn">Salvar Preferências</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Aba de Faturamento -->
+                    <div class="settings-tab" id="billing-tab">
+                        <h2>Informações de Faturamento</h2>
+                        
+                        <div class="plan-info">
+                            <div class="current-plan">
+                                <h3>Plano Atual: <span class="plan-name">Pro</span></h3>
+                                <p class="plan-price">R$ 199,00/mês</p>
+                                <p>Próxima cobrança em: 15/10/2023</p>
+                            </div>
+                            
+                            <div class="plan-actions">
+                                <button class="secondary-btn">Alterar Plano</button>
+                                <button class="danger-btn">Cancelar Assinatura</button>
+                            </div>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <h2>Método de Pagamento</h2>
+                        
+                        <div class="payment-method">
+                            <div class="payment-card">
+                                <div class="card-info">
+                                    <i class="fab fa-cc-visa"></i>
+                                    <div>
+                                        <p>Visa terminando em 4242</p>
+                                        <p>Expira em 12/2025</p>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <button class="secondary-btn">Editar</button>
+                                    <button class="danger-btn">Remover</button>
+                                </div>
+                            </div>
+                            
+                            <button class="add-payment-btn"><i class="fas fa-plus"></i> Adicionar Método de Pagamento</button>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <h2>Histórico de Faturas</h2>
+                        
+                        <div class="invoice-list">
+                            <div class="invoice-item">
+                                <div class="invoice-info">
+                                    <p class="invoice-date">15/09/2023</p>
+                                    <p class="invoice-number">Fatura #INV-2023-09</p>
+                                    <p class="invoice-amount">R$ 199,00</p>
+                                </div>
+                                <div class="invoice-actions">
+                                    <button class="secondary-btn small-btn"><i class="fas fa-download"></i> PDF</button>
+                                </div>
+                            </div>
+                            
+                            <div class="invoice-item">
+                                <div class="invoice-info">
+                                    <p class="invoice-date">15/08/2023</p>
+                                    <p class="invoice-number">Fatura #INV-2023-08</p>
+                                    <p class="invoice-amount">R$ 199,00</p>
+                                </div>
+                                <div class="invoice-actions">
+                                    <button class="secondary-btn small-btn"><i class="fas fa-download"></i> PDF</button>
+                                </div>
+                            </div>
+                            
+                            <div class="invoice-item">
+                                <div class="invoice-info">
+                                    <p class="invoice-date">15/07/2023</p>
+                                    <p class="invoice-number">Fatura #INV-2023-07</p>
+                                    <p class="invoice-amount">R$ 199,00</p>
+                                </div>
+                                <div class="invoice-actions">
+                                    <button class="secondary-btn small-btn"><i class="fas fa-download"></i> PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Aba de API -->
+                    <div class="settings-tab" id="api-tab">
+                        <h2>Chaves de API</h2>
+                        
+                        <div class="api-key-section">
+                            <div class="api-key-info">
+                                <h3>Chave de API Atual</h3>
+                                <div class="api-key-display">
+                                    <input type="password" value="sk_live_51NxYz2CZ6qsJYZplG7hTnHb2a" id="api-key" readonly>
+                                    <button class="show-key-btn" data-show="false"><i class="fas fa-eye"></i></button>
+                                    <button class="copy-key-btn"><i class="fas fa-copy"></i></button>
+                                </div>
+                                <p class="api-key-created">Criada em: 10/06/2023</p>
+                            </div>
+                            
+                            <div class="api-key-actions">
+                                <button class="primary-btn">Gerar Nova Chave</button>
+                                <button class="danger-btn">Revogar Chave</button>
+                            </div>
+                        </div>
+                        
+                        <div class="divider"></div>
+                        
+                        <h2>Documentação da API</h2>
+                        
+                        <div class="api-docs">
+                            <p>Acesse nossa documentação completa para integrar o Growth Pro com suas aplicações.</p>
+                            <a href="#" class="docs-link"><i class="fas fa-book"></i> Ver Documentação</a>
+                        </div>
+                        
+                        <div class="api-example">
+                            <h3>Exemplo de Requisição</h3>
+                            <pre><code>curl -X GET "https://api.growthpro.com/v1/campaigns" \
+-H "Authorization: Bearer sk_live_51NxYz2CZ6qsJYZplG7hTnHb2a" \
+-H "Content-Type: application/json"</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="configuracoes.js"></script>
+</body>
+</html>

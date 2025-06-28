@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Growth Pro</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="/app Growth Pro/Dashboard/nova-campanha.html">Campanhas</a>
+            <a href="anuncios.html">Anúncios</a>
+            <a href="relatorios.html">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="active"><a href="#"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li><a href="#"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li><a href="#"><i class="fas fa-users"></i> Públicos</a></li>
+                <li><a href="#"><i class="fas fa-images"></i> Criativos</a></li>
+                <li><a href="#"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="welcome-banner">
+                <h1>Bem-vindo ao Growth Pro</h1>
+                <p>Vamos começar a criar suas campanhas automatizadas</p>
+                <button id="create-campaign-btn" class="primary-btn">Criar Nova Campanha</button>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-eye"></i></div>
+                    <div class="stat-info">
+                        <h3>Impressões</h3>
+                        <p class="stat-value">0</p>
+                        <p class="stat-change positive">+0% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-mouse-pointer"></i></div>
+                    <div class="stat-info">
+                        <h3>Cliques</h3>
+                        <p class="stat-value">0</p>
+                        <p class="stat-change positive">+0% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+                    <div class="stat-info">
+                        <h3>CTR</h3>
+                        <p class="stat-value">0%</p>
+                        <p class="stat-change neutral">0% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-info">
+                        <h3>Conversões</h3>
+                        <p class="stat-value">0</p>
+                        <p class="stat-change positive">+0% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-campaigns">
+                <div class="section-header">
+                    <h2>Campanhas Recentes</h2>
+                    <a href="/app Growth Pro/Dashboard/campanhas/nova-campanha.html" class="view-all">Ver todas</a>
+                </div>
+                <div class="empty-state">
+                    <i class="fas fa-bullhorn"></i>
+                    <h3>Nenhuma campanha criada</h3>
+                    <p>Clique em "Criar Nova Campanha" para começar</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

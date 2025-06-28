@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - Growth Pro</title>
+    <link rel="stylesheet" href="../dashboard/dashboard.css">
+    <link rel="stylesheet" href="relatorios.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../dashboard/dashboard.html">Dashboard</a>
+            <a href="../../campanhas/campanha/nova-campanha.html">Campanhas</a>
+            <a href="../publicos/publicos.html">Públicos</a>
+            <a href="relatorios.html" class="active">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard/dashboard.html"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li><a href="../../campanhas/campanha/nova-campanha.html"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li><a href="../publicos/publicos.html"><i class="fas fa-users"></i> Públicos</a></li>
+                <li><a href="../criativos/criativos.html"><i class="fas fa-images"></i> Criativos</a></li>
+                <li class="active"><a href="relatorios.html"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li><a href="../configurações/configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Relatórios</h1>
+                <p>Analise o desempenho das suas campanhas</p>
+            </div>
+
+            <div class="report-filters">
+                <div class="date-range">
+                    <label for="date-range">Período:</label>
+                    <select id="date-range">
+                        <option value="7days">Últimos 7 dias</option>
+                        <option value="30days" selected>Últimos 30 dias</option>
+                        <option value="90days">Últimos 90 dias</option>
+                        <option value="year">Este ano</option>
+                        <option value="custom">Personalizado</option>
+                    </select>
+                </div>
+                
+                <div class="custom-date-range" style="display: none;">
+                    <div class="date-input">
+                        <label for="start-date">De:</label>
+                        <input type="date" id="start-date">
+                    </div>
+                    <div class="date-input">
+                        <label for="end-date">Até:</label>
+                        <input type="date" id="end-date">
+                    </div>
+                </div>
+                
+                <div class="filter-options">
+                    <select id="platform-filter">
+                        <option value="all">Todas as plataformas</option>
+                        <option value="meta">Meta Ads</option>
+                        <option value="google">Google Ads</option>
+                    </select>
+                    <select id="campaign-filter">
+                        <option value="all">Todas as campanhas</option>
+                        <option value="campaign1">Campanha de Verão</option>
+                        <option value="campaign2">Lançamento de Produto</option>
+                        <option value="campaign3">Promoção Especial</option>
+                    </select>
+                </div>
+                
+                <button id="apply-filters" class="primary-btn">Aplicar Filtros</button>
+            </div>
+
+            <div class="report-summary">
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="fas fa-eye"></i></div>
+                    <div class="summary-info">
+                        <h3>Impressões</h3>
+                        <p class="summary-value">125.432</p>
+                        <p class="summary-change positive">+12.5% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="fas fa-mouse-pointer"></i></div>
+                    <div class="summary-info">
+                        <h3>Cliques</h3>
+                        <p class="summary-value">3.845</p>
+                        <p class="summary-change positive">+8.2% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="fas fa-percentage"></i></div>
+                    <div class="summary-info">
+                        <h3>CTR</h3>
+                        <p class="summary-value">3.06%</p>
+                        <p class="summary-change negative">-0.4% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="summary-info">
+                        <h3>Custo</h3>
+                        <p class="summary-value">R$ 2.450,00</p>
+                        <p class="summary-change negative">+5.8% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="summary-info">
+                        <h3>Conversões</h3>
+                        <p class="summary-value">215</p>
+                        <p class="summary-change positive">+15.3% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="summary-info">
+                        <h3>CPA</h3>
+                        <p class="summary-value">R$ 11,40</p>
+                        <p class="summary-change positive">-8.2% <span>vs. período anterior</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-charts">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Desempenho ao longo do tempo</h3>
+                        <div class="chart-controls">
+                            <select id="metric-selector">
+                                <option value="impressions">Impressões</option>
+                                <option value="clicks" selected>Cliques</option>
+                                <option value="conversions">Conversões</option>
+                                <option value="cost">Custo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart" id="performance-chart">
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-area"></i>
+                            <p>Gráfico de desempenho ao longo do tempo</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-row">
+                    <div class="chart-container half-width">
+                        <div class="chart-header">
+                            <h3>Distribuição por plataforma</h3>
+                        </div>
+                        <div class="chart" id="platform-chart">
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-pie"></i>
+                                <p>Gráfico de distribuição por plataforma</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container half-width">
+                        <div class="chart-header">
+                            <h3>Desempenho por campanha</h3>
+                        </div>
+                        <div class="chart" id="campaign-chart">
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-bar"></i>
+                                <p>Gráfico de desempenho por campanha</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-table">
+                <h3>Detalhes por campanha</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Campanha</th>
+                                <th>Plataforma</th>
+                                <th>Impressões</th>
+                                <th>Cliques</th>
+                                <th>CTR</th>
+                                <th>Custo</th>
+                                <th>Conversões</th>
+                                <th>CPA</th>
+                                <th>ROI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Campanha de Verão</td>
+                                <td><i class="fab fa-facebook"></i> Meta Ads</td>
+                                <td>58.432</td>
+                                <td>1.845</td>
+                                <td>3.16%</td>
+                                <td>R$ 1.250,00</td>
+                                <td>98</td>
+                                <td>R$ 12,76</td>
+                                <td>3.2x</td>
+                            </tr>
+                            <tr>
+                                <td>Lançamento de Produto</td>
+                                <td><i class="fab fa-google"></i> Google Ads</td>
+                                <td>42.650</td>
+                                <td>1.320</td>
+                                <td>3.09%</td>
+                                <td>R$ 850,00</td>
+                                <td>75</td>
+                                <td>R$ 11,33</td>
+                                <td>2.8x</td>
+                            </tr>
+                            <tr>
+                                <td>Promoção Especial</td>
+                                <td><i class="fab fa-facebook"></i> Meta Ads</td>
+                                <td>24.350</td>
+                                <td>680</td>
+                                <td>2.79%</td>
+                                <td>R$ 350,00</td>
+                                <td>42</td>
+                                <td>R$ 8,33</td>
+                                <td>4.1x</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="table-actions">
+                    <button id="export-csv" class="secondary-btn"><i class="fas fa-download"></i> Exportar CSV</button>
+                    <button id="export-pdf" class="secondary-btn"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="relatorios.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente Financeiro</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Assistente Financeiro</h1>
+            <p>Organize suas finanças e alcance seus objetivos</p>
+        </header>
+
+        <div class="input-section">
+            <h2>Insira seus dados financeiros</h2>
+            <div class="form-group">
+                <label for="renda">Renda mensal (R$):</label>
+                <input type="number" id="renda" placeholder="Ex: 5000">
+            </div>
+            <div class="form-group">
+                <label for="contas">Contas fixas (R$):</label>
+                <input type="number" id="contas" placeholder="Ex: 1500">
+            </div>
+            <div class="form-group">
+                <label for="cartao">Dívidas de cartão (R$):</label>
+                <input type="number" id="cartao" placeholder="Ex: 2000">
+            </div>
+            <div class="form-group">
+                <label for="objetivos">Objetivos de compra (descrição):</label>
+                <input type="text" id="objetivos" placeholder="Ex: 2 carros e 1 moto">
+            </div>
+            <div class="form-group">
+                <label for="valor-objetivos">Valor total dos objetivos (R$):</label>
+                <input type="number" id="valor-objetivos" placeholder="Ex: 80000">
+            </div>
+            <div class="form-group">
+                <label for="renda-extra">Renda extra mensal (R$):</label>
+                <input type="number" id="renda-extra" placeholder="Ex: 1000">
+            </div>
+            <div class="form-group">
+                <label for="dias-uteis">Dias úteis no mês:</label>
+                <input type="number" id="dias-uteis" value="22" placeholder="Ex: 22">
+            </div>
+            <button id="calcular">Calcular Plano Financeiro</button>
+        </div>
+
+        <div class="resultado" id="resultado">
+            <div class="resumo-financeiro">
+                <h2>💬 Resumo Financeiro</h2>
+                <table id="tabela-resumo">
+                    <tr>
+                        <td>Renda mensal:</td>
+                        <td id="resumo-renda">-</td>
+                    </tr>
+                    <tr>
+                        <td>Contas fixas:</td>
+                        <td id="resumo-contas">-</td>
+                    </tr>
+                    <tr>
+                        <td>Cartão de crédito:</td>
+                        <td id="resumo-cartao">-</td>
+                    </tr>
+                    <tr>
+                        <td>Objetivos:</td>
+                        <td id="resumo-objetivos">-</td>
+                    </tr>
+                    <tr>
+                        <td>Renda extra:</td>
+                        <td id="resumo-renda-extra">-</td>
+                    </tr>
+                    <tr class="destaque">
+                        <td>Saldo restante:</td>
+                        <td id="resumo-saldo">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="metas-financeiras">
+                <h2>📊 Metas Financeiras</h2>
+                <table id="tabela-metas">
+                    <tr>
+                        <td>Meta mensal de economia:</td>
+                        <td id="meta-mensal">-</td>
+                    </tr>
+                    <tr>
+                        <td>Meta diária:</td>
+                        <td id="meta-diaria">-</td>
+                    </tr>
+                    <tr>
+                        <td>Tempo estimado para alcançar objetivo:</td>
+                        <td id="tempo-estimado">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="dicas">
+                <h2>✨ Dicas</h2>
+                <ul id="lista-dicas">
+                </ul>
+            </div>
+
+            <div class="renda-extra-section">
+                <h2>✅ Adicionar Renda Extra</h2>
+                <p>Você já incluiu uma renda extra? Se não, adicione no formulário acima e recalcule seu plano.</p>
+            </div>
+
+            <div class="motivacional">
+                <h2>💪 Palavra Motivacional</h2>
+                <p id="frase-motivacional"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

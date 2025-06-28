@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criativos - Growth Pro</title>
+    <link rel="stylesheet" href="../dashboard/dashboard.css">
+    <link rel="stylesheet" href="criativos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../dashboard/dashboard.html">Dashboard</a>
+            <a href="../campanhas/nova-campanha.html">Campanhas</a>
+            <a href="../publicos/publicos.html">Públicos</a>
+            <a href="criativos.html" class="active">Criativos</a>
+            <a href="../relatorios/relatorios.html">Relatórios</a>
+            <div class="user-menu">
+                <img src="https://via.placeholder.com/40" alt="Usuário" class="user-avatar">
+                <span>Usuário</span>
+            </div>
+        </nav>
+    </header>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard/dashboard.html"><i class="fas fa-home"></i> Visão Geral</a></li>
+                <li><a href="../campanhas/nova-campanha.html"><i class="fas fa-bullhorn"></i> Campanhas</a></li>
+                <li><a href="../publicos/publicos.html"><i class="fas fa-users"></i> Públicos</a></li>
+                <li class="active"><a href="criativos.html"><i class="fas fa-images"></i> Criativos</a></li>
+                <li><a href="../relatorios/relatorios.html"><i class="fas fa-chart-line"></i> Relatórios</a></li>
+                <li><a href="../configurações/configuracoes.html"><i class="fas fa-cog"></i> Configurações</a></li>
+            </ul>
+            
+            <div class="connected-accounts">
+                <h3>Contas Conectadas</h3>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/600px-Facebook_Logo_%282019%29.png" alt="Meta">
+                    <span>Meta Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+                <div class="account-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/2048px-Google_%22G%22_Logo.svg.png" alt="Google">
+                    <span>Google Ads</span>
+                    <span class="status connected">Conectado</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Criativos</h1>
+                <p>Gerencie seus anúncios e materiais criativos</p>
+                <button id="create-creative-btn" class="primary-btn"><i class="fas fa-plus"></i> Criar Novo Criativo</button>
+            </div>
+
+            <div class="creative-filters">
+                <div class="search-box">
+                    <input type="text" placeholder="Buscar criativos..." id="search-creative">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="filter-options">
+                    <select id="format-filter">
+                        <option value="all">Todos os formatos</option>
+                        <option value="image">Imagem</option>
+                        <option value="video">Vídeo</option>
+                        <option value="carousel">Carrossel</option>
+                    </select>
+                    <select id="platform-filter">
+                        <option value="all">Todas as plataformas</option>
+                        <option value="meta">Meta Ads</option>
+                        <option value="google">Google Ads</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="creative-grid">
+                <div class="creative-card">
+                    <div class="creative-preview">
+                        <img src="https://via.placeholder.com/600x400/4285f4/ffffff?text=Oferta+Especial" alt="Anúncio de Oferta Especial">
+                        <div class="creative-format">
+                            <i class="fas fa-image"></i> Imagem
+                        </div>
+                    </div>
+                    <div class="creative-info">
+                        <h3>Oferta Especial de Verão</h3>
+                        <div class="creative-meta">
+                            <span class="creative-platform"><i class="fab fa-facebook"></i> Meta Ads</span>
+                            <span class="creative-date">Criado em 15/06/2023</span>
+                        </div>
+                        <div class="creative-stats">
+                            <div class="stat">
+                                <span class="stat-label">CTR</span>
+                                <span class="stat-value">2.4%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Conversões</span>
+                                <span class="stat-value">48</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="creative-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div class="creative-card">
+                    <div class="creative-preview">
+                        <img src="https://via.placeholder.com/600x400/34a853/ffffff?text=Novo+Produto" alt="Anúncio de Novo Produto">
+                        <div class="creative-format">
+                            <i class="fas fa-image"></i> Imagem
+                        </div>
+                    </div>
+                    <div class="creative-info">
+                        <h3>Lançamento de Produto</h3>
+                        <div class="creative-meta">
+                            <span class="creative-platform"><i class="fab fa-google"></i> Google Ads</span>
+                            <span class="creative-date">Criado em 22/05/2023</span>
+                        </div>
+                        <div class="creative-stats">
+                            <div class="stat">
+                                <span class="stat-label">CTR</span>
+                                <span class="stat-value">3.1%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Conversões</span>
+                                <span class="stat-value">72</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="creative-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div class="creative-card">
+                    <div class="creative-preview video-preview">
+                        <div class="video-placeholder">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="creative-format">
+                            <i class="fas fa-video"></i> Vídeo
+                        </div>
+                    </div>
+                    <div class="creative-info">
+                        <h3>Tutorial do Produto</h3>
+                        <div class="creative-meta">
+                            <span class="creative-platform"><i class="fab fa-facebook"></i> Meta Ads</span>
+                            <span class="creative-date">Criado em 10/07/2023</span>
+                        </div>
+                        <div class="creative-stats">
+                            <div class="stat">
+                                <span class="stat-label">CTR</span>
+                                <span class="stat-value">4.2%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Conversões</span>
+                                <span class="stat-value">105</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="creative-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+
+                <div class="creative-card">
+                    <div class="creative-preview carousel-preview">
+                        <div class="carousel-placeholder">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <div class="creative-format">
+                            <i class="fas fa-clone"></i> Carrossel
+                        </div>
+                    </div>
+                    <div class="creative-info">
+                        <h3>Coleção de Produtos</h3>
+                        <div class="creative-meta">
+                            <span class="creative-platform"><i class="fab fa-facebook"></i> Meta Ads</span>
+                            <span class="creative-date">Criado em 05/08/2023</span>
+                        </div>
+                        <div class="creative-stats">
+                            <div class="stat">
+                                <span class="stat-label">CTR</span>
+                                <span class="stat-value">3.8%</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Conversões</span>
+                                <span class="stat-value">89</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="creative-actions">
+                        <button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>
+                        <button class="action-btn duplicate-btn"><i class="fas fa-copy"></i></button>
+                        <button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para criar/editar criativo -->
+            <div class="modal" id="creative-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Criar Novo Criativo</h2>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="creative-form">
+                            <div class="form-group">
+                                <label for="creative-name">Nome do Criativo</label>
+                                <input type="text" id="creative-name" placeholder="Ex: Oferta Especial de Verão">
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="creative-format">Formato</label>
+                                    <select id="creative-format">
+                                        <option value="image">Imagem</option>
+                                        <option value="video">Vídeo</option>
+                                        <option value="carousel">Carrossel</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="creative-platform">Plataforma</label>
+                                    <select id="creative-platform">
+                                        <option value="meta">Meta Ads</option>
+                                        <option value="google">Google Ads</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="creative-headline">Título do Anúncio</label>
+                                <input type="text" id="creative-headline" placeholder="Ex: Oferta Especial de Verão!">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="creative-description">Descrição do Anúncio</label>
+                                <textarea id="creative-description" placeholder="Ex: Aproveite nossos produtos com 30% OFF. Promoção por tempo limitado!"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="creative-media">Mídia</label>
+                                <div class="file-upload">
+                                    <input type="file" id="creative-media" accept="image/*,video/*">
+                                    <label for="creative-media" class="file-upload-label">
+                                        <i class="fas fa-upload"></i>
+                                        <span>Escolher Arquivo</span>
+                                    </label>
+                                </div>
+                                <small>Formatos aceitos: JPG, PNG, GIF, MP4. Tamanho máximo: 10MB</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="creative-cta">Chamada para Ação</label>
+                                <select id="creative-cta">
+                                    <option value="shop_now">Comprar Agora</option>
+                                    <option value="learn_more">Saiba Mais</option>
+                                    <option value="sign_up">Cadastre-se</option>
+                                    <option value="contact_us">Entre em Contato</option>
+                                    <option value="download">Baixar</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="creative-url">URL de Destino</label>
+                                <input type="url" id="creative-url" placeholder="Ex: https://seusite.com.br/promocao">
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="secondary-btn cancel-btn">Cancelar</button>
+                                <button type="submit" class="primary-btn">Salvar Criativo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="criativos.js"></script>
+</body>
+</html>

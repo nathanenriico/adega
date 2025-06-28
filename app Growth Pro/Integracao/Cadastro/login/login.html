@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Growth Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="logo">🚀 Growth Pro</div>
+        <nav>
+            <a href="../../home/home.html">Início</a>
+            <a href="../../Integracao/integracao.html">Integração</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1>Acesse sua conta</h1>
+        
+        <div class="form-container">
+            <div class="facebook-login">
+                <button type="button" id="facebook-login-btn" class="facebook-btn">
+                    <i class="fab fa-facebook-f"></i> Entrar com Facebook
+                </button>
+                <p class="login-info">Use sua conta do Facebook para acessar o Growth Pro</p>
+                <p class="login-note">Nota: É necessário fornecer o ID do Aplicativo e a Chave Secreta do Meta abaixo</p>
+            </div>
+            
+            <div class="separator">
+                <span>ou</span>
+            </div>
+            
+            <div class="meta-connect-section">
+                <h2>Conectar com Meta Ads</h2>
+                <p>Conecte sua conta do Meta Ads para visualizar suas campanhas e anúncios</p>
+                
+                <div class="form-group">
+                    <label for="app-id">ID do Aplicativo</label>
+                    <input type="text" id="app-id" placeholder="ID do aplicativo Meta">
+                </div>
+                
+                <div class="form-group">
+                    <label for="app-secret">Chave Secreta do Aplicativo</label>
+                    <input type="password" id="app-secret" placeholder="Chave secreta do aplicativo">
+                </div>
+                
+                <button type="button" id="connect-meta-btn" class="meta-btn">Conectar com Meta Ads</button>
+            </div>
+            
+            <div class="signup-link">
+                Não tem uma conta? <a href="../cadastro/cadastro.html">Cadastre-se</a>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Growth Pro - Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="login.js"></script>
+</body>
+</html>
