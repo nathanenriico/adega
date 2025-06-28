@@ -75,15 +75,15 @@ function renderActiveOrders(activeOrders) {
 
 // Renderizar histórico de entregas
 function renderDeliveredOrders(deliveredOrders) {
-    const historyList = document.getElementById('history-list');
+    const deliveredList = document.getElementById('delivered-list');
     
     if (deliveredOrders.length === 0) {
-        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
+        deliveredList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido entregue.</p>';
         return;
     }
     
-    historyList.innerHTML = deliveredOrders.map(order => `
-        <div class="order-item delivered-order">
+    deliveredList.innerHTML = deliveredOrders.map(order => `
+        <div class="order-item delivered-order" onclick="showOrderDetails(${order.id})">
             <div class="order-header">
                 <span class="order-id">#${order.id}</span>
                 <span class="order-status delivered">✅ Entregue</span>
@@ -94,10 +94,13 @@ function renderDeliveredOrders(deliveredOrders) {
                     <strong>Cliente:</strong> ${order.customer}
                 </div>
                 <div class="order-detail">
-                    <strong>Data:</strong> ${formatDate(order.date)}
+                    <strong>Data Entrega:</strong> ${formatDate(order.deliveredAt || order.date)}
                 </div>
                 <div class="order-detail">
                     <strong>Total:</strong> R$ ${order.total.toFixed(2)}
+                </div>
+                <div class="order-detail">
+                    <strong>Pagamento:</strong> ${order.paymentMethod || 'Não informado'}
                 </div>
             </div>
             
@@ -108,8 +111,22 @@ function renderDeliveredOrders(deliveredOrders) {
             <div class="order-actions">
                 <button class="action-btn btn-restore" onclick="restoreOrder(${order.id})">Restaurar</button>
             </div>
+            
+            ${order.notes ? `<div class="order-notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
         </div>
     `).join('');
+}
+
+// Navegação entre páginas
+function showMainPage() {
+    document.getElementById('main-page').classList.add('active');
+    document.getElementById('delivered-page').classList.remove('active');
+}
+
+function showDeliveredPage() {
+    document.getElementById('main-page').classList.remove('active');
+    document.getElementById('delivered-page').classList.add('active');
+    loadOrders(); // Recarregar para garantir dados atualizados
 }
 
 // Atualizar contador de pedidos ativos
