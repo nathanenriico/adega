@@ -80,10 +80,10 @@ function renderActiveOrders(activeOrders) {
 
 // Renderizar histórico de entregas
 function renderDeliveredOrders(deliveredOrders) {
-    const historyList = document.getElementById('history-list');
+    const deliveredList = document.getElementById('delivered-list');
     
     if (deliveredOrders.length === 0) {
-        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
+        deliveredList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
         return;
     }
     
@@ -188,6 +188,7 @@ function createTestDeliveredOrder() {
 function getStatusText(status) {
     const statusMap = {
         'novo': 'Novo',
+        'recebido': 'Pedido Recebido',
         'preparando': 'Preparando',
         'saindo': 'Saindo para Entrega',
         'entregue': 'Entregue'
@@ -206,6 +207,8 @@ function getActionButtons(order) {
     let buttons = '';
     
     if (order.status === 'novo') {
+        buttons += `<button class="action-btn btn-recebido" onclick="updateOrderStatus(${order.id}, 'recebido')">Pedido Recebido</button>`;
+    } else if (order.status === 'recebido') {
         buttons += `<button class="action-btn btn-preparar" onclick="updateOrderStatus(${order.id}, 'preparando')">Preparar</button>`;
     } else if (order.status === 'preparando') {
         buttons += `<button class="action-btn btn-saindo" onclick="updateOrderStatus(${order.id}, 'saindo')">Saiu para Entrega</button>`;
@@ -246,7 +249,8 @@ function updateOrderStatus(orderId, newStatus) {
 // Enviar notificação WhatsApp automática
 function sendAutomaticWhatsAppNotification(order, newStatus) {
     const statusMessages = {
-        'preparando': `🍷 *Adega do Tio Pancho*\n\n✅ Olá! Seu pedido #${order.id} está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\nTotal: R$ ${order.total.toFixed(2)}\n\nObrigado pela preferência! 🍻`,
+        'recebido': `🍷 *Adega do Tio Pancho*\n\n✅ Pedido #${order.id} recebido com sucesso!\n\nEstamos preparando tudo para você.\n\nTotal: R$ ${order.total.toFixed(2)}\nPagamento: ${order.paymentMethod}\n\nEm breve enviaremos mais atualizações! 🍻`,
+        'preparando': `🍷 *Adega do Tio Pancho*\n\n👨‍🍳 Seu pedido #${order.id} está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\nTotal: R$ ${order.total.toFixed(2)}\n\nObrigado pela preferência! 🍻`,
         'saindo': `🍷 *Adega do Tio Pancho*\n\n🚚 Seu pedido #${order.id} está a caminho!\n\nO entregador já saiu e chegará em breve.\n\nPrepare o pagamento: ${order.paymentMethod}\n\nAté já! 🚀`,
         'entregue': `🍷 *Adega do Tio Pancho*\n\n🎉 Pedido #${order.id} entregue com sucesso!\n\nObrigado pela preferência!\n\n⭐ Que tal avaliar nosso atendimento?\n\nVolte sempre! 🍻`
     };
@@ -395,6 +399,7 @@ function closeOrderModal() {
 function updateStats() {
     const stats = {
         novo: 0,
+        recebido: 0,
         preparando: 0,
         saindo: 0,
         entregue: 0

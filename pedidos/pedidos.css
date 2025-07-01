@@ -308,6 +308,11 @@ body {
     color: #856404;
 }
 
+.status-recebido {
+    background: linear-gradient(135deg, #20c997, #17a085);
+    color: white;
+}
+
 .status-preparando {
     background: linear-gradient(135deg, #17a2b8, #138496);
     color: white;
