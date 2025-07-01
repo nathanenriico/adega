@@ -80,17 +80,10 @@ function renderActiveOrders(activeOrders) {
 
 // Renderizar histórico de entregas
 function renderDeliveredOrders(deliveredOrders) {
-    const deliveredList = document.getElementById('delivered-list');
-    
-    if (!deliveredList) {
-        console.warn('Elemento delivered-list não encontrado');
-        return;
-    }
-    
-    console.log('Pedidos entregues:', deliveredOrders);
+    const historyList = document.getElementById('history-list');
     
     if (deliveredOrders.length === 0) {
-        deliveredList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido entregue ainda.</p>';
+        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
         return;
     }
     
@@ -127,6 +120,18 @@ function renderDeliveredOrders(deliveredOrders) {
             ${order.notes ? `<div class="order-notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
         </div>
     `).join('');
+}
+
+// Navegação entre páginas
+function showMainPage() {
+    document.getElementById('main-page').classList.add('active');
+    document.getElementById('delivered-page').classList.remove('active');
+}
+
+function showDeliveredPage() {
+    document.getElementById('main-page').classList.remove('active');
+    document.getElementById('delivered-page').classList.add('active');
+    loadOrders(); // Recarregar para garantir dados atualizados
 }
 
 // Atualizar contador de pedidos ativos
@@ -201,7 +206,7 @@ function getActionButtons(order) {
     let buttons = '';
     
     if (order.status === 'novo') {
-        buttons += `<button class="action-btn btn-recebido" onclick="sendOrderReceived(${order.id})">📦 Recebemos seu Pedido</button>`;
+        buttons += `<button class="action-btn btn-preparar" onclick="updateOrderStatus(${order.id}, 'preparando')">Preparar</button>`;
     } else if (order.status === 'preparando') {
         buttons += `<button class="action-btn btn-saindo" onclick="updateOrderStatus(${order.id}, 'saindo')">Saiu para Entrega</button>`;
     } else if (order.status === 'saindo') {
@@ -302,7 +307,8 @@ function showNotificationSent(orderId, status) {
         'recebido': 'Pedido Recebido',
         'preparando': 'Preparando',
         'saindo': 'Saindo para Entrega', 
-        'entregue': 'Entregue'
+        'entregue': 'Entregue',
+        'confirmado': 'Pedido Confirmado'
     };
     
     notification.innerHTML = `
@@ -407,58 +413,6 @@ function updateStats() {
         }
     });
 }
-
-// Enviar confirmação de pedido recebido
-function sendOrderReceived(orderId) {
-    event.stopPropagation();
-    
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    const message = `🍷 Adega do Tio Pancho\n\nOlá! 👋\nRecebemos seu pedido com sucesso!\nFique tranquilo, você receberá atualizações por aqui conforme ele for sendo preparado, enviado e entregue. ✅\n\nSe precisar de algo, estamos à disposição!\nObrigado pela preferência! 🙏✨`;
-    
-    // Detectar se é mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const phone = '5511941716617';
-    const encodedMessage = encodeURIComponent(message);
-    
-    if (isMobile) {
-        // Mobile: Abrir app WhatsApp
-        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-    } else {
-        // Desktop: Abrir WhatsApp Web
-        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-    }
-    
-    // Mostrar notificação
-    showNotificationSent(order.id, 'recebido');
-    
-    // Atualizar status para preparando
-    order.status = 'preparando';
-    order.updatedAt = new Date().toISOString();
-    saveOrders();
-    loadOrders();
-    updateStats();
-}
-
-// Navegação entre páginas
-function showMainPage() {
-    document.getElementById('main-page').classList.add('active');
-    document.getElementById('delivered-page').classList.remove('active');
-}
-
-function showDeliveredPage() {
-    document.getElementById('main-page').classList.remove('active');
-    document.getElementById('delivered-page').classList.add('active');
-    loadOrders();
-}
-
-// Filtrar pedidos
-function filterOrders() {
-    console.log('Filtrar pedidos');
-}
-
-
 
 // Salvar pedidos
 function saveOrders() {
