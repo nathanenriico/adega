@@ -308,16 +308,19 @@ body {
 
 .admin-header-buttons {
     display: flex;
-    gap: 10px;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
 .admin-header button {
     border: none;
-    padding: 10px 20px;
-    border-radius: 20px;
+    padding: 12px 24px;
+    border-radius: 12px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
 }
 
 .back-to-site-btn {
@@ -386,10 +389,23 @@ body {
     color: #1a1a2e;
     border: none;
     padding: 12px 25px;
-    border-radius: 25px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 600;
     margin: 10px 5px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(212, 175, 55, 0.3);
+}
+
+.admin-section button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+.management-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .management-btn {
@@ -400,17 +416,92 @@ body {
     width: 100%;
     margin: 0 !important;
     transition: all 0.3s ease;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
 }
 
 .management-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.analytics-btn {
+    background: linear-gradient(45deg, #6f42c1, #5a32a3) !important;
+}
+
+.analytics-btn:hover {
+    box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4) !important;
 }
 
 .product-form {
     display: grid;
     gap: 10px;
     margin-bottom: 20px;
+}
+
+/* Upload de Imagem */
+.image-upload-section {
+    margin: 10px 0;
+}
+
+.image-upload-label {
+    display: inline-block;
+    background: linear-gradient(45deg, #6f42c1, #5a32a3);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.image-upload-label:hover {
+    background: linear-gradient(45deg, #5a32a3, #4a2c87);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+}
+
+#product-image-file {
+    display: none;
+}
+
+.image-preview {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.image-preview img {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 10px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.image-preview-info {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(37, 211, 102, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(37, 211, 102, 0.3);
+    color: #25d366;
+    font-size: 0.9rem;
+}
+
+#product-image-url {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+#product-image-url::placeholder {
+    color: rgba(255,255,255,0.5);
 }
 
 .product-item {
@@ -1780,6 +1871,31 @@ body {
     .modal-content {
         margin: 25% auto;
         padding: 20px;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .admin-header-buttons {
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .admin-header button {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .management-buttons {
+        gap: 12px;
+    }
+    
+    .management-btn {
+        font-size: 1rem !important;
+        padding: 12px 20px !important;
     }
 }
 

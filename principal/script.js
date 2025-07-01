@@ -415,10 +415,50 @@ function updateSiteContent() {
     document.title = `${config.adegaName} - Bebidas Premium e Combos Especiais`;
 }
 
+// Preview de imagem
+function previewImage(input) {
+    const previewDiv = document.getElementById('image-preview');
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // Verificar se é uma imagem
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem!');
+            input.value = '';
+            previewDiv.innerHTML = '';
+            return;
+        }
+        
+        // Verificar tamanho do arquivo (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Arquivo muito grande! Máximo 5MB.');
+            input.value = '';
+            previewDiv.innerHTML = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewDiv.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <div class="image-preview-info">
+                    ✅ Imagem carregada: ${file.name}<br>
+                    Tamanho: ${(file.size / 1024).toFixed(1)} KB
+                </div>
+            `;
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewDiv.innerHTML = '';
+    }
+}
+
 // Adicionar produto
 function addProduct() {
     const name = document.getElementById('product-name').value.trim();
-    const image = document.getElementById('product-image').value.trim();
+    const imageFile = document.getElementById('product-image-file').files[0];
+    const imageUrl = document.getElementById('product-image-url').value.trim();
     const price = parseFloat(document.getElementById('product-price').value);
     const category = document.getElementById('product-category').value;
     
@@ -427,10 +467,39 @@ function addProduct() {
         return;
     }
     
+    // Determinar qual imagem usar
+    let finalImageUrl = 'https://via.placeholder.com/400x200/333/fff?text=Produto';
+    
+    if (imageFile) {
+        // Converter arquivo para base64
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const newProduct = {
+                id: Date.now(),
+                name,
+                image: e.target.result,
+                price,
+                category
+            };
+            
+            products.push(newProduct);
+            saveData();
+            
+            clearProductForm();
+            refreshProductDisplay();
+            
+            alert('Produto adicionado com sucesso!');
+        };
+        reader.readAsDataURL(imageFile);
+        return;
+    } else if (imageUrl) {
+        finalImageUrl = imageUrl;
+    }
+    
     const newProduct = {
         id: Date.now(),
         name,
-        image: image || 'https://via.placeholder.com/400x200/333/fff?text=Produto',
+        image: finalImageUrl,
         price,
         category
     };
@@ -447,9 +516,11 @@ function addProduct() {
 // Limpar formulário de produto
 function clearProductForm() {
     document.getElementById('product-name').value = '';
-    document.getElementById('product-image').value = '';
+    document.getElementById('product-image-file').value = '';
+    document.getElementById('product-image-url').value = '';
     document.getElementById('product-price').value = '';
     document.getElementById('product-category').selectedIndex = 0;
+    document.getElementById('image-preview').innerHTML = '';
 }
 
 // Atualizar display de produtos
@@ -605,6 +676,7 @@ function addToCart(productId) {
     if (!product) return;
     
     const cartItem = cart.find(item => item.id === productId);
+    const wasEmpty = cart.length === 0;
     
     if (cartItem) {
         cartItem.quantity++;
@@ -620,12 +692,28 @@ function addToCart(productId) {
     saveCart();
     updateCartDisplay();
     showCartNotification();
+    
+    // Analytics do carrinho
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    if (wasEmpty && window.CartAnalytics) {
+        window.CartAnalytics.onCartActivated(cart, total);
+    } else if (window.CartAnalytics) {
+        window.CartAnalytics.onCartEdited(cart, total);
+    }
 }
 
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id !== productId);
     saveCart();
     updateCartDisplay();
+    
+    // Analytics - carrinho editado ou abandonado
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    if (cart.length === 0 && window.CartAnalytics) {
+        window.CartAnalytics.onCartAbandoned('manual_clear');
+    } else if (window.CartAnalytics) {
+        window.CartAnalytics.onCartEdited(cart, total);
+    }
 }
 
 function updateCartQuantity(productId, quantity) {
@@ -638,6 +726,12 @@ function updateCartQuantity(productId, quantity) {
             cartItem.quantity = quantity;
             saveCart();
             updateCartDisplay();
+            
+            // Analytics - carrinho editado
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            if (window.CartAnalytics) {
+                window.CartAnalytics.onCartEdited(cart, total);
+            }
         }
     }
 }
@@ -772,6 +866,7 @@ function sendCartToWhatsApp() {
     
     window.open(whatsappUrl, '_blank');
     
+    // Limpar carrinho após confirmação
     cart = [];
     saveCart();
     updateCartDisplay();
@@ -815,11 +910,26 @@ function saveOrderToSystem(cartItems, total, paymentMethod) {
     
     orders.push(newOrder);
     localStorage.setItem('adegaOrders', JSON.stringify(orders));
+    
+    // Analytics - pedido confirmado
+    if (window.CartAnalytics) {
+        window.CartAnalytics.onOrderConfirmed(
+            newOrder.id.toString(),
+            cartItems,
+            total,
+            paymentText[paymentMethod]
+        );
+    }
 }
 
 // Abrir gestão de pedidos
 function openOrdersManagement() {
     window.open('../pedidos/gestao.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+}
+
+// Abrir analytics do carrinho
+function openCartAnalytics() {
+    window.open('../analytics/analytics.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
 }
 
 // Navegação do menu

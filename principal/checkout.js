@@ -5,8 +5,10 @@ function updateConfirmButton(total) {
 
 // Carregar dados do carrinho
 function loadCartData() {
-    const cart = JSON.parse(localStorage.getItem('adegaCart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
     const orderItemsContainer = document.getElementById('order-items');
+    
+    console.log('Checkout - Carrinho carregado:', cart);
     
     if (cart.length === 0) {
         orderItemsContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhum item no carrinho</p>';
@@ -113,7 +115,10 @@ function saveCard() {
 function confirmOrder() {
     const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
     const cpfCnpj = document.getElementById('cpf-cnpj').value;
-    const cart = JSON.parse(localStorage.getItem('adegaCart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
+    
+    console.log('Confirmando pedido - Carrinho:', cart);
+    console.log('Confirmando pedido - Método pagamento:', paymentMethod);
     
     if (cart.length === 0) {
         alert('Carrinho vazio!');
@@ -193,6 +198,15 @@ function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
 }
 
 function showPixModal() {
+    const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
+    const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const deliveryFee = 8.90;
+    const total = subtotal + deliveryFee;
+    
+    console.log('PIX Modal - Carrinho:', cart);
+    console.log('PIX Modal - Subtotal:', subtotal);
+    console.log('PIX Modal - Total:', total);
+    
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.style.display = 'block';
@@ -206,7 +220,7 @@ function showPixModal() {
                     11933949002@pix.com.br
                 </p>
                 <p style="margin-top: 1rem; color: #666;">
-                    Valor: <strong>R$ 177,20</strong>
+                    Valor: <strong>R$ ${total.toFixed(2)}</strong>
                 </p>
             </div>
             <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">

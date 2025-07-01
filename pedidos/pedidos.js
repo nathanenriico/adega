@@ -21,8 +21,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Carregar e renderizar pedidos
 function loadOrders() {
+    console.log('Todos os pedidos:', orders);
+    
     const activeOrders = orders.filter(order => order.status !== 'entregue');
     const deliveredOrders = orders.filter(order => order.status === 'entregue');
+    
+    console.log('Pedidos ativos:', activeOrders.length);
+    console.log('Pedidos entregues:', deliveredOrders.length);
     
     renderActiveOrders(activeOrders);
     renderDeliveredOrders(deliveredOrders);
@@ -75,15 +80,22 @@ function renderActiveOrders(activeOrders) {
 
 // Renderizar histórico de entregas
 function renderDeliveredOrders(deliveredOrders) {
-    const historyList = document.getElementById('history-list');
+    const deliveredList = document.getElementById('delivered-list');
     
-    if (deliveredOrders.length === 0) {
-        historyList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhuma entrega no histórico.</p>';
+    if (!deliveredList) {
+        console.warn('Elemento delivered-list não encontrado');
         return;
     }
     
-    historyList.innerHTML = deliveredOrders.map(order => `
-        <div class="order-item delivered-order">
+    console.log('Pedidos entregues:', deliveredOrders);
+    
+    if (deliveredOrders.length === 0) {
+        deliveredList.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum pedido entregue ainda.</p>';
+        return;
+    }
+    
+    deliveredList.innerHTML = deliveredOrders.map(order => `
+        <div class="order-item delivered-order" onclick="showOrderDetails(${order.id})">
             <div class="order-header">
                 <span class="order-id">#${order.id}</span>
                 <span class="order-status delivered">✅ Entregue</span>
@@ -94,10 +106,13 @@ function renderDeliveredOrders(deliveredOrders) {
                     <strong>Cliente:</strong> ${order.customer}
                 </div>
                 <div class="order-detail">
-                    <strong>Data:</strong> ${formatDate(order.date)}
+                    <strong>Data Entrega:</strong> ${formatDate(order.deliveredAt || order.date)}
                 </div>
                 <div class="order-detail">
                     <strong>Total:</strong> R$ ${order.total.toFixed(2)}
+                </div>
+                <div class="order-detail">
+                    <strong>Pagamento:</strong> ${order.paymentMethod || 'Não informado'}
                 </div>
             </div>
             
@@ -108,6 +123,8 @@ function renderDeliveredOrders(deliveredOrders) {
             <div class="order-actions">
                 <button class="action-btn btn-restore" onclick="restoreOrder(${order.id})">Restaurar</button>
             </div>
+            
+            ${order.notes ? `<div class="order-notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
         </div>
     `).join('');
 }
@@ -122,6 +139,8 @@ function updateActiveCounter(count) {
 
 // Restaurar pedido do histórico
 function restoreOrder(orderId) {
+    event.stopPropagation();
+    
     const order = orders.find(o => o.id === orderId);
     if (order) {
         order.status = 'saindo';
@@ -129,7 +148,35 @@ function restoreOrder(orderId) {
         saveOrders();
         loadOrders();
         updateStats();
+        alert('Pedido restaurado para "Saindo para Entrega"');
     }
+}
+
+// Função para criar pedido de teste entregue
+function createTestDeliveredOrder() {
+    const testOrder = {
+        id: Date.now(),
+        customer: 'Cliente Teste',
+        phone: '11999999999',
+        date: new Date().toISOString(),
+        status: 'entregue',
+        total: 89.90,
+        paymentMethod: 'PIX',
+        address: 'Endereço Teste',
+        items: [{
+            name: 'Vinho Teste',
+            quantity: 1,
+            price: 89.90
+        }],
+        deliveredAt: new Date().toISOString(),
+        notes: 'Pedido de teste'
+    };
+    
+    orders.push(testOrder);
+    saveOrders();
+    loadOrders();
+    updateStats();
+    console.log('Pedido de teste criado:', testOrder);
 }
 
 // Obter texto do status
@@ -154,7 +201,7 @@ function getActionButtons(order) {
     let buttons = '';
     
     if (order.status === 'novo') {
-        buttons += `<button class="action-btn btn-preparar" onclick="updateOrderStatus(${order.id}, 'preparando')">Preparar</button>`;
+        buttons += `<button class="action-btn btn-recebido" onclick="sendOrderReceived(${order.id})">📦 Recebemos seu Pedido</button>`;
     } else if (order.status === 'preparando') {
         buttons += `<button class="action-btn btn-saindo" onclick="updateOrderStatus(${order.id}, 'saindo')">Saiu para Entrega</button>`;
     } else if (order.status === 'saindo') {
@@ -252,6 +299,7 @@ function showNotificationSent(orderId, status) {
     `;
     
     const statusText = {
+        'recebido': 'Pedido Recebido',
         'preparando': 'Preparando',
         'saindo': 'Saindo para Entrega', 
         'entregue': 'Entregue'
@@ -359,6 +407,58 @@ function updateStats() {
         }
     });
 }
+
+// Enviar confirmação de pedido recebido
+function sendOrderReceived(orderId) {
+    event.stopPropagation();
+    
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const message = `🍷 Adega do Tio Pancho\n\nOlá! 👋\nRecebemos seu pedido com sucesso!\nFique tranquilo, você receberá atualizações por aqui conforme ele for sendo preparado, enviado e entregue. ✅\n\nSe precisar de algo, estamos à disposição!\nObrigado pela preferência! 🙏✨`;
+    
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const phone = '5511941716617';
+    const encodedMessage = encodeURIComponent(message);
+    
+    if (isMobile) {
+        // Mobile: Abrir app WhatsApp
+        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    } else {
+        // Desktop: Abrir WhatsApp Web
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+    }
+    
+    // Mostrar notificação
+    showNotificationSent(order.id, 'recebido');
+    
+    // Atualizar status para preparando
+    order.status = 'preparando';
+    order.updatedAt = new Date().toISOString();
+    saveOrders();
+    loadOrders();
+    updateStats();
+}
+
+// Navegação entre páginas
+function showMainPage() {
+    document.getElementById('main-page').classList.add('active');
+    document.getElementById('delivered-page').classList.remove('active');
+}
+
+function showDeliveredPage() {
+    document.getElementById('main-page').classList.remove('active');
+    document.getElementById('delivered-page').classList.add('active');
+    loadOrders();
+}
+
+// Filtrar pedidos
+function filterOrders() {
+    console.log('Filtrar pedidos');
+}
+
+
 
 // Salvar pedidos
 function saveOrders() {

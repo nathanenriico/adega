@@ -145,28 +145,6 @@ body {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-<<<<<<< HEAD
-.orders-sections {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 25px;
-}
-
-.active-orders-section,
-.history-section {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.2);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.active-orders-section h2,
-.history-section h2 {
-    color: #d4af37;
-    margin-bottom: 25px;
-=======
 .delivered-btn {
     background: #28a745 !important;
     color: white !important;
@@ -176,12 +154,25 @@ body {
     background: #218838 !important;
 }
 
+.analytics-btn {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3) !important;
+    color: white !important;
+}
+
+.analytics-btn:hover {
+    background: linear-gradient(135deg, #5a32a3, #4c2a85) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(111, 66, 193, 0.4);
+}
+
 .page {
     display: none;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 40px rgba(212, 175, 55, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .page.active {
@@ -197,7 +188,6 @@ body {
 
 .page-header h2 {
     color: #d4af37;
->>>>>>> b042e48d6b265b2eeb27f0c77a799d4c32ee3e82
     display: flex;
     align-items: center;
     gap: 12px;
@@ -432,6 +422,17 @@ body {
     box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
 }
 
+.btn-recebido {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+}
+
+.btn-recebido:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+}
+
 .order-notes {
     background: rgba(255, 255, 255, 0.05);
     padding: 12px;
@@ -534,18 +535,10 @@ body {
 }
 
 @media (max-width: 768px) {
-<<<<<<< HEAD
     .orders-container {
         padding: 15px;
     }
     
-    .orders-sections {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    
-=======
->>>>>>> b042e48d6b265b2eeb27f0c77a799d4c32ee3e82
     .orders-filters {
         flex-direction: column;
         gap: 12px;
