@@ -12,7 +12,7 @@
         <header class="analytics-header">
             <h1>📊 Analytics do Carrinho</h1>
             <div class="header-actions">
-                <button onclick="testCartFlow()" class="test-btn">🧪 Testar Fluxo</button>
+                <button onclick="createTestData()" class="test-btn">📊 Dados Teste</button>
                 <button onclick="resetAnalytics()" class="reset-btn">🔄 Resetar</button>
                 <button onclick="exportData()" class="export-btn">📥 Exportar</button>
                 <button onclick="window.close()" class="close-btn">✕</button>
@@ -48,10 +48,7 @@
                 <h3>🎉 Entregue</h3>
                 <span id="stat-entregue">0</span>
             </div>
-            <div class="stat-card cancelled">
-                <h3>❌ Cancelado</h3>
-                <span id="stat-cancelado">0</span>
-            </div>
+
             <div class="stat-card abandoned">
                 <h3>🚫 Desistido</h3>
                 <span id="stat-desistido">0</span>
@@ -123,6 +120,15 @@
                 <p>Nenhuma atividade registrada</p>
             </div>
         </div>
+
+        <div class="abandoned-carts-section">
+            <h2>🛒 Carrinhos Abandonados</h2>
+            <div class="abandoned-carts-list" id="abandoned-carts-list">
+                <p>Nenhum carrinho abandonado</p>
+            </div>
+        </div>
+
+
     </div>
 
     <script src="analytics.js"></script>

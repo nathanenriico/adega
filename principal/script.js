@@ -134,7 +134,7 @@ function filterProducts(category) {
     renderProducts(filteredProducts);
 }
 
-// Renderizar produtos
+// Renderizar produtos com carrossel
 function renderProducts(productsToRender = products) {
     const grid = document.getElementById('products-grid');
     
@@ -143,10 +143,30 @@ function renderProducts(productsToRender = products) {
         return;
     }
     
-    grid.innerHTML = productsToRender.map(product => `
+    grid.innerHTML = productsToRender.map(product => {
+        const hasMultipleImages = product.images && product.images.length > 1;
+        
+        return `
         <div class="product-card" data-category="${product.category}">
-            <img src="${product.image}" alt="${product.name}" class="product-image" 
-                 onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+            <div class="product-image-container">
+                ${hasMultipleImages ? `
+                    <div class="product-carousel" id="carousel-${product.id}">
+                        <div class="carousel-nav prev" onclick="prevProductImage(${product.id})">‹</div>
+                        <img src="${product.images[0]}" alt="${product.name}" class="product-image" 
+                             onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+                        <div class="carousel-nav next" onclick="nextProductImage(${product.id})">›</div>
+                        <div class="carousel-dots">
+                            ${product.images.map((_, index) => `
+                                <div class="dot ${index === 0 ? 'active' : ''}" onclick="goToProductImage(${product.id}, ${index})"></div>
+                            `).join('')}
+                        </div>
+                        <div class="image-counter">${1}/${product.images.length}</div>
+                    </div>
+                ` : `
+                    <img src="${product.image}" alt="${product.name}" class="product-image" 
+                         onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+                `}
+            </div>
             <div class="product-name">${product.name}</div>
             <div class="product-price">R$ ${product.price.toFixed(2)}</div>
             <div class="product-actions">
@@ -159,10 +179,12 @@ function renderProducts(productsToRender = products) {
             </div>
             <div class="suggestions" id="suggestions-${product.id}"></div>
         </div>
-    `).join('');
+    `;
+    }).join('');
     
     updateCartDisplay();
     loadSuggestions();
+    initializeProductCarousels();
 }
 
 // Sugestões de produtos
@@ -415,40 +437,69 @@ function updateSiteContent() {
     document.title = `${config.adegaName} - Bebidas Premium e Combos Especiais`;
 }
 
-// Preview de imagem
+// Preview com navegação entre múltiplas imagens
 function previewImage(input) {
     const previewDiv = document.getElementById('image-preview');
     
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
+    if (input.files && input.files.length > 0) {
+        const files = Array.from(input.files);
+        let currentIndex = 0;
         
-        // Verificar se é uma imagem
-        if (!file.type.startsWith('image/')) {
-            alert('Por favor, selecione apenas arquivos de imagem!');
-            input.value = '';
-            previewDiv.innerHTML = '';
-            return;
+        function showImage(index) {
+            const file = files[index];
+            if (!file.type.startsWith('image/')) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewDiv.innerHTML = `
+                    <div class="image-carousel">
+                        <div class="carousel-header">
+                            <span>Imagem ${index + 1} de ${files.length}</span>
+                            <div class="carousel-controls">
+                                <button onclick="previousImage()" ${index === 0 ? 'disabled' : ''}>‹</button>
+                                <button onclick="nextImage()" ${index === files.length - 1 ? 'disabled' : ''}>›</button>
+                            </div>
+                        </div>
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <div class="image-preview-info">
+                            ✅ ${file.name} - ${(file.size / 1024).toFixed(1)} KB
+                        </div>
+                        <div class="image-thumbnails">
+                            ${files.map((f, i) => `
+                                <div class="thumbnail ${i === index ? 'active' : ''}" onclick="showImageAt(${i})">
+                                    ${i + 1}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
         }
         
-        // Verificar tamanho do arquivo (máximo 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('Arquivo muito grande! Máximo 5MB.');
-            input.value = '';
-            previewDiv.innerHTML = '';
-            return;
-        }
+        window.currentImageIndex = currentIndex;
+        window.imageFiles = files;
         
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            previewDiv.innerHTML = `
-                <img src="${e.target.result}" alt="Preview">
-                <div class="image-preview-info">
-                    ✅ Imagem carregada: ${file.name}<br>
-                    Tamanho: ${(file.size / 1024).toFixed(1)} KB
-                </div>
-            `;
+        window.nextImage = () => {
+            if (window.currentImageIndex < window.imageFiles.length - 1) {
+                window.currentImageIndex++;
+                showImage(window.currentImageIndex);
+            }
         };
-        reader.readAsDataURL(file);
+        
+        window.previousImage = () => {
+            if (window.currentImageIndex > 0) {
+                window.currentImageIndex--;
+                showImage(window.currentImageIndex);
+            }
+        };
+        
+        window.showImageAt = (index) => {
+            window.currentImageIndex = index;
+            showImage(index);
+        };
+        
+        showImage(0);
     } else {
         previewDiv.innerHTML = '';
     }
@@ -457,7 +508,7 @@ function previewImage(input) {
 // Adicionar produto
 function addProduct() {
     const name = document.getElementById('product-name').value.trim();
-    const imageFile = document.getElementById('product-image-file').files[0];
+    const imageFiles = document.getElementById('product-image-file').files;
     const imageUrl = document.getElementById('product-image-url').value.trim();
     const price = parseFloat(document.getElementById('product-price').value);
     const category = document.getElementById('product-category').value;
@@ -467,38 +518,44 @@ function addProduct() {
         return;
     }
     
-    // Determinar qual imagem usar
-    let finalImageUrl = 'https://via.placeholder.com/400x200/333/fff?text=Produto';
-    
-    if (imageFile) {
-        // Converter arquivo para base64
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const newProduct = {
-                id: Date.now(),
-                name,
-                image: e.target.result,
-                price,
-                category
+    if (imageFiles.length > 0) {
+        const images = [];
+        let processedCount = 0;
+        
+        Array.from(imageFiles).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                images[index] = e.target.result;
+                processedCount++;
+                
+                if (processedCount === imageFiles.length) {
+                    const newProduct = {
+                        id: Date.now(),
+                        name,
+                        images: images,
+                        image: images[0],
+                        price,
+                        category
+                    };
+                    
+                    products.push(newProduct);
+                    saveData();
+                    clearProductForm();
+                    refreshProductDisplay();
+                    alert('Produto adicionado com sucesso!');
+                }
             };
-            
-            products.push(newProduct);
-            saveData();
-            
-            clearProductForm();
-            refreshProductDisplay();
-            
-            alert('Produto adicionado com sucesso!');
-        };
-        reader.readAsDataURL(imageFile);
+            reader.readAsDataURL(file);
+        });
         return;
-    } else if (imageUrl) {
-        finalImageUrl = imageUrl;
     }
+    
+    const finalImageUrl = imageUrl || 'https://via.placeholder.com/400x200/333/fff?text=Produto';
     
     const newProduct = {
         id: Date.now(),
         name,
+        images: [finalImageUrl],
         image: finalImageUrl,
         price,
         category
@@ -506,10 +563,8 @@ function addProduct() {
     
     products.push(newProduct);
     saveData();
-    
     clearProductForm();
     refreshProductDisplay();
-    
     alert('Produto adicionado com sucesso!');
 }
 
@@ -647,8 +702,11 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSiteContent();
     }
     
-    // Não abrir admin automaticamente - apenas se explicitamente solicitado
-    // Remover abertura automática do admin
+    // Inicializar sistema de analytics
+    if (!window.CartAnalytics) {
+        console.log('Inicializando sistema de analytics...');
+        initializeCartAnalytics();
+    }
     
     updateCartDisplay();
     
@@ -695,10 +753,12 @@ function addToCart(productId) {
     
     // Analytics do carrinho
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    if (wasEmpty && window.CartAnalytics) {
-        window.CartAnalytics.onCartActivated(cart, total);
-    } else if (window.CartAnalytics) {
-        window.CartAnalytics.onCartEdited(cart, total);
+    if (wasEmpty) {
+        console.log('🛍️ Carrinho ativado:', cart.length, 'itens, R$', total);
+        trackCartEvent('ativo', { items: cart.length, total, products: cart });
+    } else {
+        console.log('✏️ Carrinho editado:', cart.length, 'itens, R$', total);
+        trackCartEvent('editado', { items: cart.length, total, products: cart });
     }
 }
 
@@ -709,10 +769,11 @@ function removeFromCart(productId) {
     
     // Analytics - carrinho editado ou abandonado
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    if (cart.length === 0 && window.CartAnalytics) {
-        window.CartAnalytics.onCartAbandoned('manual_clear');
-    } else if (window.CartAnalytics) {
-        window.CartAnalytics.onCartEdited(cart, total);
+    if (cart.length === 0) {
+        console.log('🚫 Carrinho esvaziado');
+        trackCartEvent('desistido', { reason: 'manual_clear', items: 0, total: 0 });
+    } else {
+        trackCartEvent('editado', { items: cart.length, total, products: cart });
     }
 }
 
@@ -729,9 +790,7 @@ function updateCartQuantity(productId, quantity) {
             
             // Analytics - carrinho editado
             const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            if (window.CartAnalytics) {
-                window.CartAnalytics.onCartEdited(cart, total);
-            }
+            trackCartEvent('editado', { items: cart.length, total, products: cart });
         }
     }
 }
@@ -881,6 +940,52 @@ function sendCartToWhatsApp() {
     saveAnalytics();
 }
 
+// Função de fallback para rastreamento de carrinho
+function trackCartEvent(state, data = {}) {
+    const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
+    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+    
+    analytics[state] = (analytics[state] || 0) + 1;
+    analytics.lastUpdate = new Date().toISOString();
+    
+    events.push({
+        state,
+        timestamp: new Date().toISOString(),
+        sessionId: Date.now().toString(36),
+        ...data
+    });
+    
+    if (events.length > 100) events.splice(0, events.length - 100);
+    
+    localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
+    localStorage.setItem('cartEvents', JSON.stringify(events));
+    
+    // Disparar evento para atualização imediata
+    window.dispatchEvent(new CustomEvent('cartAnalyticsUpdate', { detail: { state, data } }));
+    
+    console.log(`📊 Cart Event: ${state}`, data);
+}
+
+// Inicializar sistema de analytics
+function initializeCartAnalytics() {
+    window.CartAnalytics = {
+        trackEvent: trackCartEvent,
+        onCartActivated: (items, total) => {
+            trackCartEvent('ativo', { items: items.length, total, products: items });
+        },
+        onCartEdited: (items, total) => {
+            trackCartEvent('editado', { items: items.length, total, products: items });
+        },
+        onOrderConfirmed: (orderId, items, total, paymentMethod) => {
+            trackCartEvent('confirmado', { orderId, items: items.length, total, paymentMethod });
+        },
+        onCartAbandoned: (reason = 'manual') => {
+            trackCartEvent('desistido', { reason });
+        }
+    };
+    console.log('✅ Sistema CartAnalytics inicializado');
+}
+
 // Salvar pedido no sistema de gestão
 function saveOrderToSystem(cartItems, total, paymentMethod) {
     const orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
@@ -911,15 +1016,13 @@ function saveOrderToSystem(cartItems, total, paymentMethod) {
     orders.push(newOrder);
     localStorage.setItem('adegaOrders', JSON.stringify(orders));
     
-    // Analytics - pedido confirmado
-    if (window.CartAnalytics) {
-        window.CartAnalytics.onOrderConfirmed(
-            newOrder.id.toString(),
-            cartItems,
-            total,
-            paymentText[paymentMethod]
-        );
-    }
+    // Analytics - pedido criado
+    console.log('🆕 Pedido criado:', newOrder.id);
+    trackCartEvent('novo', { orderId: newOrder.id, total });
+    
+    // Analytics - carrinho confirmado
+    console.log('✅ Carrinho confirmado');
+    trackCartEvent('confirmado', { total });
 }
 
 // Abrir gestão de pedidos
@@ -930,6 +1033,62 @@ function openOrdersManagement() {
 // Abrir analytics do carrinho
 function openCartAnalytics() {
     window.open('../analytics/analytics.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+}
+
+// Funções do carrossel de produtos
+let productCarouselStates = {};
+
+function initializeProductCarousels() {
+    products.forEach(product => {
+        if (!product.images && product.image) {
+            product.images = [product.image];
+        }
+        if (product.images && product.images.length > 1) {
+            productCarouselStates[product.id] = { currentIndex: 0, images: product.images };
+        }
+    });
+}
+
+function nextProductImage(productId) {
+    const state = productCarouselStates[productId];
+    if (!state) return;
+    
+    state.currentIndex = (state.currentIndex + 1) % state.images.length;
+    updateProductCarousel(productId);
+}
+
+function prevProductImage(productId) {
+    const state = productCarouselStates[productId];
+    if (!state) return;
+    
+    state.currentIndex = state.currentIndex === 0 ? state.images.length - 1 : state.currentIndex - 1;
+    updateProductCarousel(productId);
+}
+
+function goToProductImage(productId, index) {
+    const state = productCarouselStates[productId];
+    if (!state) return;
+    
+    state.currentIndex = index;
+    updateProductCarousel(productId);
+}
+
+function updateProductCarousel(productId) {
+    const state = productCarouselStates[productId];
+    const carousel = document.getElementById(`carousel-${productId}`);
+    if (!carousel || !state) return;
+    
+    const img = carousel.querySelector('.product-image');
+    const dots = carousel.querySelectorAll('.dot');
+    const counter = carousel.querySelector('.image-counter');
+    
+    img.src = state.images[state.currentIndex];
+    
+    dots.forEach((dot, index) => {
+        dot.classList.toggle('active', index === state.currentIndex);
+    });
+    
+    counter.textContent = `${state.currentIndex + 1}/${state.images.length}`;
 }
 
 // Navegação do menu

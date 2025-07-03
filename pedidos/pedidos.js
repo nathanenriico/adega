@@ -239,6 +239,51 @@ function updateOrderStatus(orderId, newStatus) {
         loadOrders();
         updateStats();
         
+        // Analytics em tempo real - mapear status para analytics
+        const statusMapping = {
+            'recebido': 'confirmado',  // Pedido recebido = Pedido confirmado no analytics
+            'preparando': 'preparando',
+            'saindo': 'em_entrega',
+            'entregue': 'entregue'
+        };
+        
+        const analyticsStatus = statusMapping[newStatus] || newStatus;
+        const oldAnalyticsStatus = statusMapping[oldStatus] || oldStatus;
+        
+        const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
+        analytics[analyticsStatus] = (analytics[analyticsStatus] || 0) + 1;
+        if (oldStatus && oldAnalyticsStatus && analytics[oldAnalyticsStatus] && analytics[oldAnalyticsStatus] > 0) {
+            analytics[oldAnalyticsStatus] = analytics[oldAnalyticsStatus] - 1;
+        }
+        analytics.lastUpdate = new Date().toISOString();
+        localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
+        
+        const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+        events.push({
+            state: analyticsStatus,
+            timestamp: new Date().toISOString(),
+            orderId: orderId,
+            previousStatus: oldAnalyticsStatus,
+            orderTotal: order.total,
+            customerName: order.customer
+        });
+        if (events.length > 100) events.splice(0, events.length - 100);
+        localStorage.setItem('cartEvents', JSON.stringify(events));
+        
+        // Disparar evento customizado para atualização imediata
+        window.dispatchEvent(new CustomEvent('cartAnalyticsUpdate', {
+            detail: {
+                status: analyticsStatus,
+                orderId: orderId,
+                previousStatus: oldAnalyticsStatus
+            }
+        }));
+        
+        console.log(`📊 Status atualizado: ${oldStatus} → ${newStatus} (Analytics: ${oldAnalyticsStatus} → ${analyticsStatus})`);
+        
+        // Mostrar notificação de atualização
+        showAnalyticsUpdateNotification(newStatus, orderId);
+        
         // Enviar notificação WhatsApp automática
         if (oldStatus !== newStatus) {
             sendAutomaticWhatsAppNotification(order, newStatus);
@@ -332,6 +377,47 @@ function showNotificationSent(orderId, status) {
     }, 4000);
 }
 
+// Mostrar notificação de atualização do analytics
+function showAnalyticsUpdateNotification(status, orderId) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        z-index: 9998;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        font-size: 0.9rem;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    const analyticsText = {
+        'recebido': '✅ Pedido Confirmado',
+        'preparando': '👨‍🍳 Em Preparo',
+        'saindo': '🛵 Em Entrega',
+        'entregue': '🎉 Entregue'
+    };
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1rem;">📊</span>
+            <div>
+                <div style="font-weight: 600;">Analytics Atualizado!</div>
+                <div style="font-size: 0.8rem; opacity: 0.9;">#${orderId} → ${analyticsText[status]}</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
 // Editar notas do pedido
 function editNotes(orderId) {
     event.stopPropagation();
@@ -419,7 +505,38 @@ function updateStats() {
     });
 }
 
+
+
 // Salvar pedidos
 function saveOrders() {
     localStorage.setItem('adegaOrders', JSON.stringify(orders));
 }
+
+// Função de teste para demonstrar sincronização em tempo real
+function createTestOrder() {
+    const testOrder = {
+        id: Date.now(),
+        customer: 'Cliente Teste ' + Math.floor(Math.random() * 100),
+        phone: '11999999999',
+        date: new Date().toISOString(),
+        status: 'novo',
+        total: Math.floor(Math.random() * 200) + 50,
+        paymentMethod: ['PIX', 'Cartão', 'Dinheiro'][Math.floor(Math.random() * 3)],
+        address: 'Endereço Teste',
+        items: [{
+            name: 'Vinho Teste',
+            quantity: Math.floor(Math.random() * 3) + 1,
+            price: Math.floor(Math.random() * 100) + 30
+        }],
+        notes: 'Pedido de teste para demonstração'
+    };
+    
+    orders.push(testOrder);
+    saveOrders();
+    loadOrders();
+    updateStats();
+    
+    console.log('🍷 Pedido de teste criado:', testOrder);
+    alert(`Pedido de teste #${testOrder.id} criado! Agora clique em "Pedido Recebido" para ver a atualização no Analytics.`);
+}
+
