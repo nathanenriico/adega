@@ -2,7 +2,8 @@
 let config = {
     adegaName: 'Adega do Tio Pancho',
     whatsappNumber: '1193394-9002',
-    defaultMessage: 'Oi, quero ver as ofertas da adega!'
+    defaultMessage: 'Oi, quero ver as ofertas da adega!',
+    paymentLink: 'https://mpago.la/2TkKdAB?amount={valor}&description={descricao}'
 };
 
 // Analytics
@@ -330,6 +331,7 @@ function loadAdminData() {
     document.getElementById('adega-name').value = config.adegaName;
     document.getElementById('whatsapp-number').value = config.whatsappNumber;
     document.getElementById('default-message').value = config.defaultMessage;
+    document.getElementById('payment-link').value = config.paymentLink || '';
     
     // Mostrar status da API
     const apiKey = localStorage.getItem('openai-api-key');
@@ -408,6 +410,7 @@ function saveSettings() {
     const newName = document.getElementById('adega-name').value.trim();
     const newNumber = document.getElementById('whatsapp-number').value.trim();
     const newMessage = document.getElementById('default-message').value.trim();
+    const paymentLink = document.getElementById('payment-link').value.trim();
     
     if (!newName || !newNumber) {
         alert('Nome da adega e número do WhatsApp são obrigatórios!');
@@ -423,11 +426,13 @@ function saveSettings() {
     config.adegaName = newName;
     config.whatsappNumber = newNumber;
     config.defaultMessage = newMessage;
+    config.paymentLink = paymentLink;
     
     saveData();
     updateSiteContent();
     
     console.log('Novo número WhatsApp salvo:', config.whatsappNumber);
+    console.log('Link de pagamento salvo:', config.paymentLink);
     alert('Configurações salvas com sucesso!');
 }
 
@@ -693,6 +698,145 @@ function logout() {
     clearAdminState();
 }
 
+// Funções para gerenciar o endereço de entrega
+function saveDeliveryAddress() {
+    // Obter valores dos campos
+    const cep = document.getElementById('address-cep').value.trim();
+    const street = document.getElementById('address-street').value.trim();
+    const number = document.getElementById('address-number').value.trim();
+    const complement = document.getElementById('address-complement').value.trim();
+    const neighborhood = document.getElementById('address-neighborhood').value.trim();
+    const city = document.getElementById('address-city').value.trim();
+    
+    // Validar campos obrigatórios
+    if (!cep || !street || !number || !neighborhood || !city) {
+        alert('Por favor, preencha todos os campos obrigatórios (marcados com ✅).');
+        return;
+    }
+    
+    // Formatar endereço completo
+    const addressText = `${street}, ${number}${complement ? ` - ${complement}` : ''}
+${neighborhood}, ${city}
+CEP: ${cep}`;
+    
+    // Salvar no localStorage
+    try {
+        // Salvar endereço formatado
+        localStorage.setItem('deliveryAddress', addressText);
+        
+        // Salvar campos individuais para uso futuro
+        const addressData = { cep, street, number, complement, neighborhood, city };
+        localStorage.setItem('deliveryAddressData', JSON.stringify(addressData));
+        
+        console.log('Endereço salvo no localStorage:', addressText);
+    } catch (error) {
+        console.error('Erro ao salvar no localStorage:', error);
+        alert('Erro ao salvar o endereço. Por favor, tente novamente.');
+        return;
+    }
+    
+    // Mostrar o endereço salvo
+    const addressDisplay = document.getElementById('address-display');
+    const savedAddressDiv = document.getElementById('saved-address');
+    const addressForm = document.getElementById('delivery-address-form');
+    
+    if (addressDisplay) addressDisplay.textContent = addressText;
+    if (savedAddressDiv) savedAddressDiv.style.display = 'block';
+    if (addressForm) addressForm.style.display = 'none';
+    
+    // Notificar o usuário
+    alert('Endereço de entrega salvo com sucesso!');
+}
+
+function editDeliveryAddress() {
+    // Recuperar dados do endereço salvo
+    const savedAddressData = localStorage.getItem('deliveryAddressData');
+    console.log('Editando endereço:', savedAddressData);
+    
+    const addressForm = document.getElementById('delivery-address-form');
+    const savedAddressDiv = document.getElementById('saved-address');
+    
+    // Mostrar formulário e esconder endereço salvo
+    if (addressForm) addressForm.style.display = 'flex';
+    if (savedAddressDiv) savedAddressDiv.style.display = 'none';
+    
+    // Preencher campos com dados salvos
+    if (savedAddressData) {
+        try {
+            const addressData = JSON.parse(savedAddressData);
+            
+            // Preencher cada campo
+            document.getElementById('address-cep').value = addressData.cep || '';
+            document.getElementById('address-street').value = addressData.street || '';
+            document.getElementById('address-number').value = addressData.number || '';
+            document.getElementById('address-complement').value = addressData.complement || '';
+            document.getElementById('address-neighborhood').value = addressData.neighborhood || '';
+            document.getElementById('address-city').value = addressData.city || '';
+        } catch (error) {
+            console.error('Erro ao carregar dados do endereço:', error);
+        }
+    }
+}
+
+function loadDeliveryAddress() {
+    try {
+        const savedAddress = localStorage.getItem('deliveryAddress');
+        console.log('Tentando carregar endereço:', savedAddress);
+        
+        const addressDisplay = document.getElementById('address-display');
+        const savedAddressDiv = document.getElementById('saved-address');
+        const addressForm = document.getElementById('delivery-address-form');
+        
+        if (!addressDisplay || !savedAddressDiv || !addressForm) {
+            console.error('Elementos não encontrados no DOM');
+            return false;
+        }
+        
+        if (savedAddress) {
+            addressDisplay.textContent = savedAddress;
+            savedAddressDiv.style.display = 'block';
+            addressForm.style.display = 'none';
+            console.log('Endereço exibido com sucesso');
+        } else {
+            savedAddressDiv.style.display = 'none';
+            addressForm.style.display = 'flex';
+            console.log('Nenhum endereço salvo encontrado');
+        }
+        return true;
+    } catch (error) {
+        console.error('Erro ao carregar endereço:', error);
+        return false;
+    }
+}
+
+// Função para garantir que o endereço seja carregado
+function ensureAddressLoaded(attempts = 0) {
+    // Limitar o número de tentativas para evitar loops infinitos
+    if (attempts > 10) {
+        console.error('Não foi possível carregar o endereço após várias tentativas');
+        return;
+    }
+    
+    // Verificar se os elementos necessários existem
+    const addressDisplay = document.getElementById('address-display');
+    const savedAddressDiv = document.getElementById('saved-address');
+    const addressForm = document.getElementById('delivery-address-form');
+    
+    if (!addressDisplay || !savedAddressDiv || !addressForm) {
+        console.log(`Elementos ainda não estão prontos, tentativa ${attempts + 1}/10, tentando novamente em 200ms...`);
+        setTimeout(() => ensureAddressLoaded(attempts + 1), 200);
+        return;
+    }
+    
+    console.log('Elementos encontrados, carregando endereço...');
+    const success = loadDeliveryAddress();
+    
+    if (!success) {
+        console.log('Falha ao carregar endereço, tentando novamente em 500ms...');
+        setTimeout(() => ensureAddressLoaded(attempts + 1), 500);
+    }
+}
+
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
     loadData();
@@ -708,7 +852,62 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeCartAnalytics();
     }
     
+    // Carregar endereço de entrega salvo com retry
+    console.log('Iniciando carregamento do endereço de entrega...');
+    ensureAddressLoaded();
+    
     updateCartDisplay();
+});
+
+// Garantir que o endereço seja carregado mesmo após o carregamento completo da página
+window.addEventListener('load', function() {
+    console.log('Página totalmente carregada, verificando endereço...');
+    initializeDeliveryAddress();
+});
+
+// Função de inicialização do endereço de entrega
+function initializeDeliveryAddress() {
+    // Verificar se há um endereço salvo no localStorage
+    const savedAddress = localStorage.getItem('deliveryAddress');
+    console.log('Inicializando endereço de entrega, endereço salvo:', savedAddress);
+    
+    // Obter referências aos elementos
+    const addressDisplay = document.getElementById('address-display');
+    const savedAddressDiv = document.getElementById('saved-address');
+    const addressForm = document.getElementById('delivery-address-form');
+    
+    // Verificar se todos os elementos existem
+    if (!addressDisplay || !savedAddressDiv || !addressForm) {
+        console.error('Elementos não encontrados, tentando novamente em 300ms...');
+        setTimeout(initializeDeliveryAddress, 300);
+        return;
+    }
+    
+    // Configurar os elementos com base no endereço salvo
+    if (savedAddress) {
+        addressDisplay.textContent = savedAddress;
+        savedAddressDiv.style.display = 'block';
+        addressForm.style.display = 'none';
+        console.log('Endereço exibido com sucesso na inicialização');
+    } else {
+        savedAddressDiv.style.display = 'none';
+        addressForm.style.display = 'flex';
+        console.log('Nenhum endereço salvo encontrado na inicialização');
+    }
+    
+    // Adicionar máscara para o CEP
+    const cepInput = document.getElementById('address-cep');
+    if (cepInput) {
+        cepInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length > 8) value = value.slice(0, 8);
+            if (value.length > 5) {
+                value = value.slice(0, 5) + '-' + value.slice(5);
+            }
+            this.value = value;
+        });
+    }
+}
     
     // Validação em tempo real
     const whatsappInput = document.getElementById('whatsapp-number');
@@ -726,7 +925,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value < 0) this.value = 0;
         });
     }
-});
 
 // Funções do Carrinho
 function addToCart(productId) {
@@ -771,7 +969,14 @@ function removeFromCart(productId) {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     if (cart.length === 0) {
         console.log('🚫 Carrinho esvaziado');
-        trackCartEvent('desistido', { reason: 'manual_clear', items: 0, total: 0 });
+        // Solicitar telefone antes de abandonar
+        const phone = requestPhoneForRecovery();
+        trackCartEvent('desistido', { 
+            reason: 'manual_clear', 
+            items: 0, 
+            total: 0,
+            customerPhone: phone
+        });
     } else {
         trackCartEvent('editado', { items: cart.length, total, products: cart });
     }
@@ -887,6 +1092,36 @@ function goToCheckout() {
         return;
     }
     
+    // Verificar se há endereço de entrega salvo
+    const deliveryAddress = localStorage.getItem('deliveryAddress');
+    if (!deliveryAddress) {
+        const confirmAddress = confirm('Você ainda não cadastrou um endereço de entrega. Deseja cadastrar agora?');
+        if (confirmAddress) {
+            // Mostrar seção de endereço
+            showSection('home');
+            
+            // Mostrar formulário de endereço
+            const addressForm = document.getElementById('delivery-address-form');
+            const savedAddressDiv = document.getElementById('saved-address');
+            
+            if (addressForm) {
+                addressForm.style.display = 'flex';
+                // Focar no primeiro campo
+                const cepInput = document.getElementById('address-cep');
+                if (cepInput) cepInput.focus();
+            }
+            if (savedAddressDiv) savedAddressDiv.style.display = 'none';
+            
+            // Rolar para o formulário de endereço
+            const addressCard = document.querySelector('.delivery-address-card');
+            if (addressCard) {
+                addressCard.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            return;
+        }
+    }
+    
     // Salvar dados do carrinho para a página de checkout
     localStorage.setItem('checkoutCart', JSON.stringify(cart));
     
@@ -900,6 +1135,13 @@ function sendCartToWhatsApp() {
         return;
     }
     
+    // Mostrar indicador de processamento imediatamente
+    const processingIndicator = document.createElement('div');
+    processingIndicator.className = 'cart-notification';
+    processingIndicator.innerHTML = '<span class="processing-animation">Processando pedido...</span>';
+    document.body.appendChild(processingIndicator);
+    
+    // Calcular total do carrinho
     const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     const selectedPayment = document.querySelector('input[name="payment"]:checked').value;
     const paymentText = {
@@ -908,22 +1150,35 @@ function sendCartToWhatsApp() {
         'dinheiro': 'Dinheiro'
     };
     
-    let message = 'Olá! Gostaria de fazer este pedido:\\n\\n';
+    // Obter endereço de entrega
+    const deliveryAddress = localStorage.getItem('deliveryAddress') || 'Endereço não informado';
     
+    // Salvar pedido no sistema (sem esperar)
+    const orderId = saveOrderToSystem(cart, cartTotal, selectedPayment);
+    
+    // Preparar mensagem WhatsApp em segundo plano
+    let message = 'Olá! Gostaria de fazer este pedido:\\n\\n';
     cart.forEach(item => {
         message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\\n`;
     });
-    
     message += `\\nTotal: R$ ${cartTotal.toFixed(2)}`;
     message += `\\nForma de Pagamento: ${paymentText[selectedPayment]}`;
+    message += `\\n\\nEndereço de Entrega:\\n${deliveryAddress}`;
     
-    // Salvar pedido no sistema
-    saveOrderToSystem(cart, cartTotal, selectedPayment);
+    // Remover indicador de processamento
+    processingIndicator.remove();
     
+    // Mostrar mensagem de pedido recebido
+    showOrderConfirmation(orderId, cartTotal);
+    
+    // Preparar URL do WhatsApp
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
     
-    window.open(whatsappUrl, '_blank');
+    // Abrir WhatsApp em uma nova aba (sem delay)
+    setTimeout(() => {
+        window.open(whatsappUrl, '_blank');
+    }, 500);
     
     // Limpar carrinho após confirmação
     cart = [];
@@ -940,6 +1195,39 @@ function sendCartToWhatsApp() {
     saveAnalytics();
 }
 
+// Mostrar mensagem de confirmação do pedido
+function showOrderConfirmation(orderId, total) {
+    // Criar modal de confirmação simplificado e otimizado
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'block';
+    
+    // Usar HTML mínimo para renderização mais rápida
+    modal.innerHTML = `
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 3rem; color: #4CAF50;">✅</div>
+            <h3 style="color: #4CAF50;">Pedido Recebido!</h3>
+            <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+                <p><strong>Número:</strong> #${orderId}</p>
+                <p><strong>Total:</strong> R$ ${total.toFixed(2)}</p>
+            </div>
+            <button onclick="closeOrderConfirmation()" style="background: #d4af37; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; margin-top: 0.5rem;">
+                Fechar
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// Fechar modal de confirmação
+function closeOrderConfirmation() {
+    const modal = document.querySelector('.modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
 // Função de fallback para rastreamento de carrinho
 function trackCartEvent(state, data = {}) {
     const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
@@ -948,10 +1236,15 @@ function trackCartEvent(state, data = {}) {
     analytics[state] = (analytics[state] || 0) + 1;
     analytics.lastUpdate = new Date().toISOString();
     
+    // Coletar informações do cliente se disponível
+    const customerInfo = getCustomerInfo();
+    
     events.push({
         state,
         timestamp: new Date().toISOString(),
         sessionId: Date.now().toString(36),
+        customerPhone: customerInfo.phone,
+        customerName: customerInfo.name,
         ...data
     });
     
@@ -964,6 +1257,29 @@ function trackCartEvent(state, data = {}) {
     window.dispatchEvent(new CustomEvent('cartAnalyticsUpdate', { detail: { state, data } }));
     
     console.log(`📊 Cart Event: ${state}`, data);
+}
+
+// Obter informações do cliente
+function getCustomerInfo() {
+    // Tentar obter do formulário de checkout se existir
+    const phoneInput = document.querySelector('input[name="phone"], input[id*="phone"], input[placeholder*="telefone"]');
+    const nameInput = document.querySelector('input[name="name"], input[id*="name"], input[placeholder*="nome"]');
+    
+    return {
+        phone: phoneInput ? phoneInput.value : null,
+        name: nameInput ? nameInput.value : null
+    };
+}
+
+// Solicitar telefone para recuperação
+function requestPhoneForRecovery() {
+    const phone = prompt('📱 Para recuperar seu carrinho caso saia da página, informe seu WhatsApp (opcional):');
+    if (phone && phone.trim()) {
+        localStorage.setItem('customerPhone', phone.trim());
+        localStorage.setItem('customerPhoneTime', Date.now());
+        return phone.trim();
+    }
+    return null;
 }
 
 // Inicializar sistema de analytics
@@ -988,7 +1304,8 @@ function initializeCartAnalytics() {
 
 // Salvar pedido no sistema de gestão
 function saveOrderToSystem(cartItems, total, paymentMethod) {
-    const orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
+    const orderId = Date.now();
+    localStorage.setItem('currentOrderId', orderId);
     
     const paymentText = {
         'pix': 'PIX',
@@ -997,7 +1314,7 @@ function saveOrderToSystem(cartItems, total, paymentMethod) {
     };
     
     const newOrder = {
-        id: Date.now(),
+        id: orderId,
         customer: 'Cliente WhatsApp',
         date: new Date().toISOString(),
         status: 'novo',
@@ -1013,16 +1330,22 @@ function saveOrderToSystem(cartItems, total, paymentMethod) {
         updatedAt: new Date().toISOString()
     };
     
-    orders.push(newOrder);
-    localStorage.setItem('adegaOrders', JSON.stringify(orders));
+    // Salvar pedido de forma assíncrona
+    setTimeout(() => {
+        const orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
+        orders.push(newOrder);
+        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        
+        // Analytics - pedido criado
+        console.log('🆕 Pedido criado:', newOrder.id);
+        trackCartEvent('novo', { orderId: newOrder.id, total });
+        
+        // Analytics - carrinho confirmado
+        console.log('✅ Carrinho confirmado');
+        trackCartEvent('confirmado', { total });
+    }, 0);
     
-    // Analytics - pedido criado
-    console.log('🆕 Pedido criado:', newOrder.id);
-    trackCartEvent('novo', { orderId: newOrder.id, total });
-    
-    // Analytics - carrinho confirmado
-    console.log('✅ Carrinho confirmado');
-    trackCartEvent('confirmado', { total });
+    return orderId;
 }
 
 // Abrir gestão de pedidos

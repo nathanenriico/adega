@@ -51,6 +51,7 @@ body {
 }
 
 .test-btn { background: #fd7e14; color: white; }
+.simulate-btn { background: #6f42c1; color: white; }
 .reset-btn { background: #ffc107; color: #333; }
 .export-btn { background: #17a2b8; color: white; }
 .close-btn { background: #dc3545; color: white; }
@@ -350,7 +351,48 @@ body {
 
 .abandoned-carts-section h2 {
     color: #fd7e14;
+    margin-bottom: 15px;
+}
+
+.section-info {
+    background: rgba(253, 126, 20, 0.1);
+    padding: 15px;
+    border-radius: 10px;
     margin-bottom: 20px;
+    border-left: 4px solid #fd7e14;
+}
+
+.section-info p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+}
+
+.section-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    background: #fd7e14;
+    color: white;
+}
+
+.tab-btn:hover {
+    background: rgba(253, 126, 20, 0.3);
+    color: white;
 }
 
 .abandoned-carts-list {
@@ -422,6 +464,49 @@ body {
     background: #128c7e;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.recovery-btn.disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.recovery-btn.disabled:hover {
+    background: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+.bulk-actions {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.bulk-recovery-btn {
+    background: linear-gradient(45deg, #fd7e14, #ff9500);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.bulk-recovery-btn:hover {
+    background: linear-gradient(45deg, #e8690b, #e8690b);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(253, 126, 20, 0.4);
+}
+
+.abandoned-cart-item.has-phone {
+    border-left-color: #25D366;
+}
+
+.abandoned-cart-item.no-phone {
+    border-left-color: #6c757d;
+    opacity: 0.7;
 }
 
 @media (max-width: 768px) {

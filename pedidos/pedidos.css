@@ -416,6 +416,17 @@ body {
     box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
 }
 
+.btn-payment {
+    background: linear-gradient(135deg, #d4af37, #b8941f);
+    color: white;
+}
+
+.btn-payment:hover {
+    background: linear-gradient(135deg, #b8941f, #9d7a1a);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
 .btn-restore {
     background: linear-gradient(135deg, #007bff, #0056b3);
     color: white;
@@ -447,6 +458,30 @@ body {
     background: linear-gradient(135deg, #e0a800, #d39e00);
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+}
+
+.btn-confirm-pix {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    font-weight: bold;
+}
+
+.btn-confirm-pix:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+.status-aguardando_pagamento {
+    background: linear-gradient(135deg, #ff9800, #f57c00);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
 }
 
 .order-notes {

@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="../principal/styles.css">
     <link rel="stylesheet" href="pedidos.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../principal/config.js"></script>
 </head>
 <body>
     <div class="orders-container">
@@ -21,10 +23,13 @@
             <select id="status-filter">
                 <option value="">Todos os Status</option>
                 <option value="novo">Novo</option>
+                <option value="aguardando_pagamento">Aguardando Pagamento PIX</option>
+                <option value="recebido">Pedido Recebido</option>
                 <option value="preparando">Preparando</option>
                 <option value="saindo">Saindo para Entrega</option>
             </select>
-            <button onclick="filterOrders()">Filtrar</button>
+            <button onclick="applyFilters()">Filtrar</button>
+            <button onclick="clearFilters()">Limpar</button>
             <button onclick="showDeliveredPage()" class="delivered-btn">Pedidos Entregues</button>
         </div>
 

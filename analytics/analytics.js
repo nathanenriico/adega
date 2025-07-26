@@ -368,43 +368,102 @@ function loadActivityLog() {
     loadAbandonedCarts();
 }
 
+let currentTab = 'abandoned';
+
+// Alternar entre abas
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    
+    const description = document.getElementById('section-description');
+    if (tab === 'abandoned') {
+        description.textContent = 'Clientes que adicionaram produtos ao carrinho mas não finalizaram a compra. Use o WhatsApp para recuperar essas vendas!';
+        loadAbandonedCarts();
+    } else {
+        description.textContent = 'Clientes que desistiram da compra após confirmação. Envie mensagens para reconquistar esses clientes!';
+        loadDesistedCarts();
+    }
+}
+
 // Carregar carrinhos abandonados
 function loadAbandonedCarts() {
+    const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
     const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
     const list = document.getElementById('abandoned-carts-list');
     
-    const abandonedCarts = events.filter(event => 
-        event.state === 'incompleto' && 
-        event.products && 
-        event.products.length > 0
-    ).slice(-10).reverse();
+    // Buscar carrinhos abandonados dos dados ativos e eventos
+    const abandonedFromActive = Object.entries(activeCarts)
+        .filter(([sessionId, cart]) => cart.state === 'incompleto')
+        .map(([sessionId, cart]) => ({
+            sessionId,
+            timestamp: new Date(cart.lastActivity || cart.created).toISOString(),
+            products: cart.items || [],
+            total: cart.total || 0,
+            customerPhone: cart.customerPhone || null,
+            customerName: cart.customerName || null,
+            timeInactive: Math.round((Date.now() - (cart.lastActivity || cart.created)) / 60000)
+        }));
     
-    if (abandonedCarts.length === 0) {
-        list.innerHTML = '<p>Nenhum carrinho abandonado</p>';
+    const abandonedFromEvents = events.filter(event => 
+        event.state === 'incompleto'
+    ).map(event => ({
+        sessionId: event.sessionId,
+        timestamp: event.timestamp,
+        products: event.products || [],
+        total: event.total || 0,
+        customerPhone: event.customerPhone || null,
+        customerName: event.customerName || null,
+        timeInactive: event.timeInactive || 0
+    }));
+    
+    // Combinar e remover duplicatas
+    const allAbandoned = [...abandonedFromActive, ...abandonedFromEvents];
+    const uniqueAbandoned = allAbandoned.filter((cart, index, self) => 
+        index === self.findIndex(c => c.sessionId === cart.sessionId)
+    ).slice(-15).reverse();
+    
+    if (uniqueAbandoned.length === 0) {
+        list.innerHTML = '<p>Nenhum carrinho abandonado encontrado</p>';
         return;
     }
     
-    list.innerHTML = abandonedCarts.map(cart => {
+    const withPhone = uniqueAbandoned.filter(c => c.customerPhone).length;
+    const header = withPhone > 0 ? `
+        <div class="bulk-actions">
+            <button class="bulk-recovery-btn" onclick="sendBulkRecovery()">
+                📢 Enviar para Todos com WhatsApp (${withPhone})
+            </button>
+        </div>
+    ` : '';
+    
+    list.innerHTML = header + uniqueAbandoned.map(cart => {
         const time = new Date(cart.timestamp).toLocaleString('pt-BR');
-        const products = cart.products.map(p => p.name).join(', ');
+        const products = Array.isArray(cart.products) ? 
+            cart.products.map(p => typeof p === 'object' ? p.name : p).join(', ') : 
+            'Produtos não especificados';
         const total = cart.total ? `R$ ${cart.total.toFixed(2)}` : 'N/A';
+        const hasPhone = cart.customerPhone;
+        const customerName = cart.customerName || 'Cliente não identificado';
         
         return `
-            <div class="abandoned-cart-item">
+            <div class="abandoned-cart-item ${hasPhone ? 'has-phone' : 'no-phone'}">
                 <div class="cart-info">
                     <div class="cart-header">
-                        <strong>🛒 Carrinho Abandonado</strong>
+                        <strong>🛒 ${customerName}</strong>
                         <span class="cart-time">${time}</span>
                     </div>
                     <div class="cart-details">
                         <div>📦 Produtos: ${products}</div>
                         <div>💰 Total: ${total}</div>
-                        ${cart.timeInactive ? `<div>⏱️ Inativo: ${cart.timeInactive} min</div>` : ''}
+                        ${hasPhone ? `<div>📱 Tel: ${cart.customerPhone}</div>` : '<div style="color: #fd7e14;">⚠️ Sem telefone cadastrado</div>'}
+                        ${cart.timeInactive ? `<div>⏱️ Abandonado há: ${cart.timeInactive} min</div>` : ''}
                     </div>
                 </div>
                 <div class="cart-actions">
-                    <button class="recovery-btn" onclick="sendRecoveryMessage('${cart.sessionId}', '${products}', '${total}')">
-                        💬 Enviar Recuperação
+                    <button class="recovery-btn ${hasPhone ? '' : 'disabled'}" 
+                            onclick="sendRecoveryMessage('${cart.sessionId}', '${products.replace(/'/g, "\\'").replace(/"/g, '\\"')}', '${total}', '${cart.customerPhone || ''}', '${customerName.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">
+                        ${hasPhone ? '💬 Enviar WhatsApp' : '📋 Sem WhatsApp'}
                     </button>
                 </div>
             </div>
@@ -413,11 +472,23 @@ function loadAbandonedCarts() {
 }
 
 // Enviar mensagem de recuperação
-function sendRecoveryMessage(sessionId, products, total) {
-    const message = `🍷 *Adega do Tio Pancho*\n\n😢 Notamos que você esqueceu alguns itens no seu carrinho!\n\n📦 Produtos: ${products}\n💰 Total: ${total}\n\n🎁 Que tal finalizar sua compra? Temos uma oferta especial esperando por você!\n\n👉 Clique aqui para continuar: [Link do Site]`;
+function sendRecoveryMessage(sessionId, products, total, customerPhone = null, customerName = 'Cliente') {
+    const message = `🍷 *Adega do Tio Pancho*\n\nOlá ${customerName}! 😊\n\n😢 Notamos que você esqueceu alguns itens no seu carrinho:\n\n📦 Produtos: ${products}\n💰 Total: ${total}\n\n🎁 Que tal finalizar sua compra? Temos vinhos especiais esperando por você!\n\n✨ *Oferta especial*: Use o cupom VOLTA10 e ganhe 10% de desconto!\n\n👉 Finalize agora: ${window.location.origin.replace('/analytics', '')}\n\n🍷 Adega do Tio Pancho - Os melhores vinhos da região!`;
     
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    let whatsappUrl;
+    
+    if (customerPhone) {
+        // Enviar para número específico
+        const cleanPhone = customerPhone.replace(/\D/g, '');
+        // Adicionar código do país se não tiver
+        const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+        whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodedMessage}`;
+    } else {
+        // Abrir sem número (para copiar mensagem)
+        whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        alert('Número de telefone não disponível. A mensagem será copiada para você enviar manualmente.');
+    }
     
     window.open(whatsappUrl, '_blank');
     
@@ -427,16 +498,270 @@ function sendRecoveryMessage(sessionId, products, total) {
         sessionId,
         sentAt: new Date().toISOString(),
         products,
-        total
+        total,
+        customerPhone,
+        customerName
     });
     localStorage.setItem('cartRecoveries', JSON.stringify(recoveries));
     
-    // Mostrar notificação
-    showRecoveryNotification();
+    showRecoveryNotification(customerName);
+}
+
+// Carregar carrinhos desistidos
+function loadDesistedCarts() {
+    const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
+    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+    const list = document.getElementById('abandoned-carts-list');
+    
+    const desistedFromActive = Object.entries(activeCarts)
+        .filter(([sessionId, cart]) => cart.state === 'desistido')
+        .map(([sessionId, cart]) => ({
+            sessionId,
+            timestamp: new Date(cart.lastActivity || cart.created).toISOString(),
+            products: cart.items || [],
+            total: cart.total || 0,
+            customerPhone: cart.customerPhone || null,
+            customerName: cart.customerName || null,
+            orderId: cart.orderId || null
+        }));
+    
+    const desistedFromEvents = events.filter(event => 
+        event.state === 'desistido'
+    ).map(event => ({
+        sessionId: event.sessionId,
+        timestamp: event.timestamp,
+        products: event.products || [],
+        total: event.total || 0,
+        customerPhone: event.customerPhone || null,
+        customerName: event.customerName || null,
+        orderId: event.orderId || null
+    }));
+    
+    const allDesisted = [...desistedFromActive, ...desistedFromEvents];
+    const uniqueDesisted = allDesisted.filter((cart, index, self) => 
+        index === self.findIndex(c => c.sessionId === cart.sessionId)
+    ).slice(-15).reverse();
+    
+    if (uniqueDesisted.length === 0) {
+        list.innerHTML = '<p>Nenhuma compra desistida encontrada</p>';
+        return;
+    }
+    
+    const withPhone = uniqueDesisted.filter(c => c.customerPhone).length;
+    const header = withPhone > 0 ? `
+        <div class="bulk-actions">
+            <button class="bulk-recovery-btn" onclick="sendBulkDesisted()">
+                📢 Enviar para Todos com WhatsApp (${withPhone})
+            </button>
+        </div>
+    ` : '';
+    
+    list.innerHTML = header + uniqueDesisted.map(cart => {
+        const time = new Date(cart.timestamp).toLocaleString('pt-BR');
+        const products = Array.isArray(cart.products) ? 
+            cart.products.map(p => typeof p === 'object' ? p.name : p).join(', ') : 
+            'Produtos não especificados';
+        const total = cart.total ? `R$ ${cart.total.toFixed(2)}` : 'N/A';
+        const hasPhone = cart.customerPhone;
+        const customerName = cart.customerName || 'Cliente não identificado';
+        
+        return `
+            <div class="abandoned-cart-item ${hasPhone ? 'has-phone' : 'no-phone'}">
+                <div class="cart-info">
+                    <div class="cart-header">
+                        <strong>🚫 ${customerName}</strong>
+                        <span class="cart-time">${time}</span>
+                    </div>
+                    <div class="cart-details">
+                        <div>📦 Produtos: ${products}</div>
+                        <div>💰 Total: ${total}</div>
+                        ${cart.orderId ? `<div>🆔 Pedido: #${cart.orderId}</div>` : ''}
+                        ${hasPhone ? `<div>📱 Tel: ${cart.customerPhone}</div>` : '<div style="color: #fd7e14;">⚠️ Sem telefone cadastrado</div>'}
+                    </div>
+                </div>
+                <div class="cart-actions">
+                    <button class="recovery-btn ${hasPhone ? '' : 'disabled'}" 
+                            onclick="sendDesistedMessage('${cart.sessionId}', '${products.replace(/'/g, "\\'").replace(/"/g, '\\"')}', '${total}', '${cart.customerPhone || ''}', '${customerName.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">
+                        ${hasPhone ? '💬 Enviar WhatsApp' : '📋 Sem WhatsApp'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Enviar mensagem para desistidos
+function sendDesistedMessage(sessionId, products, total, customerPhone = null, customerName = 'Cliente') {
+    const message = `🍷 *Adega do Tio Pancho*\n\nOlá ${customerName}! 😊\n\n😔 Notamos que você desistiu da sua compra:\n\n📦 Produtos: ${products}\n💰 Total: ${total}\n\n💡 Que tal uma segunda chance? Preparamos uma oferta especial só para você!\n\n🎁 *Oferta exclusiva*: Use o cupom VOLTA15 e ganhe 15% de desconto!\n\n✨ Nossos vinhos estão esperando por você!\n\n👉 Acesse: ${window.location.origin.replace('/analytics', '')}\n\n🍷 Adega do Tio Pancho - Sua adega de confiança!`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    let whatsappUrl;
+    
+    if (customerPhone) {
+        const cleanPhone = customerPhone.replace(/\D/g, '');
+        const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+        whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodedMessage}`;
+    } else {
+        whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        alert('Número de telefone não disponível. A mensagem será copiada para você enviar manualmente.');
+    }
+    
+    window.open(whatsappUrl, '_blank');
+    showRecoveryNotification(customerName);
+}
+
+// Enviar recuperação em lote para desistidos
+function sendBulkDesisted() {
+    const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
+    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+    
+    const desistedFromActive = Object.entries(activeCarts)
+        .filter(([sessionId, cart]) => cart.state === 'desistido' && cart.customerPhone)
+        .map(([sessionId, cart]) => ({
+            sessionId,
+            products: cart.items || [],
+            total: cart.total || 0,
+            customerPhone: cart.customerPhone,
+            customerName: cart.customerName || 'Cliente'
+        }));
+    
+    const desistedFromEvents = events.filter(event => 
+        event.state === 'desistido' && event.customerPhone
+    );
+    
+    const allDesisted = [...desistedFromActive, ...desistedFromEvents];
+    const uniqueDesisted = allDesisted.filter((cart, index, self) => 
+        index === self.findIndex(c => c.sessionId === cart.sessionId)
+    );
+    
+    if (uniqueDesisted.length === 0) {
+        alert('⚠️ Nenhuma compra desistida com telefone disponível.');
+        return;
+    }
+    
+    const confirmed = confirm(`📢 Enviar mensagem de reconquista para ${uniqueDesisted.length} clientes?\n\n⚠️ Isso abrirá ${uniqueDesisted.length} abas do WhatsApp.`);
+    if (!confirmed) return;
+    
+    let sent = 0;
+    uniqueDesisted.forEach((cart, index) => {
+        setTimeout(() => {
+            const products = Array.isArray(cart.products) ? 
+                cart.products.map(p => typeof p === 'object' ? p.name : p).join(', ') : 
+                'Produtos';
+            const total = cart.total ? `R$ ${cart.total.toFixed(2)}` : 'N/A';
+            const customerName = cart.customerName || 'Cliente';
+            
+            sendDesistedMessage(cart.sessionId, products, total, cart.customerPhone, customerName);
+            sent++;
+            
+            if (sent === uniqueDesisted.length) {
+                setTimeout(() => {
+                    showBulkNotification(sent);
+                }, 1000);
+            }
+        }, index * 3000);
+    });
+}
+
+// Enviar recuperação em lote
+function sendBulkRecovery() {
+    const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
+    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+    
+    // Buscar carrinhos abandonados com telefone
+    const abandonedFromActive = Object.entries(activeCarts)
+        .filter(([sessionId, cart]) => cart.state === 'incompleto' && cart.customerPhone)
+        .map(([sessionId, cart]) => ({
+            sessionId,
+            products: cart.items || [],
+            total: cart.total || 0,
+            customerPhone: cart.customerPhone,
+            customerName: cart.customerName || 'Cliente'
+        }));
+    
+    const abandonedFromEvents = events.filter(event => 
+        event.state === 'incompleto' && event.customerPhone
+    );
+    
+    const allAbandoned = [...abandonedFromActive, ...abandonedFromEvents];
+    const uniqueAbandoned = allAbandoned.filter((cart, index, self) => 
+        index === self.findIndex(c => c.sessionId === cart.sessionId)
+    );
+    
+    if (uniqueAbandoned.length === 0) {
+        alert('⚠️ Nenhum carrinho abandonado com telefone disponível.');
+        return;
+    }
+    
+    const confirmed = confirm(`📢 Enviar mensagem de recuperação para ${uniqueAbandoned.length} clientes?\n\n⚠️ Isso abrirá ${uniqueAbandoned.length} abas do WhatsApp.`);
+    if (!confirmed) return;
+    
+    let sent = 0;
+    uniqueAbandoned.forEach((cart, index) => {
+        setTimeout(() => {
+            const products = Array.isArray(cart.products) ? 
+                cart.products.map(p => typeof p === 'object' ? p.name : p).join(', ') : 
+                'Produtos';
+            const total = cart.total ? `R$ ${cart.total.toFixed(2)}` : 'N/A';
+            const customerName = cart.customerName || 'Cliente';
+            
+            sendRecoveryMessage(cart.sessionId, products, total, cart.customerPhone, customerName);
+            sent++;
+            
+            if (sent === uniqueAbandoned.length) {
+                setTimeout(() => {
+                    showBulkNotification(sent);
+                }, 1000);
+            }
+        }, index * 3000); // 3 segundos entre cada envio para não sobrecarregar
+    });
+}
+
+// Mostrar notificação de envio em lote
+function showBulkNotification(count) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(45deg, #25D366, #128c7e);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        z-index: 10000;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        text-align: center;
+        min-width: 300px;
+    `;
+    
+    notification.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 15px;">🎉</div>
+        <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 10px;">
+            Envio Concluído!
+        </div>
+        <div style="font-size: 1rem; opacity: 0.9;">
+            ${count} mensagens de recuperação enviadas via WhatsApp
+        </div>
+        <div style="margin-top: 20px;">
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="background: white; color: #25D366; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                Fechar
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 8000);
 }
 
 // Mostrar notificação de recuperação enviada
-function showRecoveryNotification() {
+function showRecoveryNotification(customerName = 'Cliente') {
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
@@ -449,14 +774,15 @@ function showRecoveryNotification() {
         z-index: 9999;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         animation: slideIn 0.3s ease;
+        max-width: 300px;
     `;
     
     notification.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.2rem;">💬</span>
             <div>
-                <div style="font-weight: bold;">Mensagem de Recuperação Enviada!</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">WhatsApp aberto para envio</div>
+                <div style="font-weight: bold;">Mensagem Enviada!</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">WhatsApp aberto para ${customerName}</div>
             </div>
         </div>
     `;
@@ -473,17 +799,67 @@ function simulateAbandonedCart() {
     const sessionId = 'test_' + Date.now();
     const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
     
+    // Simular dados mais realistas
+    const testCustomers = [
+        { name: 'João Silva', phone: '11999887766' },
+        { name: 'Maria Santos', phone: '11988776655' },
+        { name: 'Pedro Costa', phone: null },
+        { name: 'Ana Oliveira', phone: '11977665544' }
+    ];
+    
+    const testProducts = [
+        [{ name: 'Vinho Tinto Reserva', price: 89.90 }, { name: 'Vinho Branco Seco', price: 65.50 }],
+        [{ name: 'Espumante Brut', price: 120.00 }],
+        [{ name: 'Vinho Rosé', price: 75.90 }, { name: 'Kit Degustação', price: 199.90 }]
+    ];
+    
+    const customer = testCustomers[Math.floor(Math.random() * testCustomers.length)];
+    const products = testProducts[Math.floor(Math.random() * testProducts.length)];
+    const total = products.reduce((sum, p) => sum + p.price, 0);
+    
     activeCarts[sessionId] = {
-        state: 'ativo',
-        created: Date.now() - (3 * 60 * 1000), // 3 minutos atrás
-        lastActivity: Date.now() - (3 * 60 * 1000),
-        items: [{name: 'Produto Teste', price: 50}],
-        total: 50
+        state: 'incompleto',
+        created: Date.now() - (Math.random() * 30 * 60 * 1000), // Até 30 min atrás
+        lastActivity: Date.now() - (Math.random() * 30 * 60 * 1000),
+        items: products,
+        total: total,
+        customerName: customer.name,
+        customerPhone: customer.phone
     };
     
     localStorage.setItem('activeCarts', JSON.stringify(activeCarts));
-    checkAbandonedCarts();
-    console.log('🛒 Carrinho abandonado simulado');
+    
+    // Atualizar analytics
+    const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
+    analytics.incompleto = (analytics.incompleto || 0) + 1;
+    localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
+    
+    // Adicionar evento
+    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+    events.push({
+        state: 'incompleto',
+        timestamp: new Date().toISOString(),
+        sessionId,
+        products: products,
+        total: total,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        timeInactive: Math.round(Math.random() * 30)
+    });
+    localStorage.setItem('cartEvents', JSON.stringify(events));
+    
+    console.log('🛒 Carrinho abandonado simulado:', customer.name);
+    
+    // Atualizar interface
+    setTimeout(() => {
+        loadAnalyticsData();
+        loadActivityLog();
+        if (currentTab === 'abandoned') {
+            loadAbandonedCarts();
+        } else {
+            loadDesistedCarts();
+        }
+    }, 100);
 }
 
 // Resetar analytics
@@ -654,3 +1030,49 @@ window.addEventListener('cartAnalyticsUpdate', function(e) {
     updateCharts();
     loadActivityLog();
 });
+
+function simulateDesistedCart() {
+    const sessionId = 'desisted_' + Date.now() + Math.random();
+    const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
+    
+    const testCustomers = [
+        { name: 'Carlos Mendes', phone: '11955443322' },
+        { name: 'Lucia Ferreira', phone: '11944332211' },
+        { name: 'Roberto Lima', phone: null }
+    ];
+    
+    const testProducts = [
+        [{ name: 'Vinho Cabernet', price: 95.90 }],
+        [{ name: 'Champagne Premium', price: 180.00 }]
+    ];
+    
+    const customer = testCustomers[Math.floor(Math.random() * testCustomers.length)];
+    const products = testProducts[Math.floor(Math.random() * testProducts.length)];
+    const total = products.reduce((sum, p) => sum + p.price, 0);
+    
+    activeCarts[sessionId] = {
+        state: 'desistido',
+        created: Date.now() - (Math.random() * 60 * 60 * 1000),
+        lastActivity: Date.now() - (Math.random() * 60 * 60 * 1000),
+        items: products,
+        total: total,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        orderId: 'PED' + Math.floor(Math.random() * 10000)
+    };
+    
+    localStorage.setItem('activeCarts', JSON.stringify(activeCarts));
+    
+    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
+    events.push({
+        state: 'desistido',
+        timestamp: new Date().toISOString(),
+        sessionId,
+        products: products,
+        total: total,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        orderId: 'PED' + Math.floor(Math.random() * 10000)
+    });
+    localStorage.setItem('cartEvents', JSON.stringify(events));
+}

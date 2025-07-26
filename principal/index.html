@@ -31,7 +31,10 @@
     <link rel="preconnect" href="https://images.unsplash.com">
     
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="pix-payment.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -108,6 +111,43 @@
 R. Oswaldo Barreto, 708 E - Alvinópolis<br>
 Atibaia - SP, 12942-570</p>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <div class="delivery-address-card">
+                        <h2>📍 Endereço de Entrega</h2>
+                        <div class="delivery-address-form" id="delivery-address-form">
+                            <div class="address-field">
+                                <label for="address-cep">CEP <span class="required">✅ Sim</span></label>
+                                <input type="text" id="address-cep" placeholder="Digite o CEP" maxlength="9">
+                                <small>Código postal para localizar o endereço</small>
+                            </div>
+                            <div class="address-field">
+                                <label for="address-street">Rua (Logradouro) <span class="required">✅ Sim</span></label>
+                                <input type="text" id="address-street" placeholder="Nome da rua ou avenida">
+                            </div>
+                            <div class="address-field">
+                                <label for="address-number">Número <span class="required">✅ Sim</span></label>
+                                <input type="text" id="address-number" placeholder="Número da residência">
+                            </div>
+                            <div class="address-field">
+                                <label for="address-complement">Complemento <span class="optional">❌ Opcional</span></label>
+                                <input type="text" id="address-complement" placeholder="Apartamento, bloco, casa dos fundos, etc.">
+                                <small>Informações adicionais para facilitar a entrega</small>
+                            </div>
+                            <div class="address-field">
+                                <label for="address-neighborhood">Bairro <span class="required">✅ Sim</span></label>
+                                <input type="text" id="address-neighborhood" placeholder="Bairro onde o endereço está localizado">
+                            </div>
+                            <div class="address-field">
+                                <label for="address-city">Cidade <span class="required">✅ Sim</span></label>
+                                <input type="text" id="address-city" placeholder="Cidade do destinatário" value="Atibaia">
+                            </div>
+                            <button class="save-address-btn" onclick="saveDeliveryAddress()">Salvar Endereço</button>
+                        </div>
+                        <div id="saved-address" class="saved-address" style="display: none;">
+                            <p id="address-display"></p>
+                            <button class="edit-address-btn" onclick="editDeliveryAddress()">Editar</button>
                         </div>
                     </div>
                     
@@ -252,6 +292,8 @@ Atibaia - SP, 12942-570</p>
                 <input type="text" id="adega-name" placeholder="Nome da Adega">
                 <input type="text" id="whatsapp-number" placeholder="Número WhatsApp (5599999999999)">
                 <textarea id="default-message" placeholder="Mensagem padrão WhatsApp"></textarea>
+                <input type="text" id="payment-link" placeholder="Link de pagamento (Mercado Pago)">
+                <small>Link de pagamento para cobranças via WhatsApp. Use {valor}, {pedido} e {descricao} como variáveis.</small>
                 <button onclick="saveSettings()">Salvar Configurações</button>
             </div>
             
@@ -413,6 +455,10 @@ Atibaia - SP, 12942-570</p>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="pix-generator.js"></script>
+    <script src="pix-estatico.js"></script>
+    <script src="pix-quick.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

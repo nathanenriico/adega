@@ -1,0 +1,156 @@
+/* Estilos para a aba de pagamento PIX */
+.pix-btn-small {
+    background-color: #00b894;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 5px;
+    transition: background-color 0.3s;
+}
+
+.pix-btn-small:hover {
+    background-color: #00a885;
+}
+
+.pix-payment-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+}
+
+.pix-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.pix-box h3 {
+    color: #333;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+}
+
+.pix-box h3 img {
+    height: 24px;
+    margin-right: 8px;
+}
+
+.pix-code {
+    font-size: 14px;
+    word-break: break-word;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 15px 0;
+    font-family: monospace;
+}
+
+.pix-qrcode {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.pix-copy-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #00b894;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.pix-copy-btn:hover {
+    background: #00a885;
+}
+
+.pix-info {
+    margin-top: 15px;
+    padding: 10px;
+    background: #e6fff9;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.pix-info p {
+    margin: 5px 0;
+}
+
+.pix-timer {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.pix-timer-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.pix-timer-progress {
+    height: 100%;
+    background: #4CAF50;
+    width: 100%;
+}
+
+.pix-status {
+    text-align: center;
+    padding: 10px;
+    margin: 15px 0;
+    border-radius: 8px;
+}
+
+.status-waiting {
+    background: #FFF3CD;
+    color: #856404;
+}
+
+.status-confirmed {
+    background: #D4EDDA;
+    color: #155724;
+}
+
+.status-expired {
+    background: #F8D7DA;
+    color: #721C24;
+}
+
+/* Animação de processamento */
+.processing-animation {
+    display: inline-block;
+    position: relative;
+}
+
+.fast-loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

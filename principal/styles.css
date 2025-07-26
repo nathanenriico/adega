@@ -1211,6 +1211,32 @@ body {
     animation: slideIn 0.3s ease;
 }
 
+@keyframes slideOut {
+    from { transform: translateX(0); }
+    to { transform: translateX(100%); }
+}
+
+.processing-animation {
+    display: inline-block;
+    position: relative;
+}
+
+.processing-animation:after {
+    content: '...';
+    position: absolute;
+    width: 24px;
+    text-align: left;
+    right: -28px;
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60% { content: '...'; }
+    80%, 100% { content: ''; }
+}
+
 @keyframes slideIn {
     from { transform: translateX(100%); }
     to { transform: translateX(0); }
@@ -1478,7 +1504,8 @@ body {
 .welcome-card,
 .contact-card,
 .hours-card,
-.reviews-card {
+.reviews-card,
+.delivery-address-card {
     background: rgba(255,255,255,0.05);
     border-radius: 20px;
     padding: 40px;
@@ -1491,7 +1518,8 @@ body {
 .welcome-card h2,
 .contact-card h2,
 .hours-card h2,
-.reviews-card h2 {
+.reviews-card h2,
+.delivery-address-card h2 {
     color: #d4af37;
     font-size: 1.8rem;
     margin-bottom: 25px;
@@ -1937,6 +1965,129 @@ body {
 
 
 
+/* Endereço de Entrega */
+.delivery-address-card {
+    text-align: center;
+}
+
+.delivery-address-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.address-field {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.address-field label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.address-field input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 1rem;
+}
+
+.address-field input::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.address-field small {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.required {
+    color: #25d366;
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+.optional {
+    color: #dc3545;
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+.delivery-address-form textarea {
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.delivery-address-form textarea::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.save-address-btn {
+    background: linear-gradient(45deg, #25d366, #128c7e);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    align-self: center;
+}
+
+.save-address-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+}
+
+.saved-address {
+    background: rgba(37, 211, 102, 0.1);
+    border: 1px solid rgba(37, 211, 102, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.saved-address p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.edit-address-btn {
+    background: #d4af37;
+    color: #1a1a2e;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.edit-address-btn:hover {
+    background: #ffd700;
+    transform: translateY(-2px);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header {
@@ -2089,7 +2240,11 @@ body {
         height: 150px;
     }
     
-
+    .delivery-address-form textarea {
+        width: 100%;
+        height: 100px;
+    }
+    
     
     .container {
         padding: 15px;

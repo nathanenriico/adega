@@ -2,29 +2,40 @@
 let orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
 
 // Carregar pedidos ao inicializar
-document.addEventListener('DOMContentLoaded', function() {
-    // Recarregar dados do localStorage sempre que a página for aberta
-    orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
-    loadOrders();
-    updateStats();
-    
-    // Atualizar a cada 5 segundos para pegar novos pedidos
-    setInterval(() => {
-        const newOrders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
-        if (newOrders.length !== orders.length) {
-            orders = newOrders;
-            loadOrders();
-            updateStats();
-        }
-    }, 5000);
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadOrdersFromDB();
+    setInterval(loadOrdersFromDB, 10000);
 });
+
+async function loadOrdersFromDB() {
+    try {
+        orders = await db.getOrders();
+        loadOrders();
+        updateStats();
+    } catch (error) {
+        console.error('Erro ao carregar pedidos:', error);
+        orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        loadOrders();
+        updateStats();
+    }
+}
+
+// Variáveis de filtro
+let currentFilters = {
+    search: '',
+    date: '',
+    status: ''
+};
 
 // Carregar e renderizar pedidos
 function loadOrders() {
     console.log('Todos os pedidos:', orders);
     
-    const activeOrders = orders.filter(order => order.status !== 'entregue');
-    const deliveredOrders = orders.filter(order => order.status === 'entregue');
+    let activeOrders = orders.filter(order => order.status !== 'entregue');
+    let deliveredOrders = orders.filter(order => order.status === 'entregue');
+    
+    // Aplicar filtros se existirem
+    activeOrders = applyFiltersToOrders(activeOrders);
     
     console.log('Pedidos ativos:', activeOrders.length);
     console.log('Pedidos entregues:', deliveredOrders.length);
@@ -32,6 +43,70 @@ function loadOrders() {
     renderActiveOrders(activeOrders);
     renderDeliveredOrders(deliveredOrders);
     updateActiveCounter(activeOrders.length);
+}
+
+// Aplicar filtros aos pedidos
+function applyFiltersToOrders(ordersList) {
+    let filtered = [...ordersList];
+    
+    console.log('Aplicando filtros a', filtered.length, 'pedidos');
+    
+    // Filtro por busca (cliente, produto, ID)
+    if (currentFilters.search) {
+        const searchTerm = currentFilters.search.toLowerCase();
+        filtered = filtered.filter(order => {
+            const matchCustomer = order.customer && order.customer.toLowerCase().includes(searchTerm);
+            const matchId = order.id.toString().includes(searchTerm);
+            const matchItems = order.items && order.items.some(item => 
+                item.name && item.name.toLowerCase().includes(searchTerm)
+            );
+            return matchCustomer || matchId || matchItems;
+        });
+        console.log('Após filtro busca:', filtered.length, 'pedidos');
+    }
+    
+    // Filtro por data
+    if (currentFilters.date) {
+        const filterDate = currentFilters.date;
+        filtered = filtered.filter(order => {
+            const orderDate = order.date.split('T')[0];
+            console.log('Comparando:', orderDate, '===', filterDate);
+            return orderDate === filterDate;
+        });
+        console.log('Após filtro data:', filtered.length, 'pedidos');
+    }
+    
+    // Filtro por status
+    if (currentFilters.status) {
+        filtered = filtered.filter(order => order.status === currentFilters.status);
+        console.log('Após filtro status:', filtered.length, 'pedidos');
+    }
+    
+    return filtered;
+}
+
+// Aplicar filtros
+function applyFilters() {
+    currentFilters.search = document.getElementById('search-input').value.trim();
+    currentFilters.date = document.getElementById('date-filter').value;
+    currentFilters.status = document.getElementById('status-filter').value;
+    
+    console.log('Filtros aplicados:', currentFilters);
+    
+    // Recarregar dados e aplicar filtros
+    orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    loadOrders();
+    updateStats();
+}
+
+// Limpar filtros
+function clearFilters() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('date-filter').value = '';
+    document.getElementById('status-filter').value = '';
+    
+    currentFilters = { search: '', date: '', status: '' };
+    loadOrders();
 }
 
 // Renderizar pedidos ativos
@@ -62,6 +137,8 @@ function renderActiveOrders(activeOrders) {
                 </div>
                 <div class="order-detail">
                     <strong>Pagamento:</strong> ${order.paymentMethod || 'Não informado'}
+                    ${order.paymentStatus === 'aguardando_comprovante' ? '<span style="color: #ff9800; font-weight: bold;"> (Aguardando Comprovante)</span>' : ''}
+                    ${order.paymentStatus === 'confirmado' ? '<span style="color: #4caf50; font-weight: bold;"> ✅</span>' : ''}
                 </div>
             </div>
             
@@ -188,6 +265,7 @@ function createTestDeliveredOrder() {
 function getStatusText(status) {
     const statusMap = {
         'novo': 'Novo',
+        'aguardando_pagamento': 'Aguardando Pagamento PIX',
         'recebido': 'Pedido Recebido',
         'preparando': 'Preparando',
         'saindo': 'Saindo para Entrega',
@@ -216,6 +294,11 @@ function getActionButtons(order) {
         buttons += `<button class="action-btn btn-entregar" onclick="updateOrderStatus(${order.id}, 'entregue')">Marcar como Entregue</button>`;
     }
     
+    // Botão para confirmar pagamento PIX em todos os pedidos
+    buttons += `<button class="action-btn btn-confirm-pix" onclick="confirmPixPaymentReceived(${order.id})">✅ Confirmar PIX Recebido</button>`;
+    
+    // Adicionar botão de cobrança de pagamento para todos os pedidos
+    buttons += `<button class="action-btn btn-payment" onclick="requestPayment(${order.id})">Cobrar Pagamento</button>`;
     buttons += `<button class="action-btn btn-notes" onclick="editNotes(${order.id})">Notas</button>`;
     
     return buttons;
@@ -357,7 +440,9 @@ function showNotificationSent(orderId, status) {
         'preparando': 'Preparando',
         'saindo': 'Saindo para Entrega', 
         'entregue': 'Entregue',
-        'confirmado': 'Pedido Confirmado'
+        'confirmado': 'Pedido Confirmado',
+        'cobranca': 'Cobrança de Pagamento',
+        'pix_confirmado': 'PIX Confirmado'
     };
     
     notification.innerHTML = `
@@ -365,7 +450,7 @@ function showNotificationSent(orderId, status) {
             <span style="font-size: 1.2rem;">📱</span>
             <div>
                 <div style="font-weight: bold;">WhatsApp Enviado!</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">Pedido #${orderId} - ${statusText[status]}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">Pedido #${orderId} - ${statusText[status] || status}</div>
             </div>
         </div>
     `;
@@ -503,6 +588,147 @@ function updateStats() {
             element.textContent = stats[status];
         }
     });
+}
+
+
+
+// Confirmar recebimento de pagamento PIX
+async function confirmPixPaymentReceived(orderId) {
+    event.stopPropagation();
+    
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const confirmPayment = confirm(`Confirmar que o pagamento PIX do pedido #${orderId} foi recebido?\n\nValor: R$ ${order.total.toFixed(2)}\nCliente: ${order.customer}`);
+    
+    if (confirmPayment) {
+        // Atualizar status do pedido
+        order.status = 'novo';
+        order.payment_status = 'confirmado';
+        order.paymentStatus = 'confirmado';
+        order.pixPaymentConfirmed = new Date().toISOString();
+        order.updatedAt = new Date().toISOString();
+        
+        // Salvar no banco
+        try {
+            await db.updateOrderStatus(orderId, 'novo', 'confirmado');
+        } catch (error) {
+            console.error('Erro ao atualizar no banco:', error);
+        }
+        
+        saveOrders();
+        loadOrders();
+        updateStats();
+        
+        // Enviar notificação automática de confirmação
+        sendPixConfirmationNotification(order);
+        
+        alert(`Pagamento PIX confirmado!\nPedido #${orderId} liberado para preparo.`);
+    }
+}
+
+// Enviar notificação de confirmação PIX
+function sendPixConfirmationNotification(order) {
+    const message = `🍷 *Adega do Tio Pancho*\n\n✅ Pagamento PIX confirmado!\n\nPedido #${order.id} recebido e liberado para preparo.\n\nValor: R$ ${order.total.toFixed(2)}\nStatus: Pedido confirmado\n\nEstamos preparando tudo para você!\n\nTempo estimado: 45-55 minutos\n\nObrigado pela preferência! 🍻`;
+    
+    // Mostrar notificação no painel admin
+    showNotificationSent(order.id, 'pix_confirmado');
+    
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const phone = order.phone || '5511941716617';
+    const encodedMessage = encodeURIComponent(message);
+    
+    // Pequeno delay para não conflitar com a atualização da tela
+    setTimeout(() => {
+        if (isMobile) {
+            window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+        } else {
+            window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+        }
+    }, 1000);
+    
+    // Registrar notificação no pedido
+    if (!order.whatsappNotifications) {
+        order.whatsappNotifications = [];
+    }
+    
+    order.whatsappNotifications.push({
+        status: 'pix_confirmado',
+        message: message,
+        sentAt: new Date().toISOString()
+    });
+    
+    saveOrders();
+}
+
+// Função para cobrar pagamento
+function requestPayment(orderId) {
+    event.stopPropagation();
+    
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Gerar mensagem personalizada com base na forma de pagamento
+    const paymentMethod = order.paymentMethod || 'PIX';
+    const customerName = order.customer || 'Cliente';
+    
+    // Dados PIX simples
+    const pixKey = '11941716617';
+    const pixAmount = order.total.toFixed(2);
+    
+    // Dados de pagamento com base no método
+    let paymentData = '';
+    
+    if (paymentMethod.toLowerCase().includes('pix')) {
+        paymentData = `PIX: ${pixKey} (Adega do Tio Pancho)\nBanco: NuBank\nValor: R$ ${pixAmount}\n\nFaça o PIX com a chave: ${pixKey}\n\nFavor enviar o comprovante por aqui após o pagamento.`;
+    } else if (paymentMethod.toLowerCase().includes('transfer')) {
+        paymentData = `Banco: NuBank\nAgência: 0001\nConta: 12345-6\nCPF: 123.456.789-00\nNome: Adega do Tio Pancho\n\nOu PIX: ${pixKey}\n\nFavor enviar o comprovante.`;
+    } else {
+        paymentData = `Pagamento na entrega via ${paymentMethod}.\n\nSe preferir pagar agora via PIX: ${pixKey}\n\nPor favor, confirme que está de acordo.`;
+    }
+    
+    // Mensagem completa
+    const message = `Olá, ${customerName}! 👋
+
+Recebemos seu pedido #${orderId} com o total de R$${order.total.toFixed(2)}.  
+Forma de pagamento escolhida: ${paymentMethod}
+
+Para prosseguir, aqui estão os dados para pagamento:
+
+${paymentData}
+
+Assim que o pagamento for realizado, favor enviar o comprovante por aqui mesmo.  
+Qualquer dúvida, estamos à disposição. 💬
+
+Obrigado por comprar com a gente!`;
+    
+    // Detectar se é mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const phone = order.phone || '5511941716617';
+    const encodedMessage = encodeURIComponent(message);
+    
+    // Abrir WhatsApp com a mensagem
+    if (isMobile) {
+        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
+    } else {
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+    }
+    
+    // Registrar que a cobrança foi enviada
+    if (!order.paymentRequests) {
+        order.paymentRequests = [];
+    }
+    
+    order.paymentRequests.push({
+        requestedAt: new Date().toISOString(),
+        message: message,
+        pixKey: pixKey,
+        amount: pixAmount
+    });
+    
+    saveOrders();
+    showNotificationSent(order.id, 'cobranca');
 }
 
 
