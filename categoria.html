@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categoria - Adega do Tio Pancho</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/categoria.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header com busca -->
+    <header class="category-header">
+        <button class="back-btn" onclick="history.back()">←</button>
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Buscar em Adega do Tio Pancho" class="search-input">
+        </div>
+    </header>
+
+    <!-- Carrossel de categorias -->
+    <div class="categories-carousel">
+        <div class="category-item active" data-category="all">
+            <div class="category-circle">🍽️</div>
+            <span>Todos</span>
+        </div>
+        <div class="category-item" data-category="cervejas">
+            <div class="category-circle">🍺</div>
+            <span>Cervejas</span>
+        </div>
+        <div class="category-item" data-category="drinks">
+            <div class="category-circle">🍹</div>
+            <span>Drinks</span>
+        </div>
+        <div class="category-item" data-category="vinhos">
+            <div class="category-circle">🍷</div>
+            <span>Vinhos</span>
+        </div>
+        <div class="category-item" data-category="refrigerantes">
+            <div class="category-circle">🥤</div>
+            <span>Refrigerantes</span>
+        </div>
+        <div class="category-item" data-category="aguas">
+            <div class="category-circle">💧</div>
+            <span>Águas</span>
+        </div>
+        <div class="category-item" data-category="chopp">
+            <div class="category-circle">🍻</div>
+            <span>Chopp</span>
+        </div>
+    </div>
+
+    <!-- Seção de produtos -->
+    <div class="products-section">
+        <h2 id="category-title">Produtos</h2>
+        <div class="products-list" id="products-list">
+            <!-- Produtos serão carregados aqui -->
+        </div>
+    </div>
+
+    <!-- Carrinho fixo -->
+    <div class="cart-fixed" id="cart-fixed" style="display: none;">
+        <div class="cart-info">
+            <span id="cart-items">0 itens</span>
+            <span id="cart-total">R$ 0,00</span>
+        </div>
+        <button class="cart-btn" onclick="goToCart()">Ver carrinho</button>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="js/categoria.js"></script>
+</body>
+</html>

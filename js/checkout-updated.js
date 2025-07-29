@@ -106,8 +106,18 @@ function confirmOrder() {
         return;
     }
     
-    // Salvar pedido na gestão (sem esperar)
-    const orderId = saveOrderToManagement(cart, paymentMethod, cpfCnpj);
+    // Gerar ID imediatamente
+    const orderId = Date.now();
+    localStorage.setItem('currentOrderId', orderId.toString());
+    
+    // Calcular total
+    const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const deliveryFee = 8.90;
+    const total = subtotal + deliveryFee;
+    localStorage.setItem('currentOrderTotal', total.toFixed(2));
+    
+    // Salvar pedido na gestão
+    saveOrderToManagement(cart, paymentMethod, cpfCnpj);
     
     // Mostrar confirmação imediatamente
     if (paymentMethod === 'pix') {
@@ -149,10 +159,9 @@ function validateCpfCnpj(value) {
     return false;
 }
 
-async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
-    // Gerar ID do pedido imediatamente
-    const orderId = Date.now();
-    localStorage.setItem('currentOrderId', orderId);
+function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
+    // Usar o ID já gerado na confirmOrder
+    const orderId = parseInt(localStorage.getItem('currentOrderId'));
     
     // Obter dados mínimos necessários
     const addressInfo = document.querySelector('.address-info');
@@ -181,78 +190,126 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         date: new Date().toISOString(),
         status: paymentMethod === 'pix' ? 'aguardando_pagamento' : 'novo',
         payment_status: paymentMethod === 'pix' ? 'aguardando_comprovante' : 'pagamento_na_entrega',
-        payment_method: paymentText,
+        paymentMethod: paymentText,
         total: total,
         address: address,
         items: cart
     };
     
-    // Salvar no banco de dados
-    try {
-        await db.saveOrder(orderData);
-        localStorage.removeItem('adegaCart');
-        localStorage.removeItem('checkoutCart');
-        console.log('Pedido salvo no banco:', orderId);
-    } catch (error) {
-        console.error('Erro ao salvar no banco:', error);
-        // Fallback para localStorage
-        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-        orders.push(orderData);
-        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+    // Salvar no localStorage imediatamente
+    const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    orders.push(orderData);
+    localStorage.setItem('adegaOrders', JSON.stringify(orders));
+    
+    // Tentar salvar no banco em background
+    if (typeof db !== 'undefined' && db.saveOrder) {
+        db.saveOrder(orderData).then(() => {
+            console.log('Pedido salvo no banco:', orderId);
+        }).catch(error => {
+            console.error('Erro ao salvar no banco:', error);
+        });
     }
     
     return orderId;
 }
 
 function showDeliveryPaymentMessage(orderId, paymentMethod) {
-    // Obter texto do método de pagamento diretamente
-    const paymentText = {
-        'money': 'Dinheiro',
-        'credit-card-delivery': 'Cartão de Crédito',
-        'debit-card-delivery': 'Cartão de Débito'
-    }[paymentMethod] || 'na entrega';
+    // Redirecionar diretamente para WhatsApp
+    goToWhatsAppWithOrder(orderId, paymentMethod);
+}
+
+// WhatsApp Bot Functions
+let currentBotPhone = '11999999999'; // Simular número do cliente
+
+function toggleWhatsAppBot() {
+    const botContainer = document.getElementById('whatsapp-bot-container');
+    if (botContainer.style.display === 'none' || !botContainer.style.display) {
+        botContainer.style.display = 'flex';
+        // Fechar outros chats
+        document.getElementById('chatbot-container').classList.remove('active');
+    } else {
+        botContainer.style.display = 'none';
+    }
+}
+
+function handleWhatsAppBotInput(event) {
+    if (event.key === 'Enter') {
+        sendWhatsAppBotMessage();
+    }
+}
+
+function sendWhatsAppBotMessage() {
+    const input = document.getElementById('whatsapp-bot-input');
+    const message = input.value.trim();
     
-    // Criar modal simplificado
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'block';
+    if (!message) return;
     
-    // HTML mínimo para renderização rápida
-    modal.innerHTML = `
-        <div class="modal-content" style="text-align: center;">
-            <h3 style="color: #2196F3;">Pedido Recebido!</h3>
-            <div style="background: #f5f5f5; padding: 0.8rem; border-radius: 8px; margin: 0.8rem 0;">
-                <p><strong>Número:</strong> #${orderId}</p>
-                <p><strong>Pagamento:</strong> ${paymentText} na entrega</p>
-            </div>
-            <div style="display: flex; justify-content: center; gap: 10px;">
-                <button onclick="goToWhatsApp()" style="background: #25D366; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer;">
-                    WhatsApp
-                </button>
-                <button onclick="closeSuccessModal()" style="background: #d4af37; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer;">
-                    Fechar
-                </button>
-            </div>
-        </div>
+    // Adicionar mensagem do usuário
+    addWhatsAppBotMessage(message, 'user');
+    input.value = '';
+    
+    // Processar com o bot
+    setTimeout(() => {
+        const response = whatsappBot.processMessage(currentBotPhone, message);
+        addWhatsAppBotMessage(response.message, 'bot');
+        
+        // Salvar na gestão se necessário
+        if (response.saveToManagement && response.orderData) {
+            if (response.orderData.type !== 'human_transfer') {
+                const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+                orders.push(response.orderData);
+                localStorage.setItem('adegaOrders', JSON.stringify(orders));
+                
+                // Mostrar notificação
+                showBotOrderNotification(response.orderData.id);
+            }
+        }
+    }, 1000);
+}
+
+function addWhatsAppBotMessage(message, sender) {
+    const messagesContainer = document.getElementById('whatsapp-bot-messages');
+    const messageDiv = document.createElement('div');
+    
+    if (sender === 'user') {
+        messageDiv.className = 'user-message-whatsapp';
+    } else {
+        messageDiv.className = 'bot-message whatsapp-style';
+    }
+    
+    messageDiv.innerHTML = message.replace(/\n/g, '<br>');
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showBotOrderNotification(orderId) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #25D366;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        z-index: 9999;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
     `;
     
-    document.body.appendChild(modal);
+    notification.innerHTML = `🤖 Novo pedido via Bot: #${orderId}`;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
 }
 
 // Função para mostrar uma aba de pagamento PIX simples
 function showSimplePixPayment(orderId) {
-    // Calcular total do carrinho
-    const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
-    const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const deliveryFee = 8.90;
-    const total = subtotal + deliveryFee;
-    
-    // Salvar dados do pedido para a página de callback
-    localStorage.setItem('currentOrderId', orderId);
-    localStorage.setItem('currentOrderTotal', total.toFixed(2));
-    
-    // Redirecionar para a página de callback PIX
-    window.location.href = `checkout-callback.html?order_id=${orderId}&status=waiting&total=${total.toFixed(2)}&payment=pix`;
+    // Redirecionar diretamente para WhatsApp
+    goToWhatsAppWithOrder(orderId, 'pix');
 }
 
 // Função removida - confirmação PIX agora é feita apenas na gestão de pedidos
@@ -306,22 +363,44 @@ function showSuccessMessage() {
     localStorage.removeItem('checkoutCart');
 }
 
-function goToWhatsApp() {
-    const orderId = localStorage.getItem('currentOrderId');
-    const message = encodeURIComponent(`🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId}.\n\nGostaria de acompanhar o andamento pelo WhatsApp.\n\nObrigado!`);
+function goToWhatsAppWithOrder(orderId, paymentMethod) {
+    const orderTotal = localStorage.getItem('currentOrderTotal') || '0.00';
+    
+    // Mensagens diferentes por forma de pagamento
+    let message;
+    
+    if (paymentMethod === 'pix') {
+        message = `🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId} no valor de R$ ${orderTotal}.\n\n💳 Realizei o pagamento via PIX e estou enviando o comprovante.\n\nPor favor, confirme o recebimento para liberar meu pedido.\n\nObrigado!`;
+    } else {
+        const paymentText = {
+            'money': 'Dinheiro',
+            'credit-card-delivery': 'Cartão de Crédito',
+            'debit-card-delivery': 'Cartão de Débito'
+        }[paymentMethod] || 'na entrega';
+        
+        message = `🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId} no valor de R$ ${orderTotal}.\n\n💵 Pagamento: ${paymentText} na entrega\n\nPor favor, confirme meu pedido e me informe o tempo de entrega.\n\nObrigado!`;
+    }
+    
+    const encodedMessage = encodeURIComponent(message);
     
     // Detectar se é mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-        // Mobile: Abrir app WhatsApp
-        window.open(`https://wa.me/5511941716617?text=${message}`, '_blank');
+        window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
     } else {
-        // Desktop: Abrir WhatsApp Web
-        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${message}`, '_blank');
+        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
     }
     
-    closeSuccessModal();
+    // Limpar carrinho após finalizar
+    localStorage.removeItem('adegaCart');
+    localStorage.removeItem('checkoutCart');
+}
+
+// Função legacy para compatibilidade
+function goToWhatsApp() {
+    const orderId = localStorage.getItem('currentOrderId');
+    goToWhatsAppWithOrder(orderId, 'pix');
 }
 
 function showMessage(text, type = 'success') {
@@ -414,6 +493,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Página de checkout carregada, carregando dados do carrinho...');
     loadCartData();
     
+    // Carregar endereço salvo
+    loadSavedAddressInCheckout();
+    
     // Atualizar valor do PIX
     updatePixValue();
     
@@ -422,3 +504,19 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('change-amount').style.display = this.checked ? 'block' : 'none';
     });
 });
+
+// Função para carregar endereço salvo no checkout
+function loadSavedAddressInCheckout() {
+    const savedAddress = localStorage.getItem('deliveryAddress');
+    if (savedAddress) {
+        const addressInfo = document.querySelector('.address-info');
+        if (addressInfo) {
+            const lines = savedAddress.split('\n');
+            addressInfo.innerHTML = `
+                <p><strong>${lines[0]}</strong></p>
+                <p>${lines[1]}</p>
+                <p>${lines[2]}</p>
+            `;
+        }
+    }
+}

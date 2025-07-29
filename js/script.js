@@ -16,33 +16,144 @@ let analytics = {
 
 // Produtos padrão
 let products = [
+    // Cervejas
     {
         id: 1,
-        name: 'Combo Cerveja Artesanal',
-        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
-        price: 45.90,
-        category: 'combos'
+        name: 'Heineken Lata 350ml',
+        image: 'https://images.unsplash.com/photo-1571613316887-6f8d5cbf7ef7?w=400',
+        price: 4.50,
+        category: 'cervejas'
     },
     {
         id: 2,
-        name: 'Vinho Tinto Premium',
-        image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400',
-        price: 89.90,
-        category: 'bebidas'
+        name: 'Stella Artois Long Neck',
+        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
+        price: 5.90,
+        category: 'cervejas'
     },
     {
         id: 3,
-        name: 'Kit Whisky + Taças',
-        image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400',
-        price: 159.90,
-        category: 'combos'
+        name: 'Corona Extra 355ml',
+        image: 'https://images.unsplash.com/photo-1571613316887-6f8d5cbf7ef7?w=400',
+        price: 6.50,
+        category: 'cervejas'
     },
     {
         id: 4,
-        name: 'Promoção Cerveja Gelada',
-        image: 'https://images.unsplash.com/photo-1571613316887-6f8d5cbf7ef7?w=400',
-        price: 12.90,
-        category: 'promocoes'
+        name: 'Brahma Duplo Malte',
+        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
+        price: 3.90,
+        category: 'cervejas'
+    },
+    // Drinks
+    {
+        id: 5,
+        name: 'Smirnoff Ice 275ml',
+        image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
+        price: 8.90,
+        category: 'drinks'
+    },
+    {
+        id: 6,
+        name: 'Caipirinha Ypioca',
+        image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
+        price: 12.50,
+        category: 'drinks'
+    },
+    {
+        id: 7,
+        name: 'Batida de Coco Pitú',
+        image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400',
+        price: 15.90,
+        category: 'drinks'
+    },
+    // Vinhos
+    {
+        id: 8,
+        name: 'Vinho Tinto Cabernet',
+        image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400',
+        price: 45.90,
+        category: 'vinhos'
+    },
+    {
+        id: 9,
+        name: 'Vinho Branco Chardonnay',
+        image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400',
+        price: 42.90,
+        category: 'vinhos'
+    },
+    {
+        id: 10,
+        name: 'Espumante Chandon',
+        image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400',
+        price: 89.90,
+        category: 'vinhos'
+    },
+    // Refrigerantes
+    {
+        id: 11,
+        name: 'Coca-Cola 2L',
+        image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400',
+        price: 8.50,
+        category: 'refrigerantes'
+    },
+    {
+        id: 12,
+        name: 'Guaraná Antarctica 2L',
+        image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400',
+        price: 7.90,
+        category: 'refrigerantes'
+    },
+    {
+        id: 13,
+        name: 'Fanta Laranja 2L',
+        image: 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400',
+        price: 7.50,
+        category: 'refrigerantes'
+    },
+    // Águas e Gelo
+    {
+        id: 14,
+        name: 'Água Crystal 1,5L',
+        image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400',
+        price: 3.50,
+        category: 'aguas'
+    },
+    {
+        id: 15,
+        name: 'Água com Gás Perrier',
+        image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=400',
+        price: 8.90,
+        category: 'aguas'
+    },
+    {
+        id: 16,
+        name: 'Gelo 2kg',
+        image: 'https://images.unsplash.com/photo-1564053489984-317bbd824340?w=400',
+        price: 5.00,
+        category: 'aguas'
+    },
+    // Chopp
+    {
+        id: 17,
+        name: 'Chopp Brahma 1L',
+        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
+        price: 18.90,
+        category: 'chopp'
+    },
+    {
+        id: 18,
+        name: 'Chopp Heineken 1L',
+        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
+        price: 22.50,
+        category: 'chopp'
+    },
+    {
+        id: 19,
+        name: 'Chopp Stella Artois 1L',
+        image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
+        price: 24.90,
+        category: 'chopp'
     }
 ];
 
@@ -147,6 +258,29 @@ function renderProducts(productsToRender = products) {
     grid.innerHTML = productsToRender.map(product => {
         const hasMultipleImages = product.images && product.images.length > 1;
         
+        // Layout mobile
+        if (window.innerWidth <= 768) {
+            return `
+            <div class="product-card" data-category="${product.category}">
+                <button class="product-favorite" onclick="toggleFavorite(${product.id})">
+                    <span class="heart">♡</span>
+                </button>
+                <img src="${product.image}" alt="${product.name}" 
+                     onerror="this.src='https://via.placeholder.com/200x100/333/fff?text=Produto'">
+                <h4>${product.name}</h4>
+                <div class="product-rating">
+                    <span class="star">★</span>
+                    <span class="rating-text">${(Math.random() * 2 + 3).toFixed(1)}</span>
+                </div>
+                <div class="price">R$ ${product.price.toFixed(2)}</div>
+                <button class="add-to-cart" onclick="addToCart(${product.id})">
+                    Adicionar
+                </button>
+            </div>
+        `;
+        }
+        
+        // Layout desktop original
         return `
         <div class="product-card" data-category="${product.category}">
             <div class="product-image-container">
@@ -380,29 +514,70 @@ function resetAnalytics() {
 // Renderizar produtos no admin
 function renderAdminProducts() {
     const list = document.getElementById('admin-products-list');
+    const filter = document.getElementById('admin-category-filter');
+    const selectedCategory = filter ? filter.value : 'all';
     
-    if (products.length === 0) {
-        list.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhum produto cadastrado ainda.</p>';
+    const filteredProducts = selectedCategory === 'all' 
+        ? products 
+        : products.filter(product => product.category === selectedCategory);
+    
+    if (filteredProducts.length === 0) {
+        list.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhum produto encontrado nesta categoria.</p>';
         return;
     }
     
-    list.innerHTML = products.map(product => `
-        <div class="product-item">
-            <div class="product-info">
-                <strong>${product.name}</strong><br>
-                <span style="color: #d4af37;">R$ ${product.price.toFixed(2)}</span> - 
-                <span style="text-transform: capitalize;">${product.category}</span>
-            </div>
-            <div class="product-actions">
-                <button class="edit-btn" onclick="editProduct(${product.id})">
-                    Editar
-                </button>
-                <button class="delete-btn" onclick="deleteProduct(${product.id})">
-                    Excluir
-                </button>
-            </div>
-        </div>
-    `).join('');
+    // Agrupar por categoria
+    const groupedProducts = {};
+    filteredProducts.forEach(product => {
+        if (!groupedProducts[product.category]) {
+            groupedProducts[product.category] = [];
+        }
+        groupedProducts[product.category].push(product);
+    });
+    
+    const categoryNames = {
+        'cervejas': 'Cervejas',
+        'drinks': 'Drinks',
+        'vinhos': 'Vinhos',
+        'refrigerantes': 'Refrigerantes',
+        'aguas': 'Águas e Gelo',
+        'chopp': 'Chopp'
+    };
+    
+    let html = '';
+    Object.keys(groupedProducts).forEach(category => {
+        html += `<div class="admin-category-group">
+            <h5 style="color: #d4af37; margin: 20px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                ${categoryNames[category] || category} (${groupedProducts[category].length})
+            </h5>`;
+        
+        groupedProducts[category].forEach(product => {
+            html += `
+            <div class="product-item">
+                <div class="product-info">
+                    <strong>${product.name}</strong><br>
+                    <span style="color: #d4af37;">R$ ${product.price.toFixed(2)}</span>
+                </div>
+                <div class="product-actions">
+                    <button class="edit-btn" onclick="editProduct(${product.id})">
+                        Editar
+                    </button>
+                    <button class="delete-btn" onclick="deleteProduct(${product.id})">
+                        Excluir
+                    </button>
+                </div>
+            </div>`;
+        });
+        
+        html += '</div>';
+    });
+    
+    list.innerHTML = html;
+}
+
+// Filtrar produtos no admin
+function filterAdminProducts() {
+    renderAdminProducts();
 }
 
 // Salvar configurações
@@ -438,7 +613,7 @@ function saveSettings() {
 
 // Atualizar conteúdo do site em tempo real
 function updateSiteContent() {
-    document.querySelector('.logo h1').textContent = `🍷 ${config.adegaName}`;
+    document.querySelector('.logo h1').innerHTML = `<img src="adega-logo.jpg" alt="${config.adegaName}" style="height: 40px; vertical-align: middle; margin-right: 8px;" onerror="this.style.display='none'"> ${config.adegaName}`;
     document.title = `${config.adegaName} - Bebidas Premium e Combos Especiais`;
 }
 
@@ -728,6 +903,9 @@ CEP: ${cep}`;
         const addressData = { cep, street, number, complement, neighborhood, city };
         localStorage.setItem('deliveryAddressData', JSON.stringify(addressData));
         
+        // Atualizar checkout se estiver aberto
+        updateCheckoutAddress(addressText);
+        
         console.log('Endereço salvo no localStorage:', addressText);
     } catch (error) {
         console.error('Erro ao salvar no localStorage:', error);
@@ -746,6 +924,20 @@ CEP: ${cep}`;
     
     // Notificar o usuário
     alert('Endereço de entrega salvo com sucesso!');
+}
+
+// Função para atualizar endereço no checkout
+function updateCheckoutAddress(addressText) {
+    // Verificar se estamos na página de checkout
+    const checkoutAddressInfo = document.querySelector('.address-info');
+    if (checkoutAddressInfo) {
+        const lines = addressText.split('\n');
+        checkoutAddressInfo.innerHTML = `
+            <p><strong>${lines[0]}</strong></p>
+            <p>${lines[1]}</p>
+            <p>${lines[2]}</p>
+        `;
+    }
 }
 
 function editDeliveryAddress() {
@@ -1129,6 +1321,40 @@ function goToCheckout() {
     window.location.href = 'checkout.html';
 }
 
+// Função para redirecionar para WhatsApp com bot
+function redirectToWhatsAppBot(orderData) {
+    const botTrigger = `🤖 NOVO_PEDIDO_BOT`;
+    
+    const orderDetails = `
+📋 *Dados do Pedido:*
+• ID: #${orderData.id}
+• Cliente: ${orderData.customer}
+• Total: R$ ${orderData.total.toFixed(2)}
+• Pagamento: ${orderData.paymentMethod}
+• Data: ${new Date().toLocaleString('pt-BR')}
+
+🛒 *Itens:*
+${orderData.items.map(item => `• ${item.name} x${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+
+📍 *Endereço:*
+${orderData.address || 'Endereço não informado'}
+
+⚡ *Status:* Aguardando confirmação`;
+
+    const fullMessage = `${botTrigger}${orderDetails}`;
+    
+    localStorage.setItem(`bot_order_${orderData.id}`, JSON.stringify(orderData));
+    
+    const encodedMessage = encodeURIComponent(fullMessage);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
+    } else {
+        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
+    }
+}
+
 function sendCartToWhatsApp() {
     if (cart.length === 0) {
         alert('Carrinho vazio!');
@@ -1350,12 +1576,12 @@ function saveOrderToSystem(cartItems, total, paymentMethod) {
 
 // Abrir gestão de pedidos
 function openOrdersManagement() {
-    window.open('../pedidos/gestao.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    window.open('gestao.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
 }
 
 // Abrir analytics do carrinho
 function openCartAnalytics() {
-    window.open('../analytics/analytics.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+    window.open('analytics.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
 }
 
 // Funções do carrossel de produtos

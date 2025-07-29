@@ -30,11 +30,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://images.unsplash.com">
     
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="pix-payment.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/pix-payment.css">
+    <link rel="stylesheet" href="css/mobile-app.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
+    <script src="js/config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -43,7 +44,7 @@
         <!-- Header -->
         <header class="header">
             <div class="logo">
-                <h1>🍷 Adega do Tio Pancho</h1>
+                <h1><img src="/imagens/logo/adega-logo.jpg" alt="Adega do Tio Pancho" style="height: 40px; vertical-align: middle; margin-right: 8px;"> Adega do Tio Pancho</h1>
             </div>
             <p class="slogan">Seu rolê começa aqui 🍻</p>
         </header>
@@ -56,6 +57,15 @@
                     <span></span>
                     <span></span>
                 </button>
+                
+                <!-- Perfil do Cliente -->
+                <div id="customer-profile" class="customer-profile" style="display: none;">
+                    <div class="profile-icon">👤</div>
+                    <span id="profile-name">Nathan</span>
+                </div>
+                
+                <!-- Endereço Mobile -->
+                <div class="mobile-address" onclick="changeAddress()"></div>
                 
                 <div class="nav-items">
                     <div class="nav-item" onclick="goToHome()">
@@ -80,11 +90,13 @@
                     </div>
                 </div>
                 
-                <div class="cart-widget" onclick="toggleCart()">
-                    <div class="cart-icon">🛍️</div>
-                    <div class="cart-info">
-                        <span class="cart-count" id="cart-count-widget">0</span>
-                        <span class="cart-total" id="cart-total-widget">R$ 0,00</span>
+                <div class="nav-right">
+                    <div class="cart-widget" onclick="toggleCart()">
+                        <div class="cart-icon">🛍️</div>
+                        <div class="cart-info">
+                            <span class="cart-count" id="cart-count-widget">0</span>
+                            <span class="cart-total" id="cart-total-widget">R$ 0,00</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -101,6 +113,66 @@
 
         <main class="main-content">
             <div id="home" class="section active">
+                <!-- Seção de Cadastro Clube Fidelidade -->
+                <div id="loyalty-signup" class="loyalty-section">
+                    <div class="loyalty-card">
+                        <h2>🌟 Bem-vindo à Adega do Tio Pancho!</h2>
+                        <p>Já é cliente do nosso clube de fidelidade? Cadastre-se abaixo com seu nome e número de WhatsApp para acompanhar seus pedidos, acumular pontos e garantir cupons exclusivos!</p>
+                        
+                        <div class="benefits">
+                            <div class="benefit">✅ Compre e acumule benefícios</div>
+                            <div class="benefit">📲 Receba atualizações direto no WhatsApp</div>
+                            <div class="benefit">🎁 Ganhe promoções exclusivas a cada compra</div>
+                        </div>
+                        
+                        <div class="signup-form">
+                            <h3>📋 Criar Conta</h3>
+                            <input type="text" id="loyalty-name" placeholder="Nome completo" required>
+                            <input type="tel" id="loyalty-phone" placeholder="Número do WhatsApp" required>
+                            <button onclick="createLoyaltyAccount()" class="create-account-btn">Criar Conta e Continuar</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Painel do Cliente -->
+                <div id="customer-panel" class="customer-panel" style="display: none;">
+                    <div class="panel-header">
+                        <h2>Olá, <span id="customer-name-display"></span>! 👋</h2>
+                        <button onclick="logoutCustomer()" class="logout-btn">Sair</button>
+                    </div>
+                    
+                    <div class="customer-stats">
+                        <div class="stat-card">
+                            <h3>Pontos Acumulados</h3>
+                            <span id="customer-points">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Pedidos Realizados</h3>
+                            <span id="customer-orders">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Cupons Disponíveis</h3>
+                            <span id="customer-coupons">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="customer-actions">
+                        <button onclick="makeNewOrder()" class="new-order-btn">📦 Fazer Novo Pedido</button>
+                        <button onclick="showOrderHistory()" class="history-btn">📋 Histórico de Compras</button>
+                        <button onclick="showCoupons()" class="coupons-btn">🎁 Meus Cupons</button>
+                    </div>
+                    
+                    <div id="order-history" class="order-history" style="display: none;">
+                        <h3>Histórico de Compras</h3>
+                        <div id="history-list"></div>
+                    </div>
+                    
+                    <div id="coupons-list" class="coupons-list" style="display: none;">
+                        <h3>Cupons Disponíveis</h3>
+                        <div id="available-coupons"></div>
+                    </div>
+                </div>
+                
                 <div class="home-section">
                     <div class="welcome-card">
                         <h2>📍 Endereço</h2>
@@ -199,18 +271,40 @@ Atibaia - SP, 12942-570</p>
             </div>
 
             <div id="products" class="section">
+                <!-- Barra de Pesquisa Mobile -->
+                <div class="mobile-search-bar">
+                    <div class="search-container">
+                        <div class="search-icon">🔍</div>
+                        <input type="text" id="mobile-product-search" placeholder="Buscar produtos..." oninput="searchProducts()">
+                    </div>
+                </div>
+                
                 <div class="products-section">
                     <h3>Nossos Produtos</h3>
                     <div class="filters">
-                        <button class="filter-btn active" onclick="filterProducts('all')">Todos</button>
-                        <button class="filter-btn" onclick="filterProducts('bebidas')">Bebidas</button>
-                        <button class="filter-btn" onclick="filterProducts('combos')">Combos</button>
-                        <button class="filter-btn" onclick="filterProducts('promocoes')">Promoções</button>
+                        <button class="filter-btn active" onclick="openCategoryPage('all')">Todos</button>
+                        <button class="filter-btn" onclick="openCategoryPage('cervejas')">Cervejas</button>
+                        <button class="filter-btn" onclick="openCategoryPage('drinks')">Drinks</button>
+                        <button class="filter-btn" onclick="openCategoryPage('vinhos')">Vinhos</button>
+                        <button class="filter-btn" onclick="openCategoryPage('refrigerantes')">Refrigerantes</button>
+                        <button class="filter-btn" onclick="openCategoryPage('aguas')">Águas e Gelo</button>
+                        <button class="filter-btn" onclick="openCategoryPage('chopp')">Chopp</button>
                     </div>
 
                     <div class="products-grid" id="products-grid">
                         <!-- Produtos serão carregados aqui -->
                     </div>
+                </div>
+            </div>
+            
+            <!-- Modal de Categoria Mobile -->
+            <div id="mobile-category-modal" class="mobile-category-modal">
+                <div class="mobile-category-header">
+                    <button class="mobile-back-btn" onclick="closeMobileCategoryModal()">←</button>
+                    <h3 id="mobile-category-title">Categoria</h3>
+                </div>
+                <div class="mobile-category-content" id="mobile-category-content">
+                    <!-- Produtos da categoria -->
                 </div>
             </div>
 
@@ -251,6 +345,33 @@ Atibaia - SP, 12942-570</p>
 
         <div class="admin-access">
             <button onclick="showAdminLogin()">Admin</button>
+        </div>
+    </div>
+
+    <!-- Modal Clube de Fidelidade -->
+    <div id="loyalty-modal" class="modal" style="display: block;">
+        <div class="modal-content loyalty-modal-content">
+            <span class="close" onclick="closeLoyaltyModal()">&times;</span>
+            <div class="loyalty-modal-header">
+                <h2>🌟 Bem-vindo à Adega do Tio Pancho!</h2>
+                <p>Já é cliente do nosso clube de fidelidade? Cadastre-se abaixo com seu nome e número de WhatsApp para acompanhar seus pedidos, acumular pontos e garantir cupons exclusivos!</p>
+            </div>
+            
+            <div class="loyalty-benefits">
+                <div class="benefit-item">✅ Compre e acumule benefícios</div>
+                <div class="benefit-item">📲 Receba atualizações direto no WhatsApp</div>
+                <div class="benefit-item">🎁 Ganhe promoções exclusivas a cada compra</div>
+            </div>
+            
+            <div class="loyalty-form">
+                <h3>📋 Criar Conta</h3>
+                <input type="text" id="modal-loyalty-name" placeholder="Nome completo" required>
+                <input type="tel" id="modal-loyalty-phone" placeholder="Número do WhatsApp" required>
+                <div class="modal-buttons">
+                    <button onclick="createModalLoyaltyAccount()" class="create-account-modal-btn">Criar Conta e Continuar</button>
+                    <button onclick="skipLoyalty()" class="skip-btn">Pular por Agora</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -354,11 +475,27 @@ Atibaia - SP, 12942-570</p>
                     </div>
                     <input type="number" id="product-price" placeholder="Preço" step="0.01">
                     <select id="product-category">
-                        <option value="bebidas">Bebidas</option>
-                        <option value="combos">Combos</option>
-                        <option value="promocoes">Promoções</option>
+                        <option value="cervejas">Cervejas</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="vinhos">Vinhos</option>
+                        <option value="refrigerantes">Refrigerantes</option>
+                        <option value="aguas">Águas e Gelo</option>
+                        <option value="chopp">Chopp</option>
                     </select>
                     <button onclick="addProduct()">Adicionar Produto</button>
+                </div>
+                
+                <div class="admin-products-filter">
+                    <h5>Filtrar por Categoria:</h5>
+                    <select id="admin-category-filter" onchange="filterAdminProducts()">
+                        <option value="all">Todas as Categorias</option>
+                        <option value="cervejas">Cervejas</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="vinhos">Vinhos</option>
+                        <option value="refrigerantes">Refrigerantes</option>
+                        <option value="aguas">Águas e Gelo</option>
+                        <option value="chopp">Chopp</option>
+                    </select>
                 </div>
                 
                 <div id="admin-products-list"></div>
@@ -406,9 +543,13 @@ Atibaia - SP, 12942-570</p>
                 <div class="menu-icon">💬</div>
                 <div class="menu-text">WhatsApp</div>
             </div>
+            <div class="menu-item" onclick="toggleWhatsAppBot()">
+                <div class="menu-icon">📱</div>
+                <div class="menu-text">WhatsApp Bot</div>
+            </div>
             <div class="menu-item" onclick="toggleChatBot()">
                 <div class="menu-icon">🤖</div>
-                <div class="menu-text">Chat Bot 24h</div>
+                <div class="menu-text">Chat Bot IA</div>
             </div>
         </div>
     </div>
@@ -435,7 +576,37 @@ Atibaia - SP, 12942-570</p>
     </div>
     <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
 
-    <!-- Chat Bot -->
+    <!-- WhatsApp Bot Simulator -->
+    <div id="whatsapp-bot-container" class="whatsapp-bot-container">
+        <div class="whatsapp-bot-header">
+            <span>📱 WhatsApp Bot - Adega do Tio Pancho</span>
+            <button onclick="toggleWhatsAppBot()">&times;</button>
+        </div>
+        <div class="whatsapp-bot-messages" id="whatsapp-bot-messages">
+            <div class="bot-message whatsapp-style">
+                🍷 Olá! Bem-vindo à Adega do Tio Pancho!
+                <br><br>
+                Sou seu assistente virtual especializado em pedidos. Como posso ajudar?
+                <br><br>
+                <strong>Menu Principal:</strong><br>
+                1️⃣ Ver produtos disponíveis<br>
+                2️⃣ Fazer pedido<br>
+                3️⃣ Acompanhar pedido existente<br>
+                4️⃣ Falar com atendente humano
+                <br><br>
+                Digite o número da opção desejada.
+            </div>
+        </div>
+        <div class="whatsapp-bot-input">
+            <input type="text" id="whatsapp-bot-input" placeholder="Digite sua mensagem..." onkeypress="handleWhatsAppBotInput(event)">
+            <button onclick="sendWhatsAppBotMessage()" id="whatsapp-send-btn">➤</button>
+        </div>
+        <div class="whatsapp-bot-footer">
+            <small>Simulador WhatsApp Bot - Teste o atendimento</small>
+        </div>
+    </div>
+    
+    <!-- Chat Bot Original -->
     <div id="chatbot-container" class="chatbot-container">
         <div class="chatbot-header">
             <span>🤖 Assistente IA</span>
@@ -456,9 +627,130 @@ Atibaia - SP, 12942-570</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="pix-generator.js"></script>
-    <script src="pix-estatico.js"></script>
-    <script src="pix-quick.js"></script>
-    <script src="script.js"></script>
+    <script src="js/pix-generator.js"></script>
+    <script src="js/pix-estatico.js"></script>
+    <script src="js/pix-quick.js"></script>
+    <script src="js/whatsapp-bot.js"></script>
+    <script src="js/loyalty.js"></script>
+    <script src="js/script.js"></script>
+    <!-- Menu Inferior Mobile -->
+    <nav class="mobile-bottom-nav">
+        <div class="mobile-nav-item" onclick="showSection('home')">
+            <div class="mobile-nav-icon">🏠</div>
+            <span>Início</span>
+        </div>
+        <div class="mobile-nav-item" onclick="showSection('products')">
+            <div class="mobile-nav-icon">🍷</div>
+            <span>Produtos</span>
+        </div>
+        <div class="mobile-nav-item" onclick="filterProducts('cervejas'); showSection('products')">
+            <div class="mobile-nav-icon">🍺</div>
+            <span>Cervejas</span>
+        </div>
+        <div class="mobile-nav-item" onclick="showSection('contact')">
+            <div class="mobile-nav-icon">📞</div>
+            <span>Contato</span>
+        </div>
+        <div class="mobile-nav-item" onclick="showSection('about')">
+            <div class="mobile-nav-icon">ℹ️</div>
+            <span>Sobre</span>
+        </div>
+    </nav>
+
+    <script>
+    function changeAddress() {
+        if (window.innerWidth > 768) return;
+        showSection('home');
+    }
+    
+    // Limpar produtos antigos do localStorage para carregar os novos
+    if (localStorage.getItem('adegaProducts')) {
+        const savedProducts = JSON.parse(localStorage.getItem('adegaProducts'));
+        if (savedProducts.length < 19) {
+            localStorage.removeItem('adegaProducts');
+            console.log('Produtos antigos removidos, carregando novos produtos...');
+        }
+    }
+    
+    // Forçar nome correto
+    const savedConfig = localStorage.getItem('adegaConfig');
+    if (savedConfig) {
+        const configData = JSON.parse(savedConfig);
+        if (configData.adegaName.includes('Punch')) {
+            configData.adegaName = 'Adega do Tio Pancho';
+            localStorage.setItem('adegaConfig', JSON.stringify(configData));
+            location.reload();
+        }
+    }
+    
+    // Funções do modal de categoria mobile
+    function openMobileCategoryModal(category) {
+        if (window.innerWidth > 768) {
+            filterProducts(category);
+            return;
+        }
+        
+        const modal = document.getElementById('mobile-category-modal');
+        const title = document.getElementById('mobile-category-title');
+        const content = document.getElementById('mobile-category-content');
+        
+        const categoryNames = {
+            'all': 'Todos os Produtos',
+            'cervejas': 'Cervejas',
+            'drinks': 'Drinks',
+            'vinhos': 'Vinhos',
+            'refrigerantes': 'Refrigerantes',
+            'aguas': 'Águas e Gelo',
+            'chopp': 'Chopp'
+        };
+        
+        title.textContent = categoryNames[category] || 'Produtos';
+        
+        const categoryProducts = category === 'all' 
+            ? products 
+            : products.filter(p => p.category === category);
+        
+        content.innerHTML = categoryProducts.map(product => `
+            <div class="mobile-category-product">
+                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/150x100/333/fff?text=Produto'">
+                <h4>${product.name}</h4>
+                <div class="price">R$ ${product.price.toFixed(2)}</div>
+                <button class="add-btn" onclick="addToCart(${product.id}); closeMobileCategoryModal();">Adicionar</button>
+            </div>
+        `).join('');
+        
+        modal.classList.add('active');
+    }
+    
+    function closeMobileCategoryModal() {
+        const modal = document.getElementById('mobile-category-modal');
+        modal.classList.remove('active');
+    }
+    
+    function openCategoryPage(category) {
+        filterProducts(category);
+    }
+    
+    function toggleFavorite(productId) {
+        const favoriteBtn = event.target.closest('.product-favorite');
+        const heart = favoriteBtn.querySelector('.heart');
+        
+        favoriteBtn.classList.toggle('active');
+        
+        if (favoriteBtn.classList.contains('active')) {
+            heart.textContent = '♥';
+        } else {
+            heart.textContent = '♡';
+        }
+    }
+    
+    function searchProducts() {
+        const searchTerm = document.getElementById('mobile-product-search').value.toLowerCase();
+        const filteredProducts = products.filter(product => 
+            product.name.toLowerCase().includes(searchTerm)
+        );
+        renderProducts(filteredProducts);
+    }
+    </script>
 </body>
 </html>

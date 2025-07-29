@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Pedidos - Adega do Tio Pancho</title>
-    <link rel="stylesheet" href="../principal/styles.css">
-    <link rel="stylesheet" href="pedidos.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/pedidos.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
 </head>
 <body>
     <div class="orders-container">
@@ -21,17 +23,24 @@
             <select id="status-filter">
                 <option value="">Todos os Status</option>
                 <option value="novo">Novo</option>
+                <option value="aguardando_pagamento">Aguardando Pagamento PIX</option>
+                <option value="recebido">Pedido Recebido</option>
                 <option value="preparando">Preparando</option>
                 <option value="saindo">Saindo para Entrega</option>
-                <option value="entregue">Entregue</option>
             </select>
-            <button onclick="filterOrders()">Filtrar</button>
+            <button onclick="applyFilters()">Filtrar</button>
+            <button onclick="clearFilters()">Limpar</button>
+            <button onclick="showDeliveredPage()" class="delivered-btn">Pedidos Entregues</button>
         </div>
 
         <div class="orders-stats">
             <div class="stat-card">
                 <h3>Novos</h3>
                 <span id="stat-novo">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>Recebidos</h3>
+                <span id="stat-recebido">0</span>
             </div>
             <div class="stat-card">
                 <h3>Preparando</h3>
@@ -47,8 +56,25 @@
             </div>
         </div>
 
-        <div class="orders-list" id="orders-list">
-            <!-- Pedidos serão carregados aqui -->
+        <!-- Página Principal - Pedidos Ativos -->
+        <div id="main-page" class="page active">
+            <div class="page-header">
+                <h2>Pedidos Ativos <span class="counter" id="active-counter">0</span></h2>
+            </div>
+            <div class="orders-list" id="orders-list">
+                <!-- Pedidos ativos serão carregados aqui -->
+            </div>
+        </div>
+        
+        <!-- Página de Pedidos Entregues -->
+        <div id="delivered-page" class="page">
+            <div class="page-header">
+                <button onclick="showMainPage()" class="back-btn">← Voltar</button>
+                <h2>Pedidos Entregues</h2>
+            </div>
+            <div class="orders-list" id="delivered-list">
+                <!-- Pedidos entregues serão carregados aqui -->
+            </div>
         </div>
 
         <!-- Modal de Detalhes -->
@@ -60,6 +86,6 @@
         </div>
     </div>
 
-    <script src="pedidos.js"></script>
+    <script src="js/pedidos.js"></script>
 </body>
 </html>
