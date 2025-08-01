@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Adega do Tio Pancho</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+</head>
+<body>
+    <!-- Modal de Login -->
+    <div id="login-modal" class="modal" style="display: block;">
+        <div class="modal-content">
+            <div class="login-header">
+                <h3>🔐 Acesso Administrativo</h3>
+                <p>Adega do Tio Pancho</p>
+            </div>
+            <input type="password" id="admin-password" placeholder="Digite a senha">
+            <button onclick="adminLogin()" class="login-btn">Entrar</button>
+        </div>
+    </div>
+
+    <div class="admin-container" id="admin-container" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1><img src="/imagens/logo/adega-logo.jpg" alt="Adega do Tio Pancho" style="height: 40px; vertical-align: middle; margin-right: 8px;"> Admin - Adega do Tio Pancho</h1>
+            </div>
+            <p class="slogan">Gerenciamento de Estoque 📦</p>
+        </header>
+
+        <!-- Menu Horizontal Fixo -->
+        <nav class="top-nav">
+            <div class="nav-container">
+                <button class="menu-toggle-top" onclick="toggleMenu()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <div class="nav-items">
+                    <div class="nav-item" onclick="window.location.href='index.html'">
+                        <div class="nav-icon">🏠</div>
+                        <span>Início</span>
+                    </div>
+                    <div class="nav-item active">
+                        <div class="nav-icon">📦</div>
+                        <span>Estoque</span>
+                    </div>
+                    <div class="nav-item" onclick="window.open('gestao.html', '_blank')">
+                        <div class="nav-icon">📋</div>
+                        <span>Pedidos</span>
+                    </div>
+                    <div class="nav-item" onclick="window.open('analytics.html', '_blank')">
+                        <div class="nav-icon">📈</div>
+                        <span>Analytics</span>
+                    </div>
+                </div>
+                
+                <div class="nav-right">
+                    <button onclick="logout()" class="logout-btn">Sair</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="admin-content">
+            <div class="add-product-section">
+                <h3>➕ Novo Produto</h3>
+                <div class="product-form">
+                    <input type="text" id="product-name" placeholder="Nome do produto">
+                    <input type="number" id="product-price" placeholder="Preço" step="0.01">
+                    <select id="product-category">
+                        <option value="cervejas">Cervejas</option>
+                        <option value="drinks">Drinks</option>
+                        <option value="vinhos">Vinhos</option>
+                        <option value="refrigerantes">Refrigerantes</option>
+                        <option value="aguas">Águas e Gelo</option>
+                        <option value="chopp">Chopp</option>
+                    </select>
+                    <div class="form-buttons">
+                        <input type="file" id="product-image-file" accept="image/*" hidden>
+                        <button onclick="document.getElementById('product-image-file').click()" class="btn-image">📷 Imagem</button>
+                        <button onclick="addProduct()" class="btn-add">Novo +</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-preview-section">
+                <h3>📋 Visualização do Produto</h3>
+                <div id="product-preview" class="product-preview">
+                    <div class="preview-placeholder">
+                        <p>Preencha os campos acima para visualizar o produto</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="products-table-section">
+                <div class="table-header">
+                    <h3>📦 Produtos</h3>
+                    <div class="search-filter">
+                        <input type="text" id="search-products" placeholder="Pesquisar..." onkeyup="searchProducts()">
+                        <select id="filter-category" onchange="filterProducts()">
+                            <option value="all">Todas</option>
+                            <option value="cervejas">Cervejas</option>
+                            <option value="drinks">Drinks</option>
+                            <option value="vinhos">Vinhos</option>
+                            <option value="refrigerantes">Refrigerantes</option>
+                            <option value="aguas">Águas e Gelo</option>
+                            <option value="chopp">Chopp</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="products-table">
+                    <div class="table-head">
+                        <div>Código</div>
+                        <div>Produto</div>
+                        <div>Categoria</div>
+                        <div>Preço</div>
+                        <div>Ações</div>
+                    </div>
+                    <div id="products-list" class="table-body">
+                        <!-- Produtos serão carregados aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script src="js/admin.js"></script>
+
+</body>
+</html>

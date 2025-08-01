@@ -8,14 +8,11 @@ function loadCartData() {
     const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
     const orderItemsContainer = document.getElementById('order-items');
     
-    console.log('Checkout - Carrinho carregado:', cart);
-    
     if (cart.length === 0) {
         orderItemsContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhum item no carrinho</p>';
         return;
     }
     
-    // Renderizar itens do carrinho
     orderItemsContainer.innerHTML = cart.map(item => `
         <div class="item">
             <div class="item-details">
@@ -26,15 +23,135 @@ function loadCartData() {
         </div>
     `).join('');
     
-    // Calcular totais
+    calculateTotals();
+    loadAvailableCoupons();
+}
+
+// Calcular totais com cupom
+function calculateTotals() {
+    const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
     const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     const deliveryFee = 8.90;
-    const total = subtotal + deliveryFee;
     
-    // Atualizar valores na tela
+    const appliedCoupon = JSON.parse(localStorage.getItem('appliedCoupon') || 'null');
+    let discount = 0;
+    let finalDeliveryFee = deliveryFee;
+    
+    if (appliedCoupon) {
+        if (appliedCoupon.discount.includes('%')) {
+            const percentage = parseInt(appliedCoupon.discount);
+            discount = subtotal * (percentage / 100);
+        } else if (appliedCoupon.discount === 'Frete Grátis') {
+            finalDeliveryFee = 0;
+        }
+    }
+    
+    const total = subtotal - discount + finalDeliveryFee;
+    
     document.getElementById('subtotal').textContent = `R$ ${subtotal.toFixed(2)}`;
+    
+    const discountElement = document.getElementById('discount');
+    if (discount > 0) {
+        discountElement.style.display = 'block';
+        discountElement.textContent = `- R$ ${discount.toFixed(2)}`;
+    } else {
+        discountElement.style.display = 'none';
+    }
+    
+    const deliveryElement = document.getElementById('delivery-fee');
+    if (finalDeliveryFee === 0) {
+        deliveryElement.innerHTML = '<span style="text-decoration: line-through;">R$ 8,90</span> <span style="color: #25D366;">GRÁTIS</span>';
+    } else {
+        deliveryElement.textContent = `R$ ${finalDeliveryFee.toFixed(2)}`;
+    }
+    
     document.getElementById('total').innerHTML = `<strong>R$ ${total.toFixed(2)}</strong>`;
     updateConfirmButton(total);
+}
+
+// Carregar cupons disponíveis
+async function loadAvailableCoupons() {
+    const customerId = localStorage.getItem('loyaltyCustomerId');
+    const couponSelect = document.getElementById('coupon-select');
+    
+    if (!customerId) {
+        couponSelect.innerHTML = '<option value="">Faça login para usar cupons</option>';
+        return;
+    }
+    
+    // Verificar se Supabase está disponível
+    if (typeof supabase === 'undefined') {
+        console.error('Supabase não está carregado');
+        couponSelect.innerHTML = '<option value="">Erro: Sistema indisponível</option>';
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('cupons')
+            .select('*')
+            .eq('cliente_id', customerId)
+            .eq('usado', false);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            couponSelect.innerHTML = '<option value="">Nenhum cupom disponível</option>';
+            return;
+        }
+        
+        couponSelect.innerHTML = '<option value="">Selecionar cupom</option>' + 
+            data.map(coupon => 
+                `<option value="${coupon.id}">${coupon.titulo} - ${coupon.desconto}</option>`
+            ).join('');
+    } catch (error) {
+        console.error('Erro ao carregar cupons:', error);
+        couponSelect.innerHTML = '<option value="">Erro ao carregar cupons</option>';
+    }
+}
+
+// Aplicar cupom
+async function applyCoupon() {
+    const couponSelect = document.getElementById('coupon-select');
+    const couponId = couponSelect.value;
+    
+    if (!couponId) {
+        localStorage.removeItem('appliedCoupon');
+        calculateTotals();
+        return;
+    }
+    
+    // Verificar se Supabase está disponível
+    if (typeof supabase === 'undefined') {
+        console.error('Supabase não está carregado');
+        alert('Erro: Sistema de cupons indisponível');
+        return;
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('cupons')
+            .select('*')
+            .eq('id', couponId)
+            .eq('usado', false)
+            .single();
+        
+        if (error) throw error;
+        
+        const coupon = {
+            id: data.id,
+            title: data.titulo,
+            description: data.descricao,
+            discount: data.desconto
+        };
+        
+        localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
+        calculateTotals();
+        alert(`Cupom ${coupon.title} aplicado com sucesso!`);
+    } catch (error) {
+        console.error('Erro ao aplicar cupom:', error);
+        alert('Erro ao aplicar cupom.');
+    }
 }
 
 // Funções principais
@@ -88,7 +205,7 @@ function saveCard() {
     }
 }
 
-function confirmOrder() {
+async function confirmOrder() {
     // Verificar carrinho instantaneamente
     const cart = JSON.parse(localStorage.getItem('checkoutCart') || '[]');
     if (cart.length === 0) {
@@ -97,7 +214,11 @@ function confirmOrder() {
     }
     
     // Obter dados do formulário diretamente
-    const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+    const paymentMethodElement = document.querySelector('input[name="payment"]:checked');
+    const paymentMethod = paymentMethodElement ? paymentMethodElement.value : 'pix';
+    
+    console.log('Elemento de pagamento encontrado:', paymentMethodElement);
+    console.log('Valor do método de pagamento:', paymentMethod);
     const cpfCnpj = document.getElementById('cpf-cnpj')?.value || '';
     
     // Validar CPF/CNPJ se fornecido
@@ -117,7 +238,7 @@ function confirmOrder() {
     localStorage.setItem('currentOrderTotal', total.toFixed(2));
     
     // Salvar pedido na gestão
-    saveOrderToManagement(cart, paymentMethod, cpfCnpj);
+    await saveOrderToManagement(cart, paymentMethod, cpfCnpj);
     
     // Mostrar confirmação imediatamente
     if (paymentMethod === 'pix') {
@@ -159,13 +280,20 @@ function validateCpfCnpj(value) {
     return false;
 }
 
-function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
+async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
     // Usar o ID já gerado na confirmOrder
     const orderId = parseInt(localStorage.getItem('currentOrderId'));
     
     // Obter dados mínimos necessários
     const addressInfo = document.querySelector('.address-info');
-    const address = addressInfo ? addressInfo.textContent.trim() : 'Endereço não informado';
+    let address = 'Endereço não informado';
+    
+    if (addressInfo) {
+        // Extrair apenas o texto do endereço, removendo quebras de linha extras
+        address = addressInfo.textContent.trim().replace(/\s+/g, ' ');
+    }
+    
+    console.log('Endereço capturado:', address);
     const customerName = document.getElementById('customer-name')?.value || 'Cliente';
     const customerPhone = document.getElementById('customer-phone')?.value || '11941716617';
     
@@ -182,6 +310,9 @@ function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         'pix': 'PIX'
     }[paymentMethod] || paymentMethod;
     
+    console.log('Método de pagamento original:', paymentMethod);
+    console.log('Método de pagamento mapeado:', paymentText);
+    
     // Criar objeto de pedido para o banco
     const orderData = {
         id: orderId,
@@ -191,23 +322,82 @@ function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         status: paymentMethod === 'pix' ? 'aguardando_pagamento' : 'novo',
         payment_status: paymentMethod === 'pix' ? 'aguardando_comprovante' : 'pagamento_na_entrega',
         paymentMethod: paymentText,
+        forma_pagamento: paymentText,
         total: total,
         address: address,
         items: cart
     };
     
-    // Salvar no localStorage imediatamente
-    const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-    orders.push(orderData);
-    localStorage.setItem('adegaOrders', JSON.stringify(orders));
-    
-    // Tentar salvar no banco em background
-    if (typeof db !== 'undefined' && db.saveOrder) {
-        db.saveOrder(orderData).then(() => {
-            console.log('Pedido salvo no banco:', orderId);
+    // Tentar salvar no banco
+    if (typeof supabase !== 'undefined' && typeof db !== 'undefined' && db.saveOrder) {
+        // Obter dados do cliente logado
+        const customerId = localStorage.getItem('loyaltyCustomerId');
+        let customerName = null;
+        
+        // Buscar nome do cliente se estiver logado
+        if (customerId && typeof supabase !== 'undefined') {
+            try {
+                const { data: customerData } = await supabase
+                    .from('clientes')
+                    .select('nome')
+                    .eq('id', customerId)
+                    .single();
+                customerName = customerData?.nome || null;
+            } catch (error) {
+                console.log('Cliente não encontrado, usando dados do formulário');
+            }
+        }
+        
+        // Preparar dados para o Supabase (conforme estrutura da tabela)
+        const supabaseOrderData = {
+            id: orderId,
+            cliente_id: customerId ? parseInt(customerId) : null,
+            cliente_nome: customerName || orderData.customer,
+            cliente_telefone: orderData.phone,
+            valor_total: orderData.total,
+            pontos_ganhos: Math.floor(orderData.total / 10),
+            status: orderData.status,
+            forma_pagamento: paymentText,
+            endereco: orderData.address,
+            itens_json: JSON.stringify(orderData.items)
+        };
+        
+        console.log('Dados sendo salvos no Supabase:', supabaseOrderData);
+        
+        db.saveOrder(supabaseOrderData).then(() => {
+            console.log('✅ Pedido salvo no Supabase:', orderId);
+            
+            // Atualizar pontos do cliente em tempo real
+            console.log('Verificando atualização de pontos:', customerId, typeof addPointsToCustomer);
+            if (customerId && typeof addPointsToCustomer === 'function') {
+                console.log('Chamando addPointsToCustomer:', orderId, orderData.total);
+                addPointsToCustomer(orderId, orderData.total);
+            } else {
+                console.warn('Não foi possível atualizar pontos:', {
+                    customerId: customerId,
+                    addPointsToCustomer: typeof addPointsToCustomer
+                });
+            }
+            
+            // Salvar no localStorage apenas como backup após sucesso no Supabase
+            const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+            orders.push(orderData);
+            localStorage.setItem('adegaOrders', JSON.stringify(orders));
         }).catch(error => {
-            console.error('Erro ao salvar no banco:', error);
+            console.error('❌ Erro ao salvar no Supabase:', error);
+            
+            // Se falhar no Supabase, salvar apenas no localStorage
+            const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+            orders.push(orderData);
+            localStorage.setItem('adegaOrders', JSON.stringify(orders));
         });
+    } else {
+        console.warn('⚠️ Banco de dados não disponível, salvando apenas localmente');
+        
+        // Salvar no localStorage se Supabase não estiver disponível
+        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        orders.push(orderData);
+        localStorage.setItem('adegaOrders', JSON.stringify(orders));
     }
     
     return orderId;
@@ -491,6 +681,21 @@ function updatePixValue() {
 // Carregar dados quando a página for carregada
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Página de checkout carregada, carregando dados do carrinho...');
+    
+    // Verificar se Supabase está carregado
+    if (typeof supabase !== 'undefined') {
+        console.log('✅ Supabase carregado com sucesso');
+    } else {
+        console.error('❌ Supabase não está carregado');
+    }
+    
+    // Verificar se db está disponível
+    if (typeof db !== 'undefined') {
+        console.log('✅ Objeto db disponível');
+    } else {
+        console.error('❌ Objeto db não está disponível');
+    }
+    
     loadCartData();
     
     // Carregar endereço salvo

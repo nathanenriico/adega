@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="css/checkout-tabs.css">
     <link rel="stylesheet" href="css/pix-payment.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/loyalty.js"></script>
 </head>
 <body>
     <div class="container">
@@ -119,6 +122,16 @@
                 </div>
             </section>
 
+            <!-- Cupons de Desconto -->
+            <section class="coupon-section">
+                <h2>🎁 Cupons de Desconto</h2>
+                <div class="coupon-input">
+                    <select id="coupon-select" onchange="applyCoupon()">
+                        <option value="">Selecionar cupom</option>
+                    </select>
+                </div>
+            </section>
+
             <!-- Resumo do Pedido -->
             <section class="order-summary">
                 <h2>📋 Resumo do Pedido</h2>
@@ -135,6 +148,10 @@
                     <div class="total-line">
                         <span>Subtotal</span>
                         <span id="subtotal">R$ 0,00</span>
+                    </div>
+                    <div class="total-line" id="discount" style="display: none; color: #25D366;">
+                        <span>Desconto</span>
+                        <span>- R$ 0,00</span>
                     </div>
                     <div class="total-line">
                         <span>Taxa de entrega</span>

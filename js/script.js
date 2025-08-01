@@ -511,6 +511,30 @@ function resetAnalytics() {
     }
 }
 
+// Testar salvamento de pedido
+async function testOrderSave() {
+    try {
+        const testOrder = {
+            cliente_id: null,
+            valor_total: 25.50,
+            pontos_ganhos: 2,
+            status: 'novo',
+            forma_pagamento: 'PIX',
+            endereco: 'Endereço de teste'
+        };
+        
+        console.log('Testando salvamento de pedido:', testOrder);
+        const savedOrder = await db.saveOrder(testOrder);
+        console.log('Pedido de teste salvo:', savedOrder);
+        
+        alert('Pedido de teste salvo com sucesso! ID: ' + savedOrder.id);
+        
+    } catch (error) {
+        console.error('Erro no teste:', error);
+        alert('Erro ao testar pedido: ' + error.message);
+    }
+}
+
 // Renderizar produtos no admin
 function renderAdminProducts() {
     const list = document.getElementById('admin-products-list');
@@ -686,7 +710,7 @@ function previewImage(input) {
 }
 
 // Adicionar produto
-function addProduct() {
+async function addProduct() {
     const name = document.getElementById('product-name').value.trim();
     const imageFiles = document.getElementById('product-image-file').files;
     const imageUrl = document.getElementById('product-image-url').value.trim();
@@ -698,54 +722,77 @@ function addProduct() {
         return;
     }
     
-    if (imageFiles.length > 0) {
-        const images = [];
-        let processedCount = 0;
+    try {
+        let finalImages = [];
+        let finalImageUrl = '';
         
-        Array.from(imageFiles).forEach((file, index) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                images[index] = e.target.result;
-                processedCount++;
-                
-                if (processedCount === imageFiles.length) {
-                    const newProduct = {
-                        id: Date.now(),
-                        name,
-                        images: images,
-                        image: images[0],
-                        price,
-                        category
+        if (imageFiles.length > 0) {
+            const images = [];
+            let processedCount = 0;
+            
+            await new Promise((resolve) => {
+                Array.from(imageFiles).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        images[index] = e.target.result;
+                        processedCount++;
+                        
+                        if (processedCount === imageFiles.length) {
+                            finalImages = images;
+                            finalImageUrl = images[0];
+                            resolve();
+                        }
                     };
-                    
-                    products.push(newProduct);
-                    saveData();
-                    clearProductForm();
-                    refreshProductDisplay();
-                    alert('Produto adicionado com sucesso!');
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-        return;
+                    reader.readAsDataURL(file);
+                });
+            });
+        } else {
+            finalImageUrl = imageUrl || 'https://via.placeholder.com/400x200/333/fff?text=Produto';
+            finalImages = [finalImageUrl];
+        }
+        
+        const newProduct = {
+            name,
+            images: finalImages,
+            image: finalImageUrl,
+            price,
+            category,
+            active: true
+        };
+        
+        // Salvar no Supabase PRIMEIRO
+        const savedProduct = await db.saveProduct(newProduct);
+        console.log('✅ Produto salvo no Supabase:', savedProduct.name);
+        
+        // Adicionar ID local para compatibilidade
+        savedProduct.id = savedProduct.id || Date.now();
+        
+        // Adicionar ao array local
+        products.push(savedProduct);
+        saveData();
+        clearProductForm();
+        refreshProductDisplay();
+        alert('Produto adicionado e salvo no banco de dados com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao salvar produto no banco:', error);
+        
+        // Fallback: salvar apenas localmente se houver erro no banco
+        const localProduct = {
+            id: Date.now(),
+            name,
+            images: finalImages,
+            image: finalImageUrl,
+            price,
+            category
+        };
+        
+        products.push(localProduct);
+        saveData();
+        clearProductForm();
+        refreshProductDisplay();
+        alert('Produto adicionado localmente. Erro ao salvar no banco: ' + error.message);
     }
-    
-    const finalImageUrl = imageUrl || 'https://via.placeholder.com/400x200/333/fff?text=Produto';
-    
-    const newProduct = {
-        id: Date.now(),
-        name,
-        images: [finalImageUrl],
-        image: finalImageUrl,
-        price,
-        category
-    };
-    
-    products.push(newProduct);
-    saveData();
-    clearProductForm();
-    refreshProductDisplay();
-    alert('Produto adicionado com sucesso!');
 }
 
 // Limpar formulário de produto
@@ -769,25 +816,50 @@ function refreshProductDisplay() {
 }
 
 // Excluir produto
-function deleteProduct(id) {
+async function deleteProduct(id) {
     const product = products.find(p => p.id === id);
     if (!product) return;
     
     if (confirm(`Tem certeza que deseja excluir "${product.name}"?`)) {
-        products = products.filter(product => product.id !== id);
-        saveData();
-        refreshProductDisplay();
-        
-        if (analytics.productViews[product.name]) {
-            delete analytics.productViews[product.name];
-            saveAnalytics();
-            updateAnalyticsDisplay();
+        try {
+            // Deletar no Supabase PRIMEIRO (delete permanente)
+            await db.deleteProduct(id);
+            console.log('✅ Produto excluído permanentemente do Supabase:', product.name);
+            
+            // Remover do array local
+            products = products.filter(product => product.id !== id);
+            saveData();
+            refreshProductDisplay();
+            
+            if (analytics.productViews[product.name]) {
+                delete analytics.productViews[product.name];
+                saveAnalytics();
+                updateAnalyticsDisplay();
+            }
+            
+            alert('Produto excluído do banco de dados com sucesso!');
+            
+        } catch (error) {
+            console.error('Erro ao excluir produto do banco:', error);
+            
+            // Fallback: remover apenas localmente
+            products = products.filter(product => product.id !== id);
+            saveData();
+            refreshProductDisplay();
+            
+            if (analytics.productViews[product.name]) {
+                delete analytics.productViews[product.name];
+                saveAnalytics();
+                updateAnalyticsDisplay();
+            }
+            
+            alert('Produto excluído localmente. Erro no banco: ' + error.message);
         }
     }
 }
 
 // Editar produto
-function editProduct(id) {
+async function editProduct(id) {
     const product = products.find(p => p.id === id);
     if (!product) return;
     
@@ -799,15 +871,48 @@ function editProduct(id) {
     
     const newImage = prompt('URL da imagem (deixe vazio para manter):', product.image);
     
-    product.name = newName.trim();
-    product.price = parseFloat(newPrice);
-    if (newImage && newImage.trim() !== '') {
-        product.image = newImage.trim();
+    try {
+        const updatedData = {
+            name: newName.trim(),
+            price: parseFloat(newPrice)
+        };
+        
+        if (newImage && newImage.trim() !== '') {
+            updatedData.image = newImage.trim();
+            updatedData.images = [newImage.trim()];
+        }
+        
+        // Atualizar no Supabase PRIMEIRO
+        await db.updateProduct(id, updatedData);
+        console.log('✅ Produto atualizado no Supabase:', updatedData.name);
+        
+        // Atualizar no array local
+        product.name = updatedData.name;
+        product.price = updatedData.price;
+        if (updatedData.image) {
+            product.image = updatedData.image;
+            product.images = updatedData.images;
+        }
+        
+        saveData();
+        refreshProductDisplay();
+        alert('Produto atualizado no banco de dados com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao atualizar produto no banco:', error);
+        
+        // Fallback: atualizar apenas localmente
+        product.name = updatedData.name;
+        product.price = updatedData.price;
+        if (updatedData.image) {
+            product.image = updatedData.image;
+            product.images = updatedData.images;
+        }
+        
+        saveData();
+        refreshProductDisplay();
+        alert('Produto atualizado localmente. Erro no banco: ' + error.message);
     }
-    
-    saveData();
-    refreshProductDisplay();
-    alert('Produto atualizado com sucesso!');
 }
 
 // Fechar modal ao clicar fora
@@ -844,6 +949,9 @@ function showAdminPanel() {
     document.getElementById('admin-panel').classList.remove('hidden');
     // Não salvar estado automaticamente
     loadAdminData();
+    
+    // Verificar status do banco ao abrir o admin
+    setTimeout(updateDatabaseStatus, 500);
 }
 
 // Ir para home (ícone da casa)
@@ -1029,9 +1137,39 @@ function ensureAddressLoaded(attempts = 0) {
     }
 }
 
+// Carregar produtos do Supabase
+async function loadProductsFromDatabase() {
+    try {
+        const dbProducts = await db.getProducts();
+        if (dbProducts && dbProducts.length > 0) {
+            // Substituir produtos locais pelos do banco (fonte da verdade)
+            products = dbProducts;
+            saveData();
+            console.log(`✅ ${dbProducts.length} produtos carregados do Supabase`);
+            return true;
+        } else {
+            console.log('📎 Nenhum produto encontrado no Supabase');
+            return false;
+        }
+    } catch (error) {
+        console.log('⚠️ Erro ao carregar produtos do Supabase:', error.message);
+        console.log('📱 Usando produtos locais como fallback');
+        return false;
+    }
+}
+
 // Inicializar aplicação
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     loadData();
+    
+    // Carregar produtos do Supabase primeiro
+    const hasDbProducts = await loadProductsFromDatabase();
+    
+    // Se não há produtos no banco, sincronizar os locais
+    if (!hasDbProducts) {
+        await syncAllProductsToSupabase();
+    }
+    
     renderProducts();
     
     if (config.adegaName !== 'Adega do Tio Pancho') {
@@ -1049,6 +1187,14 @@ document.addEventListener('DOMContentLoaded', function() {
     ensureAddressLoaded();
     
     updateCartDisplay();
+    
+    // Garantir que a seção home esteja ativa por padrão
+    setTimeout(() => {
+        if (typeof window.showSection === 'function') {
+            window.showSection('home');
+            console.log('Navegação inicializada com sucesso!');
+        }
+    }, 100);
 });
 
 // Garantir que o endereço seja carregado mesmo após o carregamento completo da página
@@ -1056,6 +1202,49 @@ window.addEventListener('load', function() {
     console.log('Página totalmente carregada, verificando endereço...');
     initializeDeliveryAddress();
 });
+
+// Sincronizar todos os produtos com Supabase
+async function syncAllProductsToSupabase() {
+    try {
+        console.log('🔄 Sincronizando todos os produtos com Supabase...');
+        
+        // Obter produtos existentes no Supabase
+        const existingProducts = await db.getProducts();
+        const existingNames = existingProducts.map(p => p.name.toLowerCase());
+        
+        let syncCount = 0;
+        
+        // Sincronizar produtos do array local
+        for (const product of products) {
+            const productExists = existingNames.includes(product.name.toLowerCase());
+            
+            if (!productExists) {
+                const productData = {
+                    name: product.name,
+                    image: product.image,
+                    images: product.images || [product.image],
+                    price: product.price,
+                    category: product.category,
+                    active: true
+                };
+                
+                await db.saveProduct(productData);
+                syncCount++;
+                console.log(`✅ Produto salvo no banco: ${product.name}`);
+            }
+        }
+        
+        if (syncCount > 0) {
+            console.log(`🎉 ${syncCount} produtos sincronizados com sucesso!`);
+        } else {
+            console.log('✅ Todos os produtos já estão sincronizados');
+        }
+        
+    } catch (error) {
+        console.log('⚠️ Erro na sincronização:', error.message);
+        console.log('📱 Continuando com produtos locais');
+    }
+}
 
 // Função de inicialização do endereço de entrega
 function initializeDeliveryAddress() {
@@ -1355,70 +1544,189 @@ ${orderData.address || 'Endereço não informado'}
     }
 }
 
-function sendCartToWhatsApp() {
+async function sendCartToWhatsApp() {
     if (cart.length === 0) {
         alert('Carrinho vazio!');
         return;
     }
     
-    // Mostrar indicador de processamento imediatamente
+    // Mostrar indicador de processamento
     const processingIndicator = document.createElement('div');
     processingIndicator.className = 'cart-notification';
     processingIndicator.innerHTML = '<span class="processing-animation">Processando pedido...</span>';
     document.body.appendChild(processingIndicator);
     
-    // Calcular total do carrinho
-    const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const selectedPayment = document.querySelector('input[name="payment"]:checked').value;
-    const paymentText = {
-        'pix': 'PIX',
-        'cartao': 'Cartão',
-        'dinheiro': 'Dinheiro'
-    };
-    
-    // Obter endereço de entrega
-    const deliveryAddress = localStorage.getItem('deliveryAddress') || 'Endereço não informado';
-    
-    // Salvar pedido no sistema (sem esperar)
-    const orderId = saveOrderToSystem(cart, cartTotal, selectedPayment);
-    
-    // Preparar mensagem WhatsApp em segundo plano
-    let message = 'Olá! Gostaria de fazer este pedido:\\n\\n';
-    cart.forEach(item => {
-        message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\\n`;
-    });
-    message += `\\nTotal: R$ ${cartTotal.toFixed(2)}`;
-    message += `\\nForma de Pagamento: ${paymentText[selectedPayment]}`;
-    message += `\\n\\nEndereço de Entrega:\\n${deliveryAddress}`;
-    
-    // Remover indicador de processamento
-    processingIndicator.remove();
-    
-    // Mostrar mensagem de pedido recebido
-    showOrderConfirmation(orderId, cartTotal);
-    
-    // Preparar URL do WhatsApp
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
-    
-    // Abrir WhatsApp em uma nova aba (sem delay)
-    setTimeout(() => {
-        window.open(whatsappUrl, '_blank');
-    }, 500);
-    
-    // Limpar carrinho após confirmação
-    cart = [];
-    saveCart();
-    updateCartDisplay();
-    
-    // Fechar carrinho após envio
-    const cartSidebar = document.getElementById('cart-sidebar');
-    const cartOverlay = document.getElementById('cart-overlay');
-    cartSidebar.classList.remove('active');
-    cartOverlay.classList.remove('active');
-    
-    analytics.whatsappClicks++;
-    saveAnalytics();
+    try {
+        // Calcular total e obter dados
+        const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+        const selectedPayment = document.querySelector('input[name="payment"]:checked')?.value || 'pix';
+        const paymentText = {
+            'pix': 'PIX',
+            'cartao': 'Cartão',
+            'dinheiro': 'Dinheiro'
+        };
+        const deliveryAddress = localStorage.getItem('deliveryAddress') || 'Endereço não informado';
+        
+        // Criar pedido local primeiro
+        const localOrder = {
+            id: Date.now(),
+            customer: 'Cliente WhatsApp',
+            total: cartTotal,
+            paymentMethod: paymentText[selectedPayment],
+            address: deliveryAddress,
+            date: new Date().toISOString(),
+            status: 'novo',
+            items: cart.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price
+            }))
+        };
+        
+        // Salvar no localStorage
+        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        orders.push(localOrder);
+        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        console.log('✅ Pedido salvo no localStorage:', localOrder.id);
+        
+        // Salvar no Supabase
+        const { data, error } = await supabase
+            .from('pedidos')
+            .insert({
+                valor_total: cartTotal,
+                pontos_ganhos: Math.floor(cartTotal / 10),
+                status: 'novo',
+                forma_pagamento: paymentText[selectedPayment],
+                endereco: deliveryAddress
+            })
+            .select()
+            .single();
+            
+        if (error) {
+            console.error('❌ Erro Supabase:', error);
+        } else {
+            console.log('✅ Pedido salvo no Supabase:', data.id);
+            localOrder.supabase_id = data.id;
+            localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        }
+        
+        // Atualizar pedido local com dados do Supabase
+        if (data && data.id) {
+            localOrder.supabase_id = data.id;
+        }
+        
+        console.log('💾 SALVANDO NO LOCALSTORAGE:');
+        console.log('Pedido a ser salvo:', localOrder);
+        
+        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        console.log('Pedidos existentes:', orders.length);
+        
+        orders.push(localOrder);
+        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        
+        const savedOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        console.log('✅ CONFIRMADO - Total de pedidos após salvar:', savedOrders.length);
+        console.log('✅ Último pedido salvo:', savedOrders[savedOrders.length - 1]);
+        
+        // Forçar atualização da gestão se estiver aberta
+        if (window.opener && window.opener.loadOrdersFromDB) {
+            window.opener.loadOrdersFromDB();
+        }
+        
+        // Preparar mensagem WhatsApp
+        let message = 'Olá! Gostaria de fazer este pedido:\\n\\n';
+        cart.forEach(item => {
+            message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\\n`;
+        });
+        message += `\\nTotal: R$ ${cartTotal.toFixed(2)}`;
+        message += `\\nForma de Pagamento: ${paymentText[selectedPayment]}`;
+        message += `\\n\\nEndereço de Entrega:\\n${deliveryAddress}`;
+        
+        // Remover indicador e mostrar confirmação
+        processingIndicator.remove();
+        showOrderConfirmation(data.id, cartTotal);
+        
+        // Abrir WhatsApp
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
+        setTimeout(() => window.open(whatsappUrl, '_blank'), 500);
+        
+        // Limpar carrinho
+        cart = [];
+        saveCart();
+        updateCartDisplay();
+        
+        // Fechar carrinho
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartOverlay = document.getElementById('cart-overlay');
+        cartSidebar.classList.remove('active');
+        cartOverlay.classList.remove('active');
+        
+        analytics.whatsappClicks++;
+        saveAnalytics();
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar pedido:', error);
+        processingIndicator.remove();
+        
+        // Salvar localmente mesmo se falhar no Supabase
+        const fallbackOrder = {
+            id: Date.now(),
+            customer: 'Cliente WhatsApp',
+            total: cartTotal,
+            paymentMethod: paymentText[selectedPayment],
+            address: deliveryAddress,
+            date: new Date().toISOString(),
+            status: 'novo',
+            items: cart.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price
+            }))
+        };
+        
+        console.log('💾 FALLBACK - SALVANDO NO LOCALSTORAGE:');
+        console.log('Pedido fallback:', fallbackOrder);
+        
+        const existingOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        console.log('Pedidos existentes (fallback):', existingOrders.length);
+        
+        existingOrders.push(fallbackOrder);
+        localStorage.setItem('adegaOrders', JSON.stringify(existingOrders));
+        
+        const savedOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        console.log('✅ FALLBACK CONFIRMADO - Total:', savedOrders.length);
+        console.log('✅ Pedido fallback salvo:', savedOrders[savedOrders.length - 1]);
+        
+        // Continuar fluxo normal
+        let message = 'Olá! Gostaria de fazer este pedido:\\n\\n';
+        cart.forEach(item => {
+            message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\\n`;
+        });
+        message += `\\nTotal: R$ ${cartTotal.toFixed(2)}`;
+        message += `\\nForma de Pagamento: ${paymentText[selectedPayment]}`;
+        message += `\\n\\nEndereço de Entrega:\\n${deliveryAddress}`;
+        
+        showOrderConfirmation(fallbackOrder.id, cartTotal);
+        
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
+        setTimeout(() => window.open(whatsappUrl, '_blank'), 500);
+        
+        cart = [];
+        saveCart();
+        updateCartDisplay();
+        
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartOverlay = document.getElementById('cart-overlay');
+        cartSidebar.classList.remove('active');
+        cartOverlay.classList.remove('active');
+        
+        analytics.whatsappClicks++;
+        saveAnalytics();
+        
+        alert('Pedido processado! (Salvo localmente)');
+    }
 }
 
 // Mostrar mensagem de confirmação do pedido
@@ -1575,14 +1883,14 @@ function saveOrderToSystem(cartItems, total, paymentMethod) {
 }
 
 // Abrir gestão de pedidos
-function openOrdersManagement() {
+window.openOrdersManagement = function() {
     window.open('gestao.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-}
+};
 
 // Abrir analytics do carrinho
-function openCartAnalytics() {
+window.openCartAnalytics = function() {
     window.open('analytics.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-}
+};
 
 // Funções do carrossel de produtos
 let productCarouselStates = {};
@@ -1640,20 +1948,143 @@ function updateProductCarousel(productId) {
     counter.textContent = `${state.currentIndex + 1}/${state.images.length}`;
 }
 
-// Navegação do menu
-function showSection(sectionId) {
+// Definir todas as funções no escopo global
+window.showSection = function(sectionId) {
+    console.log('Navegando para seção:', sectionId);
+    
     // Esconder todas as seções
     const sections = document.querySelectorAll('.section');
-    sections.forEach(section => section.classList.remove('active'));
+    sections.forEach(section => {
+        section.classList.remove('active');
+        console.log('Removendo active de:', section.id);
+    });
     
     // Mostrar seção selecionada
-    document.getElementById(sectionId).classList.add('active');
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        console.log('Adicionando active para:', sectionId);
+    } else {
+        console.error('Seção não encontrada:', sectionId);
+    }
     
     // Atualizar menu ativo
     const navLinks = document.querySelectorAll('.nav-menu a');
     navLinks.forEach(link => link.classList.remove('active'));
-    document.querySelector(`[href="#${sectionId}"]`).classList.add('active');
-}
+    
+    // Buscar link ativo por onclick em vez de href
+    const activeLink = Array.from(navLinks).find(link => 
+        link.getAttribute('onclick') && link.getAttribute('onclick').includes(`'${sectionId}'`)
+    );
+    
+    if (activeLink) {
+        activeLink.classList.add('active');
+        console.log('Link ativo definido para:', sectionId);
+    } else {
+        console.log('Link ativo não encontrado para:', sectionId);
+    }
+    
+    // Fechar menus laterais se estiverem abertos
+    const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
+    
+    if (sideMenu) sideMenu.classList.remove('active');
+    if (menuOverlay) menuOverlay.classList.remove('active');
+    if (cartSidebar) cartSidebar.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
+};
+
+// Definir outras funções essenciais no escopo global
+window.toggleMenu = function() {
+    const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
+    
+    sideMenu.classList.toggle('active');
+    menuOverlay.classList.toggle('active');
+};
+
+window.goToHome = function() {
+    const adminPanel = document.getElementById('admin-panel');
+    if (!adminPanel.classList.contains('hidden')) {
+        adminPanel.classList.add('hidden');
+    }
+    showSection('home');
+};
+
+window.toggleCart = function() {
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
+    
+    cartSidebar.classList.toggle('active');
+    cartOverlay.classList.toggle('active');
+    updateCartDisplay();
+    
+    const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
+    sideMenu.classList.remove('active');
+    menuOverlay.classList.remove('active');
+};
+
+
+
+window.filterProducts = function(category) {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    const filteredProducts = category === 'all' 
+        ? products 
+        : products.filter(product => product.category === category);
+    
+    renderProducts(filteredProducts);
+};
+
+window.addToCart = function(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    const cartItem = cart.find(item => item.id === productId);
+    
+    if (cartItem) {
+        cartItem.quantity++;
+    } else {
+        cart.push({
+            id: productId,
+            name: product.name,
+            price: product.price,
+            quantity: 1
+        });
+    }
+    
+    saveCart();
+    updateCartDisplay();
+    showCartNotification();
+};
+
+window.openWhatsApp = function(productName = null) {
+    const currentNumber = config.whatsappNumber || '5599999999999';
+    let message = config.defaultMessage || 'Oi, quero ver as ofertas da adega!';
+    
+    if (productName) {
+        message = `Oi! Tenho interesse no produto: ${productName}. Pode me dar mais informações?`;
+    }
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${currentNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+};
+
+window.toggleChatBot = toggleChatBot;
+window.handleChatInput = handleChatInput;
+window.sendChatMessage = sendChatMessage;
+
+
 
 // Chat Bot
 function toggleChatBot() {
@@ -1689,20 +2120,15 @@ async function sendChatMessage() {
     sendBtn.disabled = true;
     addTypingIndicator();
     
-    try {
-        // Tentar resposta inteligente primeiro
-        const aiResponse = await getAIResponse(message);
+    // Sempre usar resposta local
+    setTimeout(() => {
         removeTypingIndicator();
-        addChatMessage(aiResponse, 'bot');
-    } catch (error) {
-        // Fallback para resposta local
-        removeTypingIndicator();
-        const fallbackResponse = getBotResponse(message.toLowerCase());
-        addChatMessage(fallbackResponse, 'bot');
-    }
-    
-    sendBtn.innerHTML = '➤';
-    sendBtn.disabled = false;
+        const response = getBotResponse(message.toLowerCase());
+        addChatMessage(response, 'bot');
+        
+        sendBtn.innerHTML = '➤';
+        sendBtn.disabled = false;
+    }, 1000);
 }
 
 function addChatMessage(message, sender) {

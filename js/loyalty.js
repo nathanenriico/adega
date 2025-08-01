@@ -1,36 +1,21 @@
-// Sistema de Fidelidade
+// Sistema de Fidelidade com Supabase
 let currentCustomer = null;
+let supabaseClient = null;
 
-// Carregar cliente logado
+// Inicializar Supabase
 document.addEventListener('DOMContentLoaded', function() {
-    checkLoyaltyModal();
+    if (typeof window.supabase !== 'undefined') {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    setTimeout(() => {
+        loadSavedCustomerInfo();
+    }, 500);
 });
 
-function checkLoyaltyModal() {
-    const savedCustomer = localStorage.getItem('loyaltyCustomer');
-    const modalSkipped = localStorage.getItem('loyaltyModalSkipped');
-    
-    if (!savedCustomer && !modalSkipped) {
-        document.getElementById('loyalty-modal').style.display = 'block';
-    } else {
-        document.getElementById('loyalty-modal').style.display = 'none';
-        loadCurrentCustomer();
-    }
-}
-
-function closeLoyaltyModal() {
-    document.getElementById('loyalty-modal').style.display = 'none';
-    loadCurrentCustomer();
-}
-
-function skipLoyalty() {
-    localStorage.setItem('loyaltyModalSkipped', 'true');
-    closeLoyaltyModal();
-}
-
-function createModalLoyaltyAccount() {
-    const name = document.getElementById('modal-loyalty-name').value.trim();
-    const phone = document.getElementById('modal-loyalty-phone').value.trim();
+// Funções globais para informações do cliente
+window.saveCustomerInfo = async function() {
+    const name = document.getElementById('customer-name').value.trim();
+    const phone = document.getElementById('customer-phone').value.trim();
     
     if (!name || !phone) {
         alert('Por favor, preencha todos os campos!');
@@ -42,328 +27,245 @@ function createModalLoyaltyAccount() {
         return;
     }
     
-    currentCustomer = {
-        id: Date.now(),
-        name: name,
-        phone: phone,
-        points: 0,
-        orders: [],
-        coupons: [],
-        createdAt: new Date().toISOString()
-    };
-    
-    localStorage.setItem('loyaltyCustomer', JSON.stringify(currentCustomer));
-    closeLoyaltyModal();
-    showSuccessMessage();
-    showCustomerProfile();
-}
-
-function loadCurrentCustomer() {
-    const savedCustomer = localStorage.getItem('loyaltyCustomer');
-    if (savedCustomer) {
-        currentCustomer = JSON.parse(savedCustomer);
-        showCustomerPanel();
-        showCustomerProfile();
-    } else {
-        showLoyaltySignup();
+    try {
+        const { data, error } = await supabaseClient
+            .from('clientes')
+            .insert([{ 
+                nome: name, 
+                telefone: phone,
+                pontos: 0
+            }])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        const customerData = {
+            id: data.id,
+            name: data.nome,
+            phone: data.telefone,
+            points: data.pontos || 0
+        };
+        
+        localStorage.setItem('customerInfo', JSON.stringify(customerData));
+        showSavedCustomerInfo(customerData);
+        alert('Informações salvas com sucesso!');
+        
+    } catch (error) {
+        if (error.code === '23505') {
+            alert('Este telefone já está cadastrado!');
+        } else {
+            alert('Erro ao salvar informações. Tente novamente.');
+        }
     }
-}
+};
 
-// Criar conta no clube de fidelidade
-function createLoyaltyAccount() {
-    const name = document.getElementById('loyalty-name').value.trim();
-    const phone = document.getElementById('loyalty-phone').value.trim();
+window.editCustomerInfo = function() {
+    const savedData = JSON.parse(localStorage.getItem('customerInfo') || '{}');
     
-    if (!name || !phone) {
-        alert('Por favor, preencha todos os campos!');
-        return;
-    }
-    
-    // Validar telefone
-    if (phone.length < 10) {
-        alert('Número de WhatsApp inválido!');
-        return;
-    }
-    
-    // Criar cliente
-    currentCustomer = {
-        id: Date.now(),
-        name: name,
-        phone: phone,
-        points: 0,
-        orders: [],
-        coupons: [],
-        createdAt: new Date().toISOString()
-    };
-    
-    // Salvar no localStorage
-    localStorage.setItem('loyaltyCustomer', JSON.stringify(currentCustomer));
-    
-    // Mostrar painel do cliente
-    showCustomerPanel();
-    showCustomerProfile();
-}
+    const infoSection = document.getElementById('customer-info');
+    infoSection.innerHTML = `
+        <div class="info-card">
+            <h2>📋 Suas Informações</h2>
+            <p>Para melhor atendimento, informe seus dados abaixo:</p>
+            
+            <div class="info-form">
+                <input type="text" id="customer-name" placeholder="Seu nome completo" value="${savedData.name || ''}" required>
+                <input type="tel" id="customer-phone" placeholder="Seu WhatsApp (com DDD)" value="${savedData.phone || ''}" required>
+                <button onclick="saveCustomerInfo()" class="save-info-btn">Salvar Informações</button>
+            </div>
+        </div>
+    `;
+};
 
-// Mostrar painel do cliente
-function showCustomerPanel() {
-    document.getElementById('loyalty-signup').style.display = 'none';
-    document.getElementById('customer-panel').style.display = 'block';
+// Mostrar informações salvas
+function showSavedCustomerInfo(customerData) {
+    const infoSection = document.getElementById('customer-info');
     
-    // Atualizar dados na tela
-    document.getElementById('customer-name-display').textContent = currentCustomer.name;
-    document.getElementById('customer-points').textContent = currentCustomer.points;
-    document.getElementById('customer-orders').textContent = currentCustomer.orders.length;
-    document.getElementById('customer-coupons').textContent = currentCustomer.coupons.length;
-}
-
-function showCustomerProfile() {
-    if (currentCustomer) {
-        document.getElementById('customer-profile').style.display = 'flex';
-        document.getElementById('profile-name').textContent = currentCustomer.name.split(' ')[0];
-    }
-}
-
-function showSuccessMessage() {
-    const message = document.createElement('div');
-    message.className = 'success-message';
-    message.innerHTML = `
-        <h3>✅ Conta Criada com Sucesso!</h3>
-        <p>Bem-vindo ao Clube de Fidelidade, ${currentCustomer.name}!</p>
+    infoSection.innerHTML = `
+        <div class="info-card saved-profile">
+            <div class="profile-header">
+                <div class="profile-avatar">👤</div>
+                <div class="profile-welcome">
+                    <h2>Olá, ${customerData.name.split(' ')[0]}! 👋</h2>
+                    <p>Suas informações estão salvas</p>
+                </div>
+            </div>
+            <div class="profile-details">
+                <div class="detail-item">
+                    <span class="detail-icon">📝</span>
+                    <div class="detail-content">
+                        <span class="detail-label">Nome Completo</span>
+                        <span class="detail-value">${customerData.name}</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-icon">📱</span>
+                    <div class="detail-content">
+                        <span class="detail-label">WhatsApp</span>
+                        <span class="detail-value">${customerData.phone}</span>
+                    </div>
+                </div>
+                <div class="detail-item points-item">
+                    <span class="detail-icon">🎆</span>
+                    <div class="detail-content">
+                        <span class="detail-label">Pontos Acumulados</span>
+                        <span class="detail-value">${customerData.points || 0} pontos</span>
+                    </div>
+                </div>
+            </div>
+            <div class="points-system">
+                <h3>🎯 Sistema de Pontos</h3>
+                <p>Ganhe 1 ponto a cada R$ 10 gastos</p>
+                <div class="coupon-store">
+                    <h4>🎁 Loja de Cupons</h4>
+                    <div class="store-grid">
+                        <div class="coupon-option" onclick="exchangePoints('5off', 50)">
+                            <div class="coupon-title">5% OFF</div>
+                            <div class="coupon-cost">50 pontos</div>
+                        </div>
+                        <div class="coupon-option" onclick="exchangePoints('10off', 100)">
+                            <div class="coupon-title">10% OFF</div>
+                            <div class="coupon-cost">100 pontos</div>
+                        </div>
+                        <div class="coupon-option" onclick="exchangePoints('frete', 150)">
+                            <div class="coupon-title">Frete Grátis</div>
+                            <div class="coupon-cost">150 pontos</div>
+                        </div>
+                        <div class="coupon-option" onclick="exchangePoints('15off', 200)">
+                            <div class="coupon-title">15% OFF</div>
+                            <div class="coupon-cost">200 pontos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="editCustomerInfo()" class="edit-profile-btn">
+                <span>✏️</span> Editar Informações
+            </button>
+        </div>
     `;
     
-    document.body.appendChild(message);
+    // Mostrar perfil no header
+    showCustomerProfile(customerData);
+}
+
+// Mostrar perfil do cliente no header
+function showCustomerProfile(customerData) {
+    const profileElement = document.getElementById('customer-profile');
+    const profileName = document.getElementById('profile-name');
     
-    setTimeout(() => {
-        message.remove();
-        showCustomerPanel();
-    }, 2500);
+    if (profileElement && profileName) {
+        profileName.textContent = customerData.name.split(' ')[0];
+        profileElement.style.display = 'flex';
+    }
 }
 
-// Mostrar tela de cadastro
-function showLoyaltySignup() {
-    document.getElementById('loyalty-signup').style.display = 'block';
-    document.getElementById('customer-panel').style.display = 'none';
-}
-
-// Logout do cliente
-function logoutCustomer() {
-    if (confirm('Deseja sair da sua conta?')) {
-        localStorage.removeItem('loyaltyCustomer');
-        currentCustomer = null;
-        showLoyaltySignup();
+// Carregar informações salvas na inicialização
+async function loadSavedCustomerInfo() {
+    const savedData = localStorage.getItem('customerInfo');
+    if (savedData) {
+        const customerData = JSON.parse(savedData);
         
-        // Limpar campos
-        document.getElementById('loyalty-name').value = '';
-        document.getElementById('loyalty-phone').value = '';
-    }
-}
-
-// Fazer novo pedido via WhatsApp
-function makeNewOrder() {
-    const message = `🍷 *Adega do Tio Pancho*
-
-Olá! Sou ${currentCustomer.name} e gostaria de fazer um pedido.
-
-📊 *Meus dados:*
-• Pontos acumulados: ${currentCustomer.points}
-• Pedidos anteriores: ${currentCustomer.orders.length}
-• Cupons disponíveis: ${currentCustomer.coupons.length}
-
-Gostaria de ver os produtos disponíveis e fazer meu pedido! 🛒`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
-    } else {
-        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
-    }
-}
-
-// Mostrar histórico de pedidos
-function showOrderHistory() {
-    const historyDiv = document.getElementById('order-history');
-    const couponsDiv = document.getElementById('coupons-list');
-    
-    // Esconder cupons
-    couponsDiv.style.display = 'none';
-    
-    // Mostrar/esconder histórico
-    if (historyDiv.style.display === 'none') {
-        historyDiv.style.display = 'block';
-        loadOrderHistory();
-    } else {
-        historyDiv.style.display = 'none';
-    }
-}
-
-// Carregar histórico de pedidos
-function loadOrderHistory() {
-    const historyList = document.getElementById('history-list');
-    
-    if (currentCustomer.orders.length === 0) {
-        historyList.innerHTML = '<p>Nenhum pedido realizado ainda.</p>';
-        return;
-    }
-    
-    historyList.innerHTML = currentCustomer.orders.map(order => `
-        <div class="history-item">
-            <div class="order-info">
-                <strong>Pedido #${order.id}</strong>
-                <span class="order-date">${formatDate(order.date)}</span>
-            </div>
-            <div class="order-total">R$ ${order.total.toFixed(2)}</div>
-            <div class="order-points">+${order.pointsEarned} pontos</div>
-        </div>
-    `).join('');
-}
-
-// Mostrar cupons
-function showCoupons() {
-    const historyDiv = document.getElementById('order-history');
-    const couponsDiv = document.getElementById('coupons-list');
-    
-    // Esconder histórico
-    historyDiv.style.display = 'none';
-    
-    // Mostrar/esconder cupons
-    if (couponsDiv.style.display === 'none') {
-        couponsDiv.style.display = 'block';
-        loadCoupons();
-    } else {
-        couponsDiv.style.display = 'none';
-    }
-}
-
-// Carregar cupons
-function loadCoupons() {
-    const couponsList = document.getElementById('available-coupons');
-    
-    if (currentCustomer.coupons.length === 0) {
-        couponsList.innerHTML = '<p>Nenhum cupom disponível. Faça pedidos para ganhar cupons!</p>';
-        return;
-    }
-    
-    couponsList.innerHTML = currentCustomer.coupons.map(coupon => `
-        <div class="coupon-item">
-            <div class="coupon-info">
-                <strong>${coupon.title}</strong>
-                <p>${coupon.description}</p>
-            </div>
-            <div class="coupon-discount">${coupon.discount}</div>
-            <button onclick="useCoupon('${coupon.id}')" class="use-coupon-btn">Usar Cupom</button>
-        </div>
-    `).join('');
-}
-
-// Usar cupom
-function useCoupon(couponId) {
-    const coupon = currentCustomer.coupons.find(c => c.id === couponId);
-    if (!coupon) return;
-    
-    const message = `🍷 *Adega do Tio Pancho*
-
-Olá! Sou ${currentCustomer.name} e gostaria de usar meu cupom:
-
-🎁 *${coupon.title}*
-${coupon.description}
-Desconto: ${coupon.discount}
-
-Gostaria de fazer um pedido usando este cupom! 🛒`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-        window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
-    } else {
-        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
-    }
-}
-
-// Enviar mensagem de boas-vindas
-function sendWelcomeMessage() {
-    const message = `🌟 *Bem-vindo ao Clube de Fidelidade!*
-
-Olá ${currentCustomer.name}! 
-
-Sua conta foi criada com sucesso! Agora você pode:
-✅ Acumular pontos a cada compra
-📲 Receber atualizações no WhatsApp
-🎁 Ganhar cupons exclusivos
-
-Faça seu primeiro pedido e comece a acumular benefícios! 🍷`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    setTimeout(() => {
-        if (isMobile) {
-            window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
-        } else {
-            window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
+        if (customerData.id && supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('clientes')
+                    .select('*')
+                    .eq('id', customerData.id)
+                    .single();
+                
+                if (data) {
+                    const updatedData = {
+                        id: data.id,
+                        name: data.nome,
+                        phone: data.telefone,
+                        points: data.pontos || 0
+                    };
+                    localStorage.setItem('customerInfo', JSON.stringify(updatedData));
+                    showSavedCustomerInfo(updatedData);
+                    return;
+                }
+            } catch (error) {
+                console.log('Erro ao carregar dados do banco:', error);
+            }
         }
-    }, 1000);
+        
+        // Garantir que pontos seja 0 se não existir
+        if (!customerData.points) customerData.points = 0;
+        showSavedCustomerInfo(customerData);
+    }
 }
-
-// Adicionar pontos (chamado quando pedido é confirmado)
-function addPointsToCustomer(orderId, orderTotal) {
-    if (!currentCustomer) return;
+// Função para trocar pontos por cupons
+async function exchangePoints(couponType, pointsCost) {
+    const customerData = JSON.parse(localStorage.getItem('customerInfo') || '{}');
     
-    const pointsEarned = Math.floor(orderTotal / 10); // 1 ponto a cada R$ 10
-    currentCustomer.points += pointsEarned;
+    if (!customerData.id || !supabaseClient) {
+        alert('Erro: sistema não inicializado');
+        return;
+    }
     
-    // Adicionar ao histórico
-    currentCustomer.orders.push({
-        id: orderId,
-        date: new Date().toISOString(),
-        total: orderTotal,
-        pointsEarned: pointsEarned
-    });
+    // Buscar pontos atuais do banco
+    const { data: currentData, error: fetchError } = await supabaseClient
+        .from('clientes')
+        .select('pontos')
+        .eq('id', customerData.id)
+        .single();
     
-    // Verificar se ganhou cupom
-    checkForNewCoupons();
+    if (fetchError) {
+        alert('Erro ao verificar pontos');
+        return;
+    }
     
-    // Salvar
-    localStorage.setItem('loyaltyCustomer', JSON.stringify(currentCustomer));
+    const currentPoints = currentData.pontos || 0;
     
-    // Atualizar tela se estiver visível
-    if (document.getElementById('customer-panel').style.display !== 'none') {
-        showCustomerPanel();
+    if (currentPoints < pointsCost) {
+        alert(`Pontos insuficientes! Você tem ${currentPoints} pontos e precisa de ${pointsCost}.`);
+        return;
+    }
+    
+    const coupons = {
+        '5off': { title: '5% OFF', description: 'Desconto de 5% em qualquer pedido', discount: '5%' },
+        '10off': { title: '10% OFF', description: 'Desconto de 10% em qualquer pedido', discount: '10%' },
+        'frete': { title: 'Frete Grátis', description: 'Entrega gratuita no próximo pedido', discount: 'Frete Grátis' },
+        '15off': { title: '15% OFF', description: 'Desconto de 15% em qualquer pedido', discount: '15%' }
+    };
+    
+    const coupon = coupons[couponType];
+    
+    try {
+        const newPoints = currentPoints - pointsCost;
+        
+        // Atualizar pontos no banco
+        const { error: updateError } = await supabaseClient
+            .from('clientes')
+            .update({ pontos: newPoints })
+            .eq('id', customerData.id);
+        
+        if (updateError) throw updateError;
+        
+        // Criar cupom no banco
+        const { error: insertError } = await supabaseClient
+            .from('cupons')
+            .insert([{
+                cliente_id: customerData.id,
+                titulo: coupon.title,
+                descricao: coupon.description,
+                desconto: coupon.discount
+            }]);
+        
+        if (insertError) throw insertError;
+        
+        // Atualizar dados locais e interface
+        customerData.points = newPoints;
+        localStorage.setItem('customerInfo', JSON.stringify(customerData));
+        showSavedCustomerInfo(customerData);
+        
+        alert(`Cupom ${coupon.title} adquirido com sucesso!`);
+        
+    } catch (error) {
+        console.error('Erro ao trocar cupom:', error);
+        alert('Erro ao trocar cupom. Tente novamente.');
     }
 }
 
-// Verificar novos cupons
-function checkForNewCoupons() {
-    const totalOrders = currentCustomer.orders.length;
-    const totalPoints = currentCustomer.points;
-    
-    // Cupom a cada 5 pedidos
-    if (totalOrders % 5 === 0 && totalOrders > 0) {
-        currentCustomer.coupons.push({
-            id: Date.now(),
-            title: '10% OFF',
-            description: 'Desconto de 10% em qualquer pedido',
-            discount: '10%',
-            createdAt: new Date().toISOString()
-        });
-    }
-    
-    // Cupom por pontos
-    if (totalPoints >= 100 && !currentCustomer.coupons.find(c => c.title === 'Frete Grátis')) {
-        currentCustomer.coupons.push({
-            id: Date.now() + 1,
-            title: 'Frete Grátis',
-            description: 'Entrega gratuita no próximo pedido',
-            discount: 'Frete Grátis',
-            createdAt: new Date().toISOString()
-        });
-    }
-}
-
-// Formatar data
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-}
+window.exchangePoints = exchangePoints;

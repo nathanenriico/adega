@@ -1,19 +1,73 @@
 // Dados dos pedidos
 let orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
 
+// Verificar status da conexão com o banco
+async function checkDatabaseConnection() {
+    try {
+        const { data, error } = await supabase
+            .from('pedidos')
+            .select('count')
+            .limit(1);
+        
+        if (error) {
+            console.error('❌ Erro de conexão Supabase:', error);
+            return false;
+        }
+        
+        console.log('✅ Conexão com Supabase OK');
+        return true;
+    } catch (error) {
+        console.error('❌ Erro ao testar conexão:', error);
+        return false;
+    }
+}
+
 // Carregar pedidos ao inicializar
 document.addEventListener('DOMContentLoaded', async function() {
-    await loadOrdersFromDB();
-    setInterval(loadOrdersFromDB, 10000);
+    // Verificar conexão primeiro
+    const isConnected = await checkDatabaseConnection();
+    if (isConnected) {
+        console.log('🔄 Carregando pedidos do banco de dados...');
+        await loadOrdersFromDB();
+        // setInterval(loadOrdersFromDB, 5000); // Removido para evitar loops
+    } else {
+        console.log('⚠️ Usando dados locais apenas');
+        orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        loadOrders();
+        updateStats();
+    }
+});
+
+// Recarregar quando a página ganhar foco
+window.addEventListener('focus', function() {
+    loadOrdersFromDB();
 });
 
 async function loadOrdersFromDB() {
     try {
-        orders = await db.getOrders();
+        const dbOrders = await db.getOrders();
+        const localOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        
+        // Usar apenas pedidos do Supabase, ignorar localStorage para evitar duplicatas
+        orders = dbOrders.map(dbOrder => {
+            console.log('Pedido do Supabase:', dbOrder.id, 'Endereço:', dbOrder.endereco);
+            return {
+                id: dbOrder.id,
+                customer: dbOrder.cliente_nome || 'Cliente WhatsApp',
+                total: dbOrder.valor_total,
+                paymentMethod: dbOrder.forma_pagamento || 'Não informado',
+                address: dbOrder.endereco || 'Endereço não informado',
+                endereco: dbOrder.endereco || 'Endereço não informado',
+                date: dbOrder.data_pedido,
+                status: dbOrder.status,
+                items: dbOrder.itens_json ? JSON.parse(dbOrder.itens_json) : [],
+                pontos_ganhos: dbOrder.pontos_ganhos || 0
+            };
+        });
         loadOrders();
         updateStats();
     } catch (error) {
-        console.error('Erro ao carregar pedidos:', error);
+        console.error('Erro ao carregar pedidos do Supabase:', error);
         orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
         loadOrders();
         updateStats();
@@ -69,9 +123,21 @@ function applyFiltersToOrders(ordersList) {
     if (currentFilters.date) {
         const filterDate = currentFilters.date;
         filtered = filtered.filter(order => {
-            const orderDate = order.date.split('T')[0];
-            console.log('Comparando:', orderDate, '===', filterDate);
-            return orderDate === filterDate;
+            if (!order.date) return false;
+            try {
+                // Converter timestamp para data se necessário
+                let orderDate;
+                if (typeof order.date === 'string' && order.date.includes('T')) {
+                    orderDate = order.date.split('T')[0];
+                } else {
+                    orderDate = new Date(order.date).toISOString().split('T')[0];
+                }
+                console.log('Data do pedido:', order.date, '-> Convertida:', orderDate, 'Filtro:', filterDate);
+                return orderDate === filterDate;
+            } catch (error) {
+                console.error('Erro ao converter data:', order.date, error);
+                return false;
+            }
         });
         console.log('Após filtro data:', filtered.length, 'pedidos');
     }
@@ -93,8 +159,7 @@ function applyFilters() {
     
     console.log('Filtros aplicados:', currentFilters);
     
-    // Recarregar dados e aplicar filtros
-    orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    // Aplicar filtros aos dados já carregados
     loadOrders();
     updateStats();
 }
@@ -127,30 +192,29 @@ function renderActiveOrders(activeOrders) {
             
             <div class="order-info">
                 <div class="order-detail">
-                    <strong>Cliente:</strong> ${order.customer}
+                    <strong>Cliente:</strong> Cliente WhatsApp
                 </div>
                 <div class="order-detail">
-                    <strong>Data:</strong> ${formatDate(order.date)}
+                    <strong>Data:</strong> ${formatDate(order.data_pedido || order.date)}
                 </div>
                 <div class="order-detail">
-                    <strong>Total:</strong> R$ ${order.total.toFixed(2)}
+                    <strong>Total:</strong> R$ ${(order.valor_total || order.total || 0).toFixed(2)}
                 </div>
                 <div class="order-detail">
-                    <strong>Pagamento:</strong> ${order.paymentMethod || 'Não informado'}
-                    ${order.paymentStatus === 'aguardando_comprovante' ? '<span style="color: #ff9800; font-weight: bold;"> (Aguardando Comprovante)</span>' : ''}
-                    ${order.paymentStatus === 'confirmado' ? '<span style="color: #4caf50; font-weight: bold;"> ✅</span>' : ''}
+                    <strong>Pagamento:</strong> ${order.paymentMethod || order.forma_pagamento || 'Não informado'}
+                </div>
+                <div class="order-detail">
+                    <strong>Pontos:</strong> ${order.pontos_ganhos || 0} pts
                 </div>
             </div>
             
-            <div class="order-items">
-                <strong>Produtos:</strong> ${order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ')}
+            <div class="order-address">
+                <strong>Endereço:</strong> ${order.endereco || 'Não informado'}
             </div>
             
             <div class="order-actions">
                 ${getActionButtons(order)}
             </div>
-            
-            ${order.notes ? `<div class="order-notes"><strong>Notas:</strong> ${order.notes}</div>` : ''}
         </div>
     `).join('');
 }
@@ -276,6 +340,7 @@ function getStatusText(status) {
 
 // Formatar data
 function formatDate(dateString) {
+    if (!dateString) return 'Data não informada';
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
 }
@@ -305,14 +370,21 @@ function getActionButtons(order) {
 }
 
 // Atualizar status do pedido
-function updateOrderStatus(orderId, newStatus) {
+async function updateOrderStatus(orderId, newStatus) {
     event.stopPropagation();
     
     const order = orders.find(o => o.id === orderId);
     if (order) {
         const oldStatus = order.status;
         order.status = newStatus;
-        order.updatedAt = new Date().toISOString();
+        
+        // Atualizar no Supabase
+        try {
+            await db.updateOrderStatus(orderId, newStatus);
+            console.log('✅ Status atualizado no Supabase:', orderId, newStatus);
+        } catch (error) {
+            console.error('Erro ao atualizar no Supabase:', error);
+        }
         
         if (newStatus === 'entregue') {
             order.deliveredAt = new Date().toISOString();
@@ -577,10 +649,19 @@ function updateStats() {
     };
     
     orders.forEach(order => {
-        if (stats.hasOwnProperty(order.status)) {
-            stats[order.status]++;
+        const status = order.status || 'novo';
+        
+        // Mapear status do banco para status da interface
+        if (status === 'aguardando_pagamento') {
+            stats.novo++;
+        } else if (stats.hasOwnProperty(status)) {
+            stats[status]++;
+        } else {
+            stats.novo++; // Status desconhecido vai para "novo"
         }
     });
+    
+    console.log('Estatísticas calculadas:', stats);
     
     Object.keys(stats).forEach(status => {
         const element = document.getElementById(`stat-${status}`);
@@ -736,6 +817,134 @@ Obrigado por comprar com a gente!`;
 // Salvar pedidos
 function saveOrders() {
     localStorage.setItem('adegaOrders', JSON.stringify(orders));
+}
+
+// Função para salvar todos os pedidos no banco de dados Supabase
+async function saveAllOrdersToDatabase() {
+    try {
+        const localOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        
+        if (localOrders.length === 0) {
+            alert('Nenhum pedido encontrado no localStorage para salvar.');
+            return;
+        }
+        
+        console.log(`🔄 Iniciando salvamento de ${localOrders.length} pedidos no Supabase...`);
+        
+        let savedCount = 0;
+        let skippedCount = 0;
+        let errorCount = 0;
+        const errors = [];
+        
+        for (const order of localOrders) {
+            try {
+                // Preparar dados do pedido para o Supabase (sem ID)
+                const orderData = {
+                    valor_total: parseFloat(order.total || order.valor_total || 0),
+                    pontos_ganhos: order.pontos_ganhos || Math.floor((order.total || 0) / 10),
+                    status: order.status || 'novo',
+                    forma_pagamento: order.paymentMethod || order.forma_pagamento || 'Não informado',
+                    endereco: order.address || order.endereco || 'Endereço não informado',
+                    data_pedido: order.date || order.data_pedido || new Date().toISOString()
+                };
+                
+                // Tentar inserir (deixar o banco gerar o ID)
+                const { data: savedOrder, error } = await supabase
+                    .from('pedidos')
+                    .insert(orderData)
+                    .select('id')
+                    .single();
+                
+                if (error) {
+                    // Se for erro de duplicata, pular
+                    if (error.code === '23505') {
+                        skippedCount++;
+                        continue;
+                    }
+                    throw error;
+                }
+                
+                savedCount++;
+                console.log(`✅ Pedido local #${order.id} salvo no Supabase com ID #${savedOrder.id}`);
+                
+            } catch (error) {
+                errorCount++;
+                const errorMsg = error.message || 'Erro desconhecido';
+                errors.push(`Pedido #${order.id}: ${errorMsg}`);
+                console.error(`❌ Erro ao salvar pedido #${order.id}:`, errorMsg);
+            }
+        }
+        
+        // Mostrar resultado
+        let message = `🎉 Sincronização concluída!\n\n`;
+        message += `✅ Pedidos salvos: ${savedCount}\n`;
+        message += `⏭️ Pedidos pulados: ${skippedCount}\n`;
+        message += `❌ Erros: ${errorCount}`;
+        
+        if (errors.length > 0 && errors.length <= 3) {
+            message += `\n\n⚠️ Erros:\n${errors.join('\n')}`;
+        } else if (errors.length > 3) {
+            message += `\n\n⚠️ Primeiros 3 erros:\n${errors.slice(0, 3).join('\n')}\n... e mais ${errors.length - 3}`;
+        }
+        
+        alert(message);
+        
+        // Recarregar pedidos
+        if (savedCount > 0) {
+            await loadOrdersFromDB();
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro geral:', error);
+        alert(`❌ Erro: ${error.message}`);
+    }
+}
+
+// Função para limpar todos os pedidos
+async function clearAllOrders() {
+    if (!confirm('⚠️ ATENÇÃO: Isso irá deletar TODOS os pedidos!\n\nLocalStorage + Supabase\n\nTem certeza?')) {
+        return;
+    }
+    
+    if (!confirm('ÚLTIMA CONFIRMAÇÃO: Deletar todos os pedidos?')) {
+        return;
+    }
+    
+    try {
+        // Limpar localStorage
+        localStorage.removeItem('adegaOrders');
+        console.log('✅ localStorage limpo');
+        
+        // Limpar Supabase
+        const { error } = await supabase
+            .from('pedidos')
+            .delete()
+            .neq('id', 0);
+        
+        if (error) {
+            throw error;
+        }
+        
+        console.log('✅ Supabase limpo');
+        
+        // Recarregar interface
+        orders = [];
+        loadOrders();
+        updateStats();
+        
+        alert('🗑️ Todos os pedidos foram deletados!\n\nPronto para novos testes.');
+        
+    } catch (error) {
+        console.error('❌ Erro ao limpar:', error);
+        alert('❌ Erro: ' + error.message);
+    }
+}
+
+// Função de sincronização simples
+function syncOrdersSimple() {
+    console.log('🚀 Sincronização rápida iniciada...');
+    loadOrdersFromDB();
+    alert('Sincronização concluída!');
 }
 
 // Função de teste para demonstrar sincronização em tempo real

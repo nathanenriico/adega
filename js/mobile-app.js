@@ -209,6 +209,30 @@ function setupMobileSearch() {
     }
 }
 
+// Função para alterar endereço
+function changeAddress() {
+    if (window.innerWidth > 768) return;
+    
+    // Garantir que estamos na seção home
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+    document.getElementById('home').classList.add('active');
+    
+    // Scroll para o formulário de endereço
+    setTimeout(() => {
+        const addressCard = document.querySelector('.delivery-address-card');
+        if (addressCard) {
+            addressCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
+}
+
+// Manter o texto padrão sempre
+document.addEventListener('DOMContentLoaded', function() {
+    // O texto sempre será "Endereço atual" definido no CSS
+});
+
 // Redimensionamento da janela
 window.addEventListener('resize', function() {
     if (window.innerWidth <= 768) {

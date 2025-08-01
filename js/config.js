@@ -3,69 +3,54 @@ const SUPABASE_URL = 'https://vtrgtorablofhmhizrjr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4';
 
 // Inicializar cliente Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Testar conexão
+supabase.from('pedidos').select('count').then(result => {
+    if (result.error) {
+        console.error('❌ Erro de conexão Supabase:', result.error);
+    } else {
+        console.log('✅ Supabase conectado com sucesso');
+    }
+});
 
 // Funções do banco de dados
 const db = {
     // Salvar pedido
     async saveOrder(orderData) {
+        console.log('Salvando pedido no Supabase:', orderData);
+        
         const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .insert([orderData])
+            .from('pedidos')
+            .insert(orderData)
             .select()
             .single();
         
-        if (orderError) throw orderError;
+        if (orderError) {
+            console.error('Erro detalhado:', orderError);
+            throw new Error(`Erro ao salvar: ${orderError.message}`);
+        }
         
-        // Salvar itens do pedido
-        const items = orderData.items.map(item => ({
-            order_id: order.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price
-        }));
-        
-        const { error: itemsError } = await supabase
-            .from('order_items')
-            .insert(items);
-        
-        if (itemsError) throw itemsError;
+        console.log('Pedido salvo:', order);
         return order;
     },
     
     // Buscar pedidos
     async getOrders() {
         const { data, error } = await supabase
-            .from('orders')
-            .select(`
-                *,
-                order_items (*)
-            `)
-            .order('date', { ascending: false });
+            .from('pedidos')
+            .select('*')
+            .order('data_pedido', { ascending: false });
         
         if (error) throw error;
-        
-        // Converter para formato do sistema atual
-        return data.map(order => ({
-            ...order,
-            items: order.order_items
-        }));
+        return data;
     },
     
     // Atualizar status do pedido
-    async updateOrderStatus(orderId, status, paymentStatus = null) {
-        const updateData = { 
-            status,
-            updated_at: new Date().toISOString()
-        };
-        
-        if (paymentStatus) {
-            updateData.payment_status = paymentStatus;
-        }
-        
+    async updateOrderStatus(orderId, status) {
         const { error } = await supabase
-            .from('orders')
-            .update(updateData)
+            .from('pedidos')
+            .update({ status })
             .eq('id', orderId);
         
         if (error) throw error;
@@ -80,5 +65,40 @@ const db = {
         
         if (error) throw error;
         return data;
+    },
+    
+    // Salvar produto
+    async saveProduct(productData) {
+        const { data, error } = await supabase
+            .from('products')
+            .insert([productData])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        return data;
+    },
+    
+    // Atualizar produto
+    async updateProduct(id, productData) {
+        const { data, error } = await supabase
+            .from('products')
+            .update(productData)
+            .eq('id', id)
+            .select()
+            .single();
+        
+        if (error) throw error;
+        return data;
+    },
+    
+    // Deletar produto (delete permanente)
+    async deleteProduct(id) {
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
     }
 };

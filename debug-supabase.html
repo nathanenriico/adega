@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        button { background: #d4af37; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+</head>
+<body>
+    <h1>🔍 Debug Supabase</h1>
+    
+    <button onclick="testConnection()">Testar Conexão</button>
+    <button onclick="testInsert()">Testar Insert</button>
+    <button onclick="viewTable()">Ver Tabela</button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">🔄 Testando conexão...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('pedidos')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) throw error;
+                
+                resultDiv.innerHTML = '<div class="result success">✅ Conexão OK!</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erro: ${error.message}</div>`;
+            }
+        }
+        
+        async function testInsert() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">🔄 Testando insert...</div>';
+            
+            try {
+                const testData = {
+                    valor_total: 25.50,
+                    pontos_ganhos: 2,
+                    status: 'novo',
+                    forma_pagamento: 'PIX',
+                    endereco: 'Teste Debug'
+                };
+                
+                console.log('Dados a inserir:', testData);
+                
+                const { data, error } = await supabase
+                    .from('pedidos')
+                    .insert(testData)
+                    .select()
+                    .single();
+                
+                if (error) {
+                    console.error('Erro detalhado:', error);
+                    throw error;
+                }
+                
+                console.log('Dados inseridos:', data);
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        ✅ Insert OK!<br>
+                        ID: ${data.id}<br>
+                        Total: R$ ${data.valor_total}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Erro completo:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Erro: ${error.message}<br>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        async function viewTable() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">🔄 Carregando tabela...</div>';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('pedidos')
+                    .select('*')
+                    .order('data_pedido', { ascending: false })
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                let html = `<div class="result success">📋 Últimos 5 pedidos:</div>`;
+                
+                if (data.length === 0) {
+                    html += '<div class="result">Nenhum pedido encontrado.</div>';
+                } else {
+                    html += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+                
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erro: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
