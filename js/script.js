@@ -237,7 +237,9 @@ function filterProducts(category) {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     const filteredProducts = category === 'all' 
         ? products 
@@ -261,21 +263,23 @@ function renderProducts(productsToRender = products) {
         // Layout mobile
         if (window.innerWidth <= 768) {
             return `
-            <div class="product-card" data-category="${product.category}">
-                <button class="product-favorite" onclick="toggleFavorite(${product.id})">
-                    <span class="heart">♡</span>
-                </button>
-                <img src="${product.image}" alt="${product.name}" 
-                     onerror="this.src='https://via.placeholder.com/200x100/333/fff?text=Produto'">
-                <h4>${product.name}</h4>
-                <div class="product-rating">
-                    <span class="star">★</span>
-                    <span class="rating-text">${(Math.random() * 2 + 3).toFixed(1)}</span>
+            <div class="mobile-product-card" data-category="${product.category}">
+                <div class="mobile-product-image">
+                    <img src="${product.image}" alt="${product.name}" 
+                         onerror="this.src='https://via.placeholder.com/120x120/333/fff?text=Produto'">
+                    <button class="mobile-favorite" onclick="toggleFavorite(${product.id})">
+                        ♡
+                    </button>
                 </div>
-                <div class="price">R$ ${product.price.toFixed(2)}</div>
-                <button class="add-to-cart" onclick="addToCart(${product.id})">
-                    Adicionar
-                </button>
+                <div class="mobile-product-info">
+                    <h4 class="mobile-product-name">${product.name}</h4>
+                    <div class="mobile-product-rating">
+                        <span class="mobile-star">★</span>
+                        <span class="mobile-rating-text">${(Math.random() * 2 + 3).toFixed(1)}</span>
+                    </div>
+                    <div class="mobile-product-price">R$ ${product.price.toFixed(2)}</div>
+                    <button class="mobile-add-btn" onclick="addToCart(${product.id})">Adicionar</button>
+                </div>
             </div>
         `;
         }
@@ -2033,6 +2037,10 @@ window.filterProducts = function(category) {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     
+    // Atualizar botões mobile
+    const mobilePills = document.querySelectorAll('.mobile-filter-pill');
+    mobilePills.forEach(pill => pill.classList.remove('active'));
+    
     if (event && event.target) {
         event.target.classList.add('active');
     }
@@ -2316,3 +2324,15 @@ function getBotResponse(message) {
     // Resposta padrão
     return 'Desculpe, não consegui processar sua pergunta. Posso ajudar com produtos, preços, carrinho, entregas ou horários. WhatsApp: (11) 93394-9002';
 }
+
+// Função de busca de produtos
+function searchProducts() {
+    const searchTerm = document.getElementById('mobile-product-search').value.toLowerCase();
+    const filteredProducts = products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm)
+    );
+    renderProducts(filteredProducts);
+}
+
+// Função global para busca de produtos
+window.searchProducts = searchProducts;

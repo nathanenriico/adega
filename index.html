@@ -265,27 +265,27 @@ Atibaia - SP, 12942-570</p>
             </div>
 
             <div id="products" class="section">
-                <!-- Barra de Pesquisa Mobile -->
-                <div class="mobile-search-bar">
-                    <div class="search-container">
-                        <div class="search-icon">🔍</div>
-                        <input type="text" id="mobile-product-search" placeholder="Buscar produtos..." oninput="searchProducts()">
-                    </div>
-                </div>
-                
                 <div class="products-section">
                     <h3>Nossos Produtos</h3>
+                    
+                    <!-- Filtros Desktop -->
                     <div class="filters">
-                        <button class="filter-btn active" onclick="openCategoryPage('all')">Todos</button>
-                        <button class="filter-btn" onclick="openCategoryPage('cervejas')">Cervejas</button>
-                        <button class="filter-btn" onclick="openCategoryPage('drinks')">Drinks</button>
-                        <button class="filter-btn" onclick="openCategoryPage('vinhos')">Vinhos</button>
-                        <button class="filter-btn" onclick="openCategoryPage('refrigerantes')">Refrigerantes</button>
-                        <button class="filter-btn" onclick="openCategoryPage('aguas')">Águas e Gelo</button>
-                        <button class="filter-btn" onclick="openCategoryPage('chopp')">Chopp</button>
+                        <button class="filter-btn active" onclick="filterProducts('all')">Todos</button>
+                        <button class="filter-btn" onclick="filterProducts('cervejas')">Cervejas</button>
+                        <button class="filter-btn" onclick="filterProducts('drinks')">Drinks</button>
+                        <button class="filter-btn" onclick="filterProducts('vinhos')">Vinhos</button>
+                        <button class="filter-btn" onclick="filterProducts('refrigerantes')">Refrigerantes</button>
+                        <button class="filter-btn" onclick="filterProducts('aguas')">Águas</button>
+                        <button class="filter-btn" onclick="filterProducts('chopp')">Chopp</button>
                     </div>
+                    
 
-                    <div class="products-grid" id="products-grid">
+                    
+
+
+
+                    
+                    <div class="mobile-food-grid" id="products-grid">
                         <!-- Produtos serão carregados aqui -->
                     </div>
                 </div>
