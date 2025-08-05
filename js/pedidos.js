@@ -468,13 +468,8 @@ function sendAutomaticWhatsAppNotification(order, newStatus) {
     
     // Pequeno delay para não conflitar com a atualização da tela
     setTimeout(() => {
-        if (isMobile) {
-            // Mobile: Abrir app WhatsApp
-            window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-        } else {
-            // Desktop: Abrir WhatsApp Web
-            window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-        }
+        // Sempre usar WhatsApp Web no analytics
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
     }, 1000);
     
     // Registrar notificação no pedido
@@ -722,11 +717,8 @@ function sendPixConfirmationNotification(order) {
     
     // Pequeno delay para não conflitar com a atualização da tela
     setTimeout(() => {
-        if (isMobile) {
-            window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-        } else {
-            window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-        }
+        // Sempre usar WhatsApp Web no analytics
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
     }, 1000);
     
     // Registrar notificação no pedido
@@ -789,12 +781,8 @@ Obrigado por comprar com a gente!`;
     const phone = order.phone || '5511941716617';
     const encodedMessage = encodeURIComponent(message);
     
-    // Abrir WhatsApp com a mensagem
-    if (isMobile) {
-        window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-    } else {
-        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-    }
+    // Abrir WhatsApp Web com a mensagem
+    window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
     
     // Registrar que a cobrança foi enviada
     if (!order.paymentRequests) {

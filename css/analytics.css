@@ -444,18 +444,18 @@ body {
 .cart-actions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .recovery-btn {
     background: #25D366;
     color: white;
     border: none;
-    padding: 12px 20px;
+    padding: 10px 16px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: all 0.3s ease;
     white-space: nowrap;
 }
@@ -464,6 +464,16 @@ body {
     background: #128c7e;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.recovery-btn.web-btn {
+    background: #25D366;
+    font-weight: 700;
+}
+
+.recovery-btn.web-btn:hover {
+    background: #128c7e;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
 }
 
 .recovery-btn.disabled {

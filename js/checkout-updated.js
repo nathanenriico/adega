@@ -156,10 +156,41 @@ async function applyCoupon() {
 
 // Funções principais
 function goBack() {
-    window.history.back();
+    window.location.href = 'index.html';
 }
 
-function changeAddress() {
+async function changeAddress() {
+    // Pré-carregar dados do endereço atual
+    try {
+        const userId = localStorage.getItem('userId');
+        if (userId && typeof supabase !== 'undefined') {
+            const { data, error } = await supabase
+                .from('clientes')
+                .select('rua, numero, complemento, bairro, cidade, cep')
+                .eq('id', userId)
+                .single();
+            
+            if (!error && data) {
+                document.getElementById('cep-input').value = data.cep || '';
+                document.getElementById('street-input').value = data.rua || '';
+                document.getElementById('number-input').value = data.numero || '';
+                document.getElementById('neighborhood-input').value = data.bairro || '';
+            }
+        } else {
+            // Fallback para localStorage
+            const savedAddressData = localStorage.getItem('deliveryAddressData');
+            if (savedAddressData) {
+                const addressData = JSON.parse(savedAddressData);
+                document.getElementById('cep-input').value = addressData.cep || '';
+                document.getElementById('street-input').value = addressData.street || '';
+                document.getElementById('number-input').value = addressData.number || '';
+                document.getElementById('neighborhood-input').value = addressData.neighborhood || '';
+            }
+        }
+    } catch (error) {
+        console.log('Erro ao carregar dados para edição:', error);
+    }
+    
     document.getElementById('address-modal').style.display = 'block';
 }
 
@@ -169,23 +200,62 @@ function closeModal() {
     });
 }
 
-function saveAddress() {
+async function saveAddress() {
     const cep = document.getElementById('cep-input').value;
     const street = document.getElementById('street-input').value;
     const number = document.getElementById('number-input').value;
     const neighborhood = document.getElementById('neighborhood-input').value;
     
     if (street && number && neighborhood) {
-        // Atualizar endereço na tela
-        const addressInfo = document.querySelector('.address-info');
-        addressInfo.innerHTML = `
-            <p><strong>${street}, ${number}</strong></p>
-            <p>${neighborhood} - Atibaia, SP</p>
-            <p>CEP: ${cep}</p>
-        `;
-        
-        closeModal();
-        showMessage('Endereço atualizado com sucesso!');
+        try {
+            // Salvar no banco de dados se usuário estiver logado
+            const userId = localStorage.getItem('userId');
+            if (userId && typeof supabase !== 'undefined') {
+                const { error } = await supabase
+                    .from('clientes')
+                    .update({
+                        rua: street,
+                        numero: number,
+                        bairro: neighborhood,
+                        cidade: 'Atibaia',
+                        cep: cep || ''
+                    })
+                    .eq('id', userId);
+                
+                if (error) {
+                    console.error('Erro ao salvar endereço no banco:', error);
+                } else {
+                    console.log('✅ Endereço salvo no banco de dados');
+                }
+            }
+            
+            // Salvar no localStorage como backup
+            const addressText = `${street}, ${number}\n${neighborhood}, Atibaia\nCEP: ${cep}`;
+            localStorage.setItem('deliveryAddress', addressText);
+            localStorage.setItem('deliveryAddressData', JSON.stringify({
+                cep: cep,
+                street: street,
+                number: number,
+                complement: '',
+                neighborhood: neighborhood,
+                city: 'Atibaia'
+            }));
+            
+            // Atualizar endereço na tela
+            const addressInfo = document.querySelector('.address-info');
+            addressInfo.innerHTML = `
+                <p><strong>${street}, ${number}</strong></p>
+                <p>${neighborhood} - Atibaia, SP</p>
+                <p>CEP: ${cep}</p>
+            `;
+            
+            closeModal();
+            showMessage('Endereço atualizado com sucesso!');
+            
+        } catch (error) {
+            console.error('Erro ao salvar endereço:', error);
+            showMessage('Erro ao salvar endereço. Tente novamente.', 'error');
+        }
     } else {
         alert('Por favor, preencha todos os campos obrigatórios.');
     }
@@ -202,6 +272,35 @@ function saveCard() {
         showMessage('Cartão adicionado com sucesso!');
     } else {
         alert('Por favor, preencha todos os campos do cartão.');
+    }
+}
+
+async function updateCustomerPoints(customerId, pointsToAdd) {
+    try {
+        // Buscar pontos atuais
+        const { data: currentData, error: fetchError } = await supabase
+            .from('clientes')
+            .select('pontos')
+            .eq('id', customerId)
+            .single();
+        
+        if (fetchError) throw fetchError;
+        
+        const currentPoints = currentData.pontos || 0;
+        const newPoints = currentPoints + pointsToAdd;
+        
+        // Atualizar pontos no banco
+        const { error: updateError } = await supabase
+            .from('clientes')
+            .update({ pontos: newPoints })
+            .eq('id', customerId);
+        
+        if (updateError) throw updateError;
+        
+        console.log(`Pontos atualizados: ${currentPoints} + ${pointsToAdd} = ${newPoints}`);
+        
+    } catch (error) {
+        console.error('Erro ao atualizar pontos:', error);
     }
 }
 
@@ -284,18 +383,46 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
     // Usar o ID já gerado na confirmOrder
     const orderId = parseInt(localStorage.getItem('currentOrderId'));
     
-    // Obter dados mínimos necessários
-    const addressInfo = document.querySelector('.address-info');
+    // Obter endereço do banco de dados primeiro
     let address = 'Endereço não informado';
     
-    if (addressInfo) {
-        // Extrair apenas o texto do endereço, removendo quebras de linha extras
-        address = addressInfo.textContent.trim().replace(/\s+/g, ' ');
+    try {
+        const userId = localStorage.getItem('userId');
+        if (userId && typeof supabase !== 'undefined') {
+            const { data: addressData } = await supabase
+                .from('clientes')
+                .select('rua, numero, complemento, bairro, cidade, cep')
+                .eq('id', userId)
+                .single();
+            
+            if (addressData && addressData.rua) {
+                address = `${addressData.rua}, ${addressData.numero}${addressData.complemento ? ` - ${addressData.complemento}` : ''}, ${addressData.bairro}, ${addressData.cidade}, CEP: ${addressData.cep}`;
+                console.log('✅ Endereço obtido do banco:', address);
+            }
+        }
+    } catch (error) {
+        console.log('Erro ao buscar endereço do banco, tentando fallbacks...');
+        
+        // Fallback 1: localStorage
+        const savedAddress = localStorage.getItem('deliveryAddress');
+        if (savedAddress) {
+            address = savedAddress.replace(/\n/g, ', ');
+            console.log('✅ Endereço obtido do localStorage:', address);
+        } else {
+            // Fallback 2: DOM
+            const addressInfo = document.querySelector('.address-info');
+            if (addressInfo) {
+                address = addressInfo.textContent.trim().replace(/\s+/g, ' ');
+                console.log('✅ Endereço obtido do DOM:', address);
+            }
+        }
     }
     
-    console.log('Endereço capturado:', address);
-    const customerName = document.getElementById('customer-name')?.value || 'Cliente';
-    const customerPhone = document.getElementById('customer-phone')?.value || '11941716617';
+    console.log('📍 Endereço capturado para pedido:', address);
+    // Obter dados do usuário logado
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const customerName = userData.nome || 'Cliente';
+    const customerPhone = userData.whatsapp ? userData.whatsapp.replace(/\D/g, '') : '11941716617';
     
     // Calcular totais rapidamente
     const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -364,19 +491,14 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         
         console.log('Dados sendo salvos no Supabase:', supabaseOrderData);
         
-        db.saveOrder(supabaseOrderData).then(() => {
+        db.saveOrder(supabaseOrderData).then(async () => {
             console.log('✅ Pedido salvo no Supabase:', orderId);
             
             // Atualizar pontos do cliente em tempo real
-            console.log('Verificando atualização de pontos:', customerId, typeof addPointsToCustomer);
-            if (customerId && typeof addPointsToCustomer === 'function') {
-                console.log('Chamando addPointsToCustomer:', orderId, orderData.total);
-                addPointsToCustomer(orderId, orderData.total);
-            } else {
-                console.warn('Não foi possível atualizar pontos:', {
-                    customerId: customerId,
-                    addPointsToCustomer: typeof addPointsToCustomer
-                });
+            if (customerId) {
+                const pointsToAdd = Math.floor(orderData.total / 10);
+                await updateCustomerPoints(customerId, pointsToAdd);
+                console.log(`🎯 Pontos adicionados: +${pointsToAdd} para cliente ${customerId}`);
             }
             
             // Salvar no localStorage apenas como backup após sucesso no Supabase
@@ -680,48 +802,71 @@ function updatePixValue() {
 
 // Carregar dados quando a página for carregada
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Página de checkout carregada, carregando dados do carrinho...');
-    
-    // Verificar se Supabase está carregado
-    if (typeof supabase !== 'undefined') {
-        console.log('✅ Supabase carregado com sucesso');
-    } else {
-        console.error('❌ Supabase não está carregado');
-    }
-    
-    // Verificar se db está disponível
-    if (typeof db !== 'undefined') {
-        console.log('✅ Objeto db disponível');
-    } else {
-        console.error('❌ Objeto db não está disponível');
-    }
-    
     loadCartData();
-    
-    // Carregar endereço salvo
-    loadSavedAddressInCheckout();
-    
-    // Atualizar valor do PIX
     updatePixValue();
     
-    // Adicionar listener para o campo de troco
+    // Carregar endereço imediatamente e repetir até conseguir
+    loadSavedAddressInCheckout();
+    setTimeout(loadSavedAddressInCheckout, 1000);
+    setTimeout(loadSavedAddressInCheckout, 3000);
+    
     document.getElementById('money')?.addEventListener('change', function() {
         document.getElementById('change-amount').style.display = this.checked ? 'block' : 'none';
     });
 });
 
 // Função para carregar endereço salvo no checkout
-function loadSavedAddressInCheckout() {
-    const savedAddress = localStorage.getItem('deliveryAddress');
-    if (savedAddress) {
-        const addressInfo = document.querySelector('.address-info');
-        if (addressInfo) {
-            const lines = savedAddress.split('\n');
+async function loadSavedAddressInCheckout() {
+    const addressInfo = document.querySelector('.address-info');
+    if (!addressInfo) return;
+    
+    const userId = localStorage.getItem('userId');
+    console.log('🔍 UserId:', userId);
+    
+    if (!userId) {
+        addressInfo.innerHTML = '<p style="color: #ff6b6b;">Usuário não identificado</p>';
+        return;
+    }
+    
+    // Aguardar Supabase estar disponível
+    let attempts = 0;
+    while ((!window.supabase || !supabase || typeof supabase.from !== 'function') && attempts < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    
+    if (!supabase || typeof supabase.from !== 'function') {
+        addressInfo.innerHTML = '<p style="color: #ff6b6b;">Sistema indisponível</p>';
+        return;
+    }
+    
+    try {
+        console.log('🔄 Buscando endereço no banco...');
+        const { data, error } = await supabase
+            .from('clientes')
+            .select('rua, numero, complemento, bairro, cidade, cep')
+            .eq('id', userId)
+            .single();
+        
+        console.log('📊 Resposta do banco:', { data, error });
+        
+        if (!error && data && data.rua) {
+            const fullAddress = `${data.rua}, ${data.numero}${data.complemento ? ` - ${data.complemento}` : ''}`;
             addressInfo.innerHTML = `
-                <p><strong>${lines[0]}</strong></p>
-                <p>${lines[1]}</p>
-                <p>${lines[2]}</p>
+                <p><strong>${fullAddress}</strong></p>
+                <p>${data.bairro}, ${data.cidade}</p>
+                <p>CEP: ${data.cep}</p>
             `;
+            console.log('✅ Endereço carregado:', fullAddress);
+        } else {
+            addressInfo.innerHTML = `
+                <p style="color: #ff6b6b;"><strong>Endereço não cadastrado</strong></p>
+                <p>Clique em "Alterar" para cadastrar</p>
+            `;
+            console.log('⚠️ Endereço não encontrado');
         }
+    } catch (error) {
+        console.error('❌ Erro:', error);
+        addressInfo.innerHTML = '<p style="color: #ff6b6b;">Erro ao carregar endereço</p>';
     }
 }

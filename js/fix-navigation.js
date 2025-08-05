@@ -1,48 +1,72 @@
 // Correção rápida para navegação - carregar antes do script principal
 console.log('🔧 Carregando correções de navegação...');
 
-// Definir funções essenciais no escopo global imediatamente
+// Definir função de navegação robusta
 window.showSection = function(sectionId) {
-    console.log('Navegando para seção:', sectionId);
+    console.log('🔄 Navegando para seção:', sectionId);
     
-    const sections = document.querySelectorAll('.section');
+    // Verificar se a seção existe
     const targetSection = document.getElementById(sectionId);
+    if (!targetSection) {
+        console.error('❌ Seção não encontrada:', sectionId);
+        return false;
+    }
     
-    // Animação de saída
-    sections.forEach(section => {
-        if (section.classList.contains('active')) {
-            section.style.opacity = '0';
-            section.style.transform = 'translateX(-20px)';
+    // PASSO 1: Esconder TODAS as seções
+    const allSections = document.querySelectorAll('.section');
+    allSections.forEach(section => {
+        section.classList.remove('active');
+        section.style.display = 'none';
+    });
+    
+    // PASSO 2: Mostrar APENAS a seção selecionada
+    targetSection.classList.add('active');
+    targetSection.style.display = 'block';
+    targetSection.style.visibility = 'visible';
+    targetSection.style.opacity = '1';
+    
+    // PASSO 3: Carregar conteúdo específico da seção
+    if (sectionId === 'products') {
+        // Renderizar produtos se for a seção de produtos
+        setTimeout(() => {
+            if (window.renderProducts) {
+                window.renderProducts();
+            }
+        }, 100);
+    }
+    
+    console.log('✅ Seção ativada:', sectionId);
+    
+    // PASSO 4: Atualizar menus ativos
+    document.querySelectorAll('.nav-menu a, .nav-item, .mobile-nav-item').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Buscar e ativar o link correspondente
+    const activeLinks = document.querySelectorAll(`[onclick*="showSection('${sectionId}')"], [onclick*="goToHome()"]`);
+    activeLinks.forEach(link => {
+        if (sectionId === 'home' || link.onclick?.toString().includes('goToHome')) {
+            link.classList.add('active');
+            console.log('🔗 Link ativado:', link.textContent?.trim());
+        } else if (link.onclick?.toString().includes(`showSection('${sectionId}')`)) {
+            link.classList.add('active');
+            console.log('🔗 Link ativado:', link.textContent?.trim());
         }
     });
     
-    setTimeout(() => {
-        sections.forEach(section => section.classList.remove('active'));
-        
-        if (targetSection) {
-            targetSection.classList.add('active');
-            targetSection.style.opacity = '0';
-            targetSection.style.transform = 'translateX(20px)';
-            
-            // Animação de entrada
-            setTimeout(() => {
-                targetSection.style.transition = 'all 0.3s ease';
-                targetSection.style.opacity = '1';
-                targetSection.style.transform = 'translateX(0)';
-            }, 50);
-        }
-    }, 150);
+    // PASSO 5: Fechar menus laterais
+    const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
     
-    const navLinks = document.querySelectorAll('.nav-menu a');
-    navLinks.forEach(link => link.classList.remove('active'));
+    if (sideMenu) sideMenu.classList.remove('active');
+    if (menuOverlay) menuOverlay.classList.remove('active');
+    if (cartSidebar) cartSidebar.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
     
-    const activeLink = Array.from(navLinks).find(link => 
-        link.getAttribute('onclick') && link.getAttribute('onclick').includes(`'${sectionId}'`)
-    );
-    
-    if (activeLink) {
-        activeLink.classList.add('active');
-    }
+    console.log('🎯 Navegação concluída para:', sectionId);
+    return true;
 };
 
 window.toggleMenu = function() {
@@ -54,7 +78,47 @@ window.toggleMenu = function() {
 };
 
 window.goToHome = function() {
-    window.showSection('home');
+    console.log('🏠 Navegando para o início...');
+    
+    // Fechar painel admin se estiver aberto
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel && !adminPanel.classList.contains('hidden')) {
+        adminPanel.classList.add('hidden');
+    }
+    
+    // Fechar menus laterais se estiverem abertos
+    const sideMenu = document.getElementById('side-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
+    
+    if (sideMenu) sideMenu.classList.remove('active');
+    if (menuOverlay) menuOverlay.classList.remove('active');
+    if (cartSidebar) cartSidebar.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
+    
+    // Ir para a seção home usando a função de navegação
+    if (typeof window.showSection === 'function') {
+        window.showSection('home');
+    } else {
+        console.error('❌ Função showSection não encontrada');
+        // Fallback manual
+        const allSections = document.querySelectorAll('.section');
+        allSections.forEach(section => {
+            section.classList.remove('active');
+            section.style.display = 'none';
+        });
+        
+        const homeSection = document.getElementById('home');
+        if (homeSection) {
+            homeSection.classList.add('active');
+            homeSection.style.display = 'block';
+            homeSection.style.visibility = 'visible';
+            homeSection.style.opacity = '1';
+        }
+    }
+    
+    console.log('✅ Navegação para início concluída');
 };
 
 window.toggleCart = function() {
@@ -107,29 +171,15 @@ function updateCartDisplay() {
                 </div>
             `).join('');
             
-            // Adicionar total geral
+            // Adicionar total e botão
             cartItems.innerHTML += `
                 <div class="cart-total-section">
                     <div class="cart-total-line">
                         <strong>Total: R$ ${cartTotal.toFixed(2)}</strong>
                     </div>
-                    <button onclick="goToCheckout()" class="checkout-btn">Finalizar Pedido</button>
+                    <button onclick="sendCartToWhatsApp()" class="checkout-btn">Finalizar Pedido</button>
                 </div>
             `;
-            
-            // Verificar se há endereço de entrega
-            const deliveryAddress = localStorage.getItem('deliveryAddress');
-            if (!deliveryAddress) {
-                const checkoutBtn = document.querySelector('.checkout-btn');
-                if (checkoutBtn) {
-                    checkoutBtn.onclick = function() {
-                        alert('Por favor, cadastre um endereço de entrega antes de finalizar o pedido.');
-                        window.showSection('home');
-                        const addressForm = document.getElementById('delivery-address-form');
-                        if (addressForm) addressForm.style.display = 'flex';
-                    };
-                }
-            }
         }
     }
 }
@@ -301,31 +351,44 @@ window.renderProducts = function(productsToRender = window.products) {
     const grid = document.getElementById('products-grid');
     if (!grid) return;
     
-    grid.style.opacity = '0';
-    grid.style.transform = 'translateY(20px)';
-    
-    setTimeout(() => {
-        grid.innerHTML = productsToRender.map((product, index) => `
-            <div class="product-card" style="animation-delay: ${index * 0.1}s">
+    grid.innerHTML = productsToRender.map(product => {
+        // Layout mobile
+        if (window.innerWidth <= 768) {
+            return `
+            <div class="product-card" data-category="${product.category}">
+                <button class="product-favorite" onclick="toggleFavorite(${product.id})">
+                    <span class="heart">♡</span>
+                </button>
                 <img src="${product.image}" alt="${product.name}" class="product-image" 
-                     onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+                     onerror="this.src='https://via.placeholder.com/90x90/333/fff?text=Produto'">
                 <div class="product-name">${product.name}</div>
                 <div class="product-price">R$ ${product.price.toFixed(2)}</div>
-                <div class="product-actions">
-                    <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
-                        Adicionar 🛒
-                    </button>
-                    <button class="whatsapp-btn-small" onclick="openWhatsApp('${product.name}')">
-                        WhatsApp 💬
-                    </button>
+                <div class="mobile-buttons">
+                    <button class="mobile-add-btn" onclick="addToCart(${product.id})">Adicionar</button>
+                    <button class="mobile-whatsapp-btn" onclick="openWhatsApp('${product.name}')">WhatsApp</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }
         
-        grid.style.transition = 'all 0.4s ease';
-        grid.style.opacity = '1';
-        grid.style.transform = 'translateY(0)';
-    }, 100);
+        // Layout desktop
+        return `
+        <div class="product-card" data-category="${product.category}">
+            <img src="${product.image}" alt="${product.name}" class="product-image" 
+                 onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">R$ ${product.price.toFixed(2)}</div>
+            <div class="product-actions">
+                <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
+                    Adicionar 🛒
+                </button>
+                <button class="whatsapp-btn-small" onclick="openWhatsApp('${product.name}')">
+                    WhatsApp 💬
+                </button>
+            </div>
+        </div>
+    `;
+    }).join('');
 };
 
 window.addToCart = function(productId) {
@@ -355,6 +418,16 @@ window.addToCart = function(productId) {
 };
 
 window.filterProducts = function(category) {
+    const pillButtons = document.querySelectorAll('.pill-btn');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    pillButtons.forEach(btn => btn.classList.remove('active'));
+    filterButtons.forEach(btn => btn.classList.remove('active'));
+    
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
     const filteredProducts = category === 'all' 
         ? window.products 
         : window.products.filter(product => product.category === category);
@@ -601,5 +674,78 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+window.toggleFavorite = function(productId) {
+    const favoriteBtn = event.target.closest('.product-favorite');
+    const heart = favoriteBtn.querySelector('.heart');
+    
+    favoriteBtn.classList.toggle('active');
+    
+    if (favoriteBtn.classList.contains('active')) {
+        heart.textContent = '♥';
+    } else {
+        heart.textContent = '♡';
+    }
+};
+
+window.searchProducts = function() {
+    const searchTerm = document.getElementById('product-search').value.toLowerCase();
+    const filteredProducts = window.products.filter(product => 
+        product.name.toLowerCase().includes(searchTerm)
+    );
+    window.renderProducts(filteredProducts);
+};
+
+window.sendCartToWhatsApp = function() {
+    const cart = JSON.parse(localStorage.getItem('adegaCart') || '[]');
+    
+    if (cart.length === 0) {
+        alert('Carrinho vazio!');
+        return;
+    }
+    
+    const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    
+    let message = `Olá! Gostaria de fazer este pedido:\n\n`;
+    cart.forEach(item => {
+        message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\n`;
+    });
+    message += `\nTotal: R$ ${cartTotal.toFixed(2)}`;
+    
+    if (userData.nome) {
+        message += `\n\nDados do cliente:\n`;
+        message += `Nome: ${userData.nome}\n`;
+        message += `WhatsApp: ${userData.whatsapp}\n`;
+        message += `Endereço: ${userData.rua}, ${userData.numero}${userData.complemento ? ' - ' + userData.complemento : ''}\n`;
+        message += `${userData.bairro}, ${userData.cidade} - ${userData.cep}`;
+    }
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/5511933949002?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+    
+    // Limpar carrinho
+    localStorage.removeItem('adegaCart');
+    updateCartDisplay();
+    
+    // Fechar carrinho
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
+    if (cartSidebar) cartSidebar.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
+};
+
+// Verificar se as funções estão funcionando corretamente
+setTimeout(() => {
+    if (typeof window.showSection === 'function' && typeof window.goToHome === 'function') {
+        console.log('✅ Todas as funções de navegação carregadas com sucesso!');
+        console.log('🏠 Função goToHome disponível:', typeof window.goToHome);
+        console.log('📄 Função showSection disponível:', typeof window.showSection);
+    } else {
+        console.error('❌ Erro: Funções de navegação não foram definidas corretamente');
+    }
+}, 100);
 
 console.log('✅ Correções de navegação carregadas!');

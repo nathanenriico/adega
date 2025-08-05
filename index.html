@@ -32,79 +32,76 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/pix-payment.css">
     <link rel="stylesheet" href="css/mobile-app.css">
+    <link rel="stylesheet" href="css/mobile-cards.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-init.js"></script>
     <script src="js/config.js"></script>
-    <script src="js/fix-navigation.js"></script>
+    <script src="js/navigation-fix-final.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/products-final.js"></script>
 </head>
 <body>
+    <!-- Menu Superior Fixo -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <button class="menu-toggle-top" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-items">
+                <div class="nav-item" onclick="goToHome()">
+                    <div class="nav-icon">🏠</div>
+                    <span>Início</span>
+                </div>
+                <div class="nav-item" onclick="showSection('products')">
+                    <div class="nav-icon">🍷</div>
+                    <span>Produtos</span>
+                </div>
+                <div class="nav-item" onclick="showSection('about')">
+                    <div class="nav-icon">ℹ️</div>
+                    <span>Sobre</span>
+                </div>
+                <div class="nav-item" onclick="showSection('contact')">
+                    <div class="nav-icon">📞</div>
+                    <span>Contato</span>
+                </div>
+            </div>
+            
+            <div class="nav-right">
+                <!-- Perfil do Cliente -->
+                <div id="customer-profile" class="customer-profile" style="display: none;">
+                    <div class="profile-icon">👤</div>
+                    <span id="profile-name">Cliente</span>
+                </div>
+                
+                <!-- Widget do Carrinho -->
+                <div class="cart-widget" onclick="toggleCart()">
+                    <div class="cart-icon">🛒</div>
+                    <div class="cart-info">
+                        <div class="cart-count" id="cart-count-widget">0 itens</div>
+                        <div class="cart-total" id="cart-total-widget">R$ 0,00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-
-
         <!-- Header -->
         <header class="header">
             <div class="logo">
-                <h1><img src="/imagens/logo/adega-logo.jpg" alt="Adega do Tio Pancho" style="height: 40px; vertical-align: middle; margin-right: 8px;"> Adega do Tio Pancho</h1>
+                <h1>🍷 Adega do Tio Pancho</h1>
             </div>
             <p class="slogan">Seu rolê começa aqui 🍻</p>
         </header>
 
-        <!-- Menu Horizontal Fixo -->
-        <nav class="top-nav">
-            <div class="nav-container">
-                <button class="menu-toggle-top" onclick="toggleMenu()">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                
-                <!-- Perfil do Cliente -->
-                <div id="customer-profile" class="customer-profile" style="display: none;">
-                    <div class="profile-icon">👤</div>
-                    <span id="profile-name"></span>
-                </div>
-                
-                <!-- Endereço Mobile -->
-                <div class="mobile-address" onclick="changeAddress()"></div>
-                
-                <div class="nav-items">
-                    <div class="nav-item" onclick="goToHome()">
-                        <div class="nav-icon">🏠</div>
-                        <span>Início</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('products')">
-                        <div class="nav-icon">🍷</div>
-                        <span>Bebidas</span>
-                    </div>
-                    <div class="nav-item" onclick="filterProducts('promocoes'); showSection('products')">
-                        <div class="nav-icon">🔥</div>
-                        <span>Promoções</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('contact')">
-                        <div class="nav-icon">📞</div>
-                        <span>Contato</span>
-                    </div>
-                    <div class="nav-item" onclick="showSection('about')">
-                        <div class="nav-icon">ℹ️</div>
-                        <span>Sobre</span>
-                    </div>
-                </div>
-                
-                <div class="nav-right">
-                    <div class="cart-widget" onclick="toggleCart()">
-                        <div class="cart-icon">🛍️</div>
-                        <div class="cart-info">
-                            <span class="cart-count" id="cart-count-widget">0</span>
-                            <span class="cart-total" id="cart-total-widget">R$ 0,00</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
+        <!-- Navigation -->
         <nav class="main-nav">
             <ul class="nav-menu">
-                <li><a href="javascript:void(0)" onclick="showSection('home')">Início</a></li>
+                <li><a href="javascript:void(0)" onclick="goToHome()">Início</a></li>
                 <li><a href="javascript:void(0)" onclick="showSection('products')">Produtos</a></li>
                 <li><a href="javascript:void(0)" onclick="showSection('about')">Sobre</a></li>
                 <li><a href="javascript:void(0)" onclick="showSection('contact')">Contato</a></li>
@@ -112,200 +109,260 @@
         </nav>
 
         <main class="main-content">
+            <!-- Home Section -->
             <div id="home" class="section active">
-                <!-- Seção de Informações do Cliente -->
-                <div id="customer-info" class="customer-info-section">
-                    <div class="info-card">
-                        <h2>📋 Suas Informações</h2>
-                        <p>Para melhor atendimento, informe seus dados abaixo:</p>
-                        
-                        <div class="info-form">
-                            <input type="text" id="customer-name" placeholder="Seu nome completo" required>
-                            <input type="tel" id="customer-phone" placeholder="Seu WhatsApp (com DDD)" required>
-                            <button onclick="saveCustomerInfo()" class="save-info-btn">Salvar Informações</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Painel do Cliente -->
-                <div id="customer-panel" class="customer-panel" style="display: none;">
-                    <div class="panel-header">
-                        <h2>Olá, <span id="customer-name-display"></span>! 👋</h2>
-                        <button onclick="logoutCustomer()" class="logout-btn">Sair</button>
-                    </div>
-                    
-                    <div class="customer-stats">
-                        <div class="stat-card">
-                            <h3>Pontos Acumulados</h3>
-                            <span id="customer-points">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Pedidos Realizados</h3>
-                            <span id="customer-orders">0</span>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Cupons Disponíveis</h3>
-                            <span id="customer-coupons">0</span>
-                        </div>
-                    </div>
-                    
-                    <div class="customer-actions">
-                        <button onclick="makeNewOrder()" class="new-order-btn">📦 Fazer Novo Pedido</button>
-                        <button onclick="showOrderHistory()" class="history-btn">📋 Histórico de Compras</button>
-                        <button onclick="showCoupons()" class="coupons-btn">🎁 Meus Cupons</button>
-                        <button onclick="simulateOrder()" class="history-btn">🧪 Simular Pedido (Teste)</button>
-                    </div>
-                    
-                    <div id="order-history" class="order-history" style="display: none;">
-                        <h3>Histórico de Compras</h3>
-                        <div id="history-list"></div>
-                    </div>
-                    
-                    <div id="coupons-list" class="coupons-list" style="display: none;">
-                        <h3>Cupons Disponíveis</h3>
-                        <div id="available-coupons"></div>
-                    </div>
-                </div>
-                
                 <div class="home-section">
-                    <div class="welcome-card">
-                        <h2>📍 Endereço</h2>
-                        <div class="address-content">
-                            <img src="../imagens/adega.webp" alt="Fachada da Adega" class="address-image">
-                            <div class="address-text">
-                                <p><strong>ADEGA DO TIO PANCHO</strong><br>
-R. Oswaldo Barreto, 708 E - Alvinópolis<br>
-Atibaia - SP, 12942-570</p>
+                    <!-- Sistema de Informações do Cliente -->
+                    <div id="customer-info" class="customer-info-section" style="display: none;">
+                        <div class="welcome-container">
+                            <div class="welcome-header">
+                                <h1>🍻 Bem-vindo à Adega do Tio Pancho!</h1>
+                                <p>Para garantir uma entrega rápida e personalizada, precisamos de alguns dados:</p>
                             </div>
+
+                            <form id="welcome-form" class="welcome-form">
+                                <div class="form-section">
+                                    <h3>✍️ Dados Pessoais</h3>
+                                    
+                                    <div class="form-field">
+                                        <label for="nome">Nome Completo *</label>
+                                        <input type="text" id="nome" name="nome" required>
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label for="whatsapp">WhatsApp com DDD *</label>
+                                        <input type="tel" id="whatsapp" name="whatsapp" placeholder="(11) 99999-9999" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>📦 Endereço de Entrega</h3>
+                                    
+                                    <div class="form-field">
+                                        <label for="cep">CEP *</label>
+                                        <input type="text" id="cep" name="cep" placeholder="12950-660" maxlength="9" required>
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label for="rua">Rua (Logradouro) *</label>
+                                        <input type="text" id="rua" name="rua" placeholder="Rua das Margaridas" required>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-field">
+                                            <label for="numero">Número *</label>
+                                            <input type="text" id="numero" name="numero" placeholder="375" required>
+                                        </div>
+                                        <div class="form-field">
+                                            <label for="complemento">Complemento</label>
+                                            <input type="text" id="complemento" name="complemento" placeholder="Casa">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label for="bairro">Bairro *</label>
+                                        <input type="text" id="bairro" name="bairro" placeholder="Nova Atiaba" required>
+                                    </div>
+
+                                    <div class="form-field">
+                                        <label for="cidade">Cidade *</label>
+                                        <input type="text" id="cidade" name="cidade" value="Atibaia" required>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="submit-btn">Continuar para a Adega 🍷</button>
+                            </form>
+
+                            <div id="loading" class="loading" style="display: none;">
+                                <p>Salvando seus dados...</p>
+                            </div>
+
+                            <div id="error-message" class="error-message" style="display: none;"></div>
                         </div>
                     </div>
                     
-                    <div class="delivery-address-card">
-                        <h2>📍 Endereço de Entrega</h2>
-                        <div class="delivery-address-form" id="delivery-address-form">
-                            <div class="address-field">
-                                <label for="address-cep">CEP <span class="required">✅ Sim</span></label>
-                                <input type="text" id="address-cep" placeholder="Digite o CEP" maxlength="9">
-                                <small>Código postal para localizar o endereço</small>
+                    <!-- Painel do Cliente Logado -->
+                    <div id="logged-customer-panel" class="customer-panel" style="display: none;">
+                        <div class="profile-header">
+                            <div class="profile-avatar">👤</div>
+                            <div class="profile-welcome">
+                                <h2>Olá, <span id="logged-customer-name">Cliente</span>! 👋</h2>
+                                <p>Bem-vindo de volta à Adega do Tio Pancho</p>
                             </div>
-                            <div class="address-field">
-                                <label for="address-street">Rua (Logradouro) <span class="required">✅ Sim</span></label>
-                                <input type="text" id="address-street" placeholder="Nome da rua ou avenida">
-                            </div>
-                            <div class="address-field">
-                                <label for="address-number">Número <span class="required">✅ Sim</span></label>
-                                <input type="text" id="address-number" placeholder="Número da residência">
-                            </div>
-                            <div class="address-field">
-                                <label for="address-complement">Complemento <span class="optional">❌ Opcional</span></label>
-                                <input type="text" id="address-complement" placeholder="Apartamento, bloco, casa dos fundos, etc.">
-                                <small>Informações adicionais para facilitar a entrega</small>
-                            </div>
-                            <div class="address-field">
-                                <label for="address-neighborhood">Bairro <span class="required">✅ Sim</span></label>
-                                <input type="text" id="address-neighborhood" placeholder="Bairro onde o endereço está localizado">
-                            </div>
-                            <div class="address-field">
-                                <label for="address-city">Cidade <span class="required">✅ Sim</span></label>
-                                <input type="text" id="address-city" placeholder="Cidade do destinatário" value="Atibaia">
-                            </div>
-                            <button class="save-address-btn" onclick="saveDeliveryAddress()">Salvar Endereço</button>
                         </div>
-                        <div id="saved-address" class="saved-address" style="display: none;">
-                            <p id="address-display"></p>
-                            <button class="edit-address-btn" onclick="editDeliveryAddress()">Editar</button>
+                        
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <div class="detail-icon">👤</div>
+                                <div class="detail-content">
+                                    <span class="detail-label">Nome Completo</span>
+                                    <span class="detail-value" id="customer-full-name">-</span>
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-icon">📱</div>
+                                <div class="detail-content">
+                                    <span class="detail-label">WhatsApp</span>
+                                    <span class="detail-value" id="customer-whatsapp">-</span>
+                                </div>
+                            </div>
+                            <div class="detail-item points-item">
+                                <div class="detail-icon">🎆</div>
+                                <div class="detail-content">
+                                    <span class="detail-label">Pontos de Fidelidade</span>
+                                    <span class="detail-value" id="customer-points-display">0 pontos</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="contact-card">
-                        <h2>📞 Contato</h2>
-                        <p><strong>(11) 93394-9002</strong></p>
-                        <button class="whatsapp-btn" onclick="openWhatsApp()">
-                            Chamar no WhatsApp 🍾
+                        
+                        <!-- Sistema de Pontos -->
+                        <div class="points-system">
+                            <h3>🎁 Loja de Cupons</h3>
+                            <p>Troque seus pontos por descontos especiais!</p>
+                            
+                            <div class="coupon-store">
+                                <h4>Cupons Disponíveis:</h4>
+                                <div class="store-grid">
+                                    <div class="coupon-option" onclick="exchangeCoupon('5% de desconto', 50)">
+                                        <div class="coupon-title">5% OFF</div>
+                                        <div class="coupon-cost">50 pontos</div>
+                                    </div>
+                                    <div class="coupon-option" onclick="exchangeCoupon('10% de desconto', 100)">
+                                        <div class="coupon-title">10% OFF</div>
+                                        <div class="coupon-cost">100 pontos</div>
+                                    </div>
+                                    <div class="coupon-option" onclick="exchangeCoupon('R$ 10 de desconto', 150)">
+                                        <div class="coupon-title">R$ 10 OFF</div>
+                                        <div class="coupon-cost">150 pontos</div>
+                                    </div>
+                                    <div class="coupon-option" onclick="exchangeCoupon('Frete Grátis', 80)">
+                                        <div class="coupon-title">Frete Grátis</div>
+                                        <div class="coupon-cost">80 pontos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="customer-actions">
+                            <button onclick="makeNewOrder()" class="new-order-btn">
+                                🛒 Fazer Novo Pedido
+                            </button>
+                            <button onclick="showOrderHistory()" class="history-btn">
+                                📋 Meus Pedidos
+                            </button>
+                            <button onclick="showCoupons()" class="coupons-btn">
+                                🎁 Meus Cupons
+                            </button>
+                        </div>
+                        
+                        <!-- Histórico de Pedidos -->
+                        <div id="order-history" class="order-history" style="display: none;">
+                            <h4>📋 Histórico de Pedidos</h4>
+                            <div id="history-list"></div>
+                        </div>
+                        
+                        <!-- Lista de Cupons -->
+                        <div id="coupons-list" class="coupons-list" style="display: none;">
+                            <h4>🎁 Meus Cupons</h4>
+                            <div id="available-coupons"></div>
+                        </div>
+                        
+                        <button onclick="logoutCustomer()" class="edit-profile-btn">
+                            🚪 Sair da Conta
                         </button>
                     </div>
                     
+
+                    
+                    <!-- Informações de Contato -->
+                    <div class="contact-card">
+                        <h2>📞 Contato Direto</h2>
+                        <p><strong>(11) 93394-9002</strong></p>
+                        <p>Atendimento rápido e personalizado</p>
+                        <button onclick="openWhatsApp()" class="whatsapp-btn">
+                            Chamar no WhatsApp 💬
+                        </button>
+                    </div>
+                    
+                    <!-- Horários de Funcionamento -->
                     <div class="hours-card">
-                        <h2>🕒 Horário de Funcionamento</h2>
+                        <h2>🕒 Horários de Funcionamento</h2>
                         <div class="hours-grid">
-                            <div class="day"><span>Domingo</span><span>09:00–18:00</span></div>
-                            <div class="day"><span>Segunda-feira</span><span>09:00–17:00</span></div>
-                            <div class="day"><span>Terça-feira</span><span>10:00–20:00</span></div>
-                            <div class="day"><span>Quarta-feira</span><span>10:00–20:00</span></div>
-                            <div class="day"><span>Quinta-feira</span><span>10:00–20:00</span></div>
-                            <div class="day"><span>Sexta-feira</span><span>10:00–22:00</span></div>
-                            <div class="day"><span>Sábado</span><span>10:00–22:00</span></div>
+                            <div class="day">
+                                <span>Domingo</span>
+                                <span>09:00 - 18:00</span>
+                            </div>
+                            <div class="day">
+                                <span>Segunda</span>
+                                <span>09:00 - 17:00</span>
+                            </div>
+                            <div class="day">
+                                <span>Terça - Quinta</span>
+                                <span>10:00 - 20:00</span>
+                            </div>
+                            <div class="day">
+                                <span>Sexta - Sábado</span>
+                                <span>10:00 - 22:00</span>
+                            </div>
                         </div>
                         <div class="delivery-hours">
-                            <h3>🚚 Entrega: 10:00–20:00</h3>
+                            <h3>🚚 Entregas: 10:00 - 20:00</h3>
                         </div>
                     </div>
                     
+                    <!-- Avaliações dos Clientes -->
                     <div class="reviews-card">
-                        <h2>⭐ Avaliações</h2>
+                        <h2>⭐ O que nossos clientes dizem</h2>
                         <div class="reviews-list">
                             <div class="review">
                                 <div class="stars">⭐⭐⭐⭐⭐</div>
-                                <p>"Lugar muito bem organizado com muitas opções de produtos e atendimento nota 10."</p>
-                                <span class="reviewer">- Francisco Ramos</span>
+                                <p>"Excelente atendimento e produtos de qualidade! Entrega super rápida."</p>
+                                <span class="reviewer">- Maria Silva</span>
                             </div>
                             <div class="review">
                                 <div class="stars">⭐⭐⭐⭐⭐</div>
-                                <p>"Um excelente atendimento...a entrega sempre no prazo ou até antes."</p>
-                                <span class="reviewer">- Priscilla Sammartano</span>
+                                <p>"Melhor adega da região! Preços justos e variedade incrível."</p>
+                                <span class="reviewer">- João Santos</span>
                             </div>
                             <div class="review">
                                 <div class="stars">⭐⭐⭐⭐⭐</div>
-                                <p>"Excelente atendimento e qualidade de produtos, bons preços."</p>
-                                <span class="reviewer">- Claudia Alves</span>
+                                <p>"Atendimento via WhatsApp é muito prático. Recomendo!"</p>
+                                <span class="reviewer">- Ana Costa</span>
                             </div>
                         </div>
                     </div>
+                    
+
                 </div>
             </div>
 
+            <!-- Products Section -->
             <div id="products" class="section">
                 <div class="products-section">
-                    <h3>Nossos Produtos</h3>
+                    <h3>🍻 Nossos Produtos</h3>
                     
-                    <!-- Filtros Desktop -->
+                    <!-- Filters -->
                     <div class="filters">
                         <button class="filter-btn active" onclick="filterProducts('all')">Todos</button>
                         <button class="filter-btn" onclick="filterProducts('cervejas')">Cervejas</button>
-                        <button class="filter-btn" onclick="filterProducts('drinks')">Drinks</button>
                         <button class="filter-btn" onclick="filterProducts('vinhos')">Vinhos</button>
+                        <button class="filter-btn" onclick="filterProducts('drinks')">Drinks</button>
                         <button class="filter-btn" onclick="filterProducts('refrigerantes')">Refrigerantes</button>
-                        <button class="filter-btn" onclick="filterProducts('aguas')">Águas</button>
-                        <button class="filter-btn" onclick="filterProducts('chopp')">Chopp</button>
                     </div>
                     
-
-                    
-
-
-
-                    
-                    <div class="mobile-food-grid" id="products-grid">
-                        <!-- Produtos serão carregados aqui -->
+                    <!-- Products Grid -->
+                    <div class="products-grid" id="products-grid">
+                        <!-- Products will be loaded here -->
                     </div>
                 </div>
             </div>
-            
-            <!-- Modal de Categoria Mobile -->
-            <div id="mobile-category-modal" class="mobile-category-modal">
-                <div class="mobile-category-header">
-                    <button class="mobile-back-btn" onclick="closeMobileCategoryModal()">←</button>
-                    <h3 id="mobile-category-title">Categoria</h3>
-                </div>
-                <div class="mobile-category-content" id="mobile-category-content">
-                    <!-- Produtos da categoria -->
-                </div>
-            </div>
 
+            <!-- About Section -->
             <div id="about" class="section">
                 <div class="about-section">
-                    <h3>Sobre a Adega</h3>
-                    <p>A Adega do Tio Pancho é especializada em bebidas premium, oferecendo os melhores vinhos, cervejas artesanais e destilados.</p>
+                    <h3>🍷 Sobre a Adega do Tio Pancho</h3>
+                    <p>Especializada em bebidas premium, oferecemos os melhores vinhos, cervejas artesanais e destilados com atendimento personalizado.</p>
+                    
                     <div class="features">
                         <div class="feature">
                             <h4>🍷 Produtos Premium</h4>
@@ -323,13 +380,14 @@ Atibaia - SP, 12942-570</p>
                 </div>
             </div>
 
+            <!-- Contact Section -->
             <div id="contact" class="section">
                 <div class="contact-section">
-                    <div class="contact-card">
-                        <h2>📱 WhatsApp</h2>
+                    <div class="welcome-section">
+                        <h2>📞 Entre em Contato</h2>
                         <p><strong>(11) 93394-9002</strong></p>
-                        <p>Atendimento direto pelo WhatsApp</p>
-                        <button class="whatsapp-btn" onclick="openWhatsApp()">
+                        <p>Atendimento direto e rápido via WhatsApp</p>
+                        <button onclick="openWhatsApp()" class="whatsapp-btn">
                             Chamar no WhatsApp 💬
                         </button>
                     </div>
@@ -337,39 +395,182 @@ Atibaia - SP, 12942-570</p>
             </div>
         </main>
 
+        <!-- Admin Access -->
         <div class="admin-access">
-            <button onclick="window.location.href='admin.html'">Admin</button>
+            <button id="admin-btn">Admin</button>
+        </div>
+    </div>
+    
+    <!-- Modal Admin Login -->
+    <div id="admin-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAdminModal()">&times;</span>
+            <h3>🔐 Acesso Administrativo</h3>
+            <input type="password" id="admin-password" placeholder="Senha do administrador">
+            <button onclick="adminLogin()">Entrar</button>
+        </div>
+    </div>
+    
+    <!-- Painel Admin -->
+    <div id="admin-panel" class="admin-panel hidden">
+        <div class="admin-header">
+            <h3>⚙️ Painel Administrativo</h3>
+            <div class="admin-header-buttons">
+                <button onclick="goToHome()" class="back-to-site-btn">🏠 Voltar ao Site</button>
+                <button onclick="logout()">🚪 Sair</button>
+            </div>
+        </div>
+        
+        <div class="admin-sections">
+            <!-- Configurações Gerais -->
+            <div class="admin-section" style="display: none;">
+                <h4>🏪 Configurações da Adega</h4>
+                <input type="text" id="adega-name" placeholder="Nome da Adega">
+                <input type="tel" id="whatsapp-number" placeholder="Número WhatsApp (apenas números)">
+                <textarea id="default-message" placeholder="Mensagem padrão do WhatsApp"></textarea>
+                <input type="url" id="payment-link" placeholder="Link de pagamento (opcional)">
+                <button onclick="saveSettings()">💾 Salvar Configurações</button>
+            </div>
+            
+            <!-- Gerenciamento de Produtos -->
+            <div class="admin-section" id="add-product-section" style="display: none;">
+                <div class="estoque-header">
+                    <h4>📦 Adicionar Produto</h4>
+                    <div class="estoque-actions">
+                        <button onclick="hideAddProductSection()" class="filter-btn">← Voltar</button>
+                    </div>
+                </div>
+                
+                <div class="estoque-table-container">
+                    <div class="product-form-grid">
+                        <div class="form-group">
+                            <label>Nome do Produto</label>
+                            <input type="text" id="product-name" placeholder="Digite o nome do produto">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Preço</label>
+                            <input type="number" id="product-price" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Categoria</label>
+                            <select id="product-category">
+                                <option value="cervejas">Cervejas</option>
+                                <option value="vinhos">Vinhos</option>
+                                <option value="drinks">Drinks</option>
+                                <option value="refrigerantes">Refrigerantes</option>
+                                <option value="aguas">Águas e Gelo</option>
+                                <option value="chopp">Chopp</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Imagem do Produto</label>
+                            <div class="image-upload-section">
+                                <label for="product-image-file" class="image-upload-label">
+                                    📷 Selecionar Imagens
+                                </label>
+                                <input type="file" id="product-image-file" accept="image/*" multiple onchange="previewImage(this)">
+                                <input type="url" id="product-image-url" placeholder="Ou cole URL da imagem">
+                                <div id="image-preview" class="image-preview"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions full-width">
+                            <button onclick="addProduct()" class="new-btn">➕ Adicionar Produto</button>
+                            <button onclick="clearProductForm()" class="filter-btn">🗑️ Limpar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Painel de Estoque -->
+            <div class="admin-section" id="estoque-section">
+                <div class="estoque-header">
+                    <h4>📦 Estoque</h4>
+                    <div class="estoque-actions">
+                        <input type="text" id="search-products" placeholder="Pesquisar..." class="search-input">
+                        <button onclick="filterProducts('all')" class="filter-btn">Filtrar</button>
+                        <button onclick="showAddProductSection()" class="new-btn">+ Novo</button>
+                    </div>
+                </div>
+                
+                <div class="estoque-table-container">
+                    <table class="estoque-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Componente</th>
+                                <th>Estoque</th>
+                                <th>Editar</th>
+                                <th>Deletar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estoque-tbody">
+                            <!-- Produtos serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Analytics -->
+            <div class="admin-section">
+                <h4>📊 Analytics</h4>
+                <div class="analytics-grid">
+                    <div class="metric-card">
+                        <h5>Cliques WhatsApp</h5>
+                        <span id="whatsapp-clicks">0</span>
+                    </div>
+                    <div class="metric-card">
+                        <h5>Visitantes Hoje</h5>
+                        <span id="daily-visitors">0</span>
+                    </div>
+                    <div class="metric-card">
+                        <h5>Produtos Populares</h5>
+                        <div id="popular-products">-</div>
+                    </div>
+                </div>
+                <button onclick="resetAnalytics()">🗑️ Resetar Dados</button>
+            </div>
+            
+            <!-- Gestão Avançada -->
+            <div class="admin-section">
+                <h4>🚀 Gestão Avançada</h4>
+                <div class="management-buttons">
+                    <button onclick="openOrdersManagement()" class="management-btn">
+                        📋 Gestão de Pedidos
+                    </button>
+                    <button onclick="openCartAnalytics()" class="management-btn analytics-btn">
+                        📊 Analytics do Carrinho
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Banco de Dados -->
+            <div class="admin-section">
+                <h4>💾 Status do Banco de Dados</h4>
+                <div class="db-status-card">
+                    <p id="db-status">Verificando conexão...</p>
+                    <small>Última verificação: <span id="last-check">-</span></small>
+                </div>
+                <div class="db-actions">
+                    <button onclick="syncProductsToSupabase()" class="sync-btn">
+                        🔄 Sincronizar Produtos
+                    </button>
+                    <button onclick="updateDatabaseStatus()" class="status-btn">
+                        📡 Verificar Status
+                    </button>
+                    <button onclick="testOrderSave()" class="test-btn">
+                        🧪 Testar Pedido
+                    </button>
+                </div>
+            </div>
+            
+
         </div>
     </div>
 
-
-
-
-
-
-
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "Adega do Tio Pancho",
-      "description": "As melhores bebidas, vinhos premium e combos especiais. Atendimento via WhatsApp.",
-      "url": "https://adegadotiopunch.com",
-      "telephone": "+55-99-99999-9999",
-      "priceRange": "$$",
-      "servesCuisine": "Bebidas",
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "BR"
-      },
-      "openingHours": "Mo-Su 18:00-02:00",
-      "sameAs": [
-        "https://wa.me/5599999999999"
-      ]
-    }
-    </script>
-    
     <!-- Menu Lateral -->
     <div id="side-menu" class="side-menu">
         <div class="menu-header">
@@ -384,17 +585,13 @@ Atibaia - SP, 12942-570</p>
                     <span class="cart-badge" id="cart-count">0</span>
                 </div>
             </div>
+            <div class="menu-item" onclick="toggleChatBot()">
+                <div class="menu-icon">🤖</div>
+                <div class="menu-text">Chat</div>
+            </div>
             <div class="menu-item" onclick="openWhatsApp()">
                 <div class="menu-icon">💬</div>
                 <div class="menu-text">WhatsApp</div>
-            </div>
-            <div class="menu-item" onclick="toggleWhatsAppBot()">
-                <div class="menu-icon">📱</div>
-                <div class="menu-text">WhatsApp Bot</div>
-            </div>
-            <div class="menu-item" onclick="toggleChatBot()">
-                <div class="menu-icon">🤖</div>
-                <div class="menu-text">Chat Bot IA</div>
             </div>
         </div>
     </div>
@@ -408,70 +605,40 @@ Atibaia - SP, 12942-570</p>
         </div>
         <div class="cart-content">
             <div id="cart-items"></div>
-        </div>
-        <div class="cart-footer" style="display: none;">
-            <!-- Footer removido - total e botão agora ficam dentro dos itens -->
+            
+
         </div>
     </div>
     <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
 
-    <!-- WhatsApp Bot Simulator -->
-    <div id="whatsapp-bot-container" class="whatsapp-bot-container">
-        <div class="whatsapp-bot-header">
-            <span>📱 WhatsApp Bot - Adega do Tio Pancho</span>
-            <button onclick="toggleWhatsAppBot()">&times;</button>
-        </div>
-        <div class="whatsapp-bot-messages" id="whatsapp-bot-messages">
-            <div class="bot-message whatsapp-style">
-                🍷 Olá! Bem-vindo à Adega do Tio Pancho!
-                <br><br>
-                Sou seu assistente virtual especializado em pedidos. Como posso ajudar?
-                <br><br>
-                <strong>Menu Principal:</strong><br>
-                1️⃣ Ver produtos disponíveis<br>
-                2️⃣ Fazer pedido<br>
-                3️⃣ Acompanhar pedido existente<br>
-                4️⃣ Falar com atendente humano
-                <br><br>
-                Digite o número da opção desejada.
-            </div>
-        </div>
-        <div class="whatsapp-bot-input">
-            <input type="text" id="whatsapp-bot-input" placeholder="Digite sua mensagem..." onkeypress="handleWhatsAppBotInput(event)">
-            <button onclick="sendWhatsAppBotMessage()" id="whatsapp-send-btn">➤</button>
-        </div>
-        <div class="whatsapp-bot-footer">
-            <small>Simulador WhatsApp Bot - Teste o atendimento</small>
-        </div>
+    <!-- Botão Flutuante do Chat -->
+    <div id="chat-float-btn" class="chat-float-btn" onclick="toggleChatBot()">
+        🤖
     </div>
     
-    <!-- Chat Bot Original -->
+    <!-- Chat Bot -->
     <div id="chatbot-container" class="chatbot-container">
         <div class="chatbot-header">
-            <span>🤖 Assistente IA</span>
+            <span>🤖 Assistente Virtual</span>
             <button onclick="toggleChatBot()">&times;</button>
         </div>
         <div class="chatbot-messages" id="chatbot-messages">
             <div class="bot-message">
-                Olá! Sou o assistente inteligente da Adega do Tio Pancho. Posso ajudar com produtos, preços, entregas e muito mais!
+                Olá! Sou o assistente da Adega do Tio Pancho. Como posso ajudar?
             </div>
         </div>
         <div class="chatbot-input">
             <input type="text" id="chatbot-input" placeholder="Digite sua mensagem..." onkeypress="handleChatInput(event)">
-            <button onclick="sendChatMessage()" id="send-btn">➤</button>
+            <button id="send-btn" onclick="sendChatMessage()">➤</button>
         </div>
         <div class="chatbot-footer">
-            <small>Powered by OpenAI GPT</small>
+            <small>Assistente Virtual - Adega do Tio Pancho</small>
         </div>
     </div>
-
-    <script src="js/whatsapp-bot.js"></script>
-    <script src="js/loyalty.js"></script>
-    <script src="js/mobile-app.js"></script>
-    <script src="js/script.js"></script>
+    
     <!-- Menu Inferior Mobile -->
-    <nav class="mobile-bottom-nav">
-        <div class="mobile-nav-item" onclick="showSection('home')">
+    <div class="mobile-bottom-nav">
+        <div class="mobile-nav-item" onclick="goToHome()">
             <div class="mobile-nav-icon">🏠</div>
             <span>Início</span>
         </div>
@@ -479,114 +646,439 @@ Atibaia - SP, 12942-570</p>
             <div class="mobile-nav-icon">🍷</div>
             <span>Produtos</span>
         </div>
-        <div class="mobile-nav-item" onclick="showSection('products'); filterProducts('cervejas')">
-            <div class="mobile-nav-icon">🍺</div>
-            <span>Cervejas</span>
+        <div class="mobile-nav-item" onclick="toggleCart()">
+            <div class="mobile-nav-icon">🛒</div>
+            <span>Carrinho</span>
         </div>
-        <div class="mobile-nav-item" onclick="showSection('contact')">
-            <div class="mobile-nav-icon">📞</div>
-            <span>Contato</span>
+        <div class="mobile-nav-item" onclick="toggleChatBot()">
+            <div class="mobile-nav-icon">🤖</div>
+            <span>Chat</span>
         </div>
-        <div class="mobile-nav-item" onclick="showSection('about')">
-            <div class="mobile-nav-icon">ℹ️</div>
-            <span>Sobre</span>
+        <div class="mobile-nav-item" onclick="openWhatsApp()">
+            <div class="mobile-nav-icon">💬</div>
+            <span>WhatsApp</span>
         </div>
-    </nav>
-
+    </div>
+    
+    <!-- Scripts -->
     <script>
-    function changeAddress() {
-        if (window.innerWidth > 768) return;
-        showSection('home');
-    }
-    
-    // Limpar produtos antigos do localStorage para carregar os novos
-    if (localStorage.getItem('adegaProducts')) {
-        const savedProducts = JSON.parse(localStorage.getItem('adegaProducts'));
-        if (savedProducts.length < 19) {
-            localStorage.removeItem('adegaProducts');
-            console.log('Produtos antigos removidos, carregando novos produtos...');
+        // Função para salvar informações do cliente
+        async function saveCustomerInfo(event) {
+            if (event) event.preventDefault();
+            
+            const name = document.getElementById('nome').value.trim();
+            const whatsapp = document.getElementById('whatsapp').value.trim();
+            const cep = document.getElementById('cep').value.trim();
+            const rua = document.getElementById('rua').value.trim();
+            const numero = document.getElementById('numero').value.trim();
+            const complemento = document.getElementById('complemento').value.trim();
+            const bairro = document.getElementById('bairro').value.trim();
+            const cidade = document.getElementById('cidade').value.trim();
+            
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+            
+            // Validar campos obrigatórios
+            if (!name || !whatsapp || !cep || !rua || !numero || !bairro || !cidade) {
+                alert('Por favor, preencha todos os campos obrigatórios!');
+                return;
+            }
+            
+            // Validar WhatsApp
+            const whatsappRegex = /^\(?\d{2}\)?[\s-]?9?\d{4}[\s-]?\d{4}$/;
+            if (!whatsappRegex.test(whatsapp)) {
+                alert('Por favor, insira um número de WhatsApp válido!');
+                return;
+            }
+            
+            try {
+                // Criar cliente Supabase
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+                
+                // Verificar se cliente já existe
+                const { data: existingClient } = await client
+                    .from('clientes')
+                    .select('id, nome')
+                    .eq('whatsapp', whatsapp)
+                    .single();
+                
+                let data;
+                
+                if (existingClient) {
+                    data = existingClient;
+                } else {
+                    // Criar novo cliente
+                    const { data: newClient, error } = await client
+                        .from('clientes')
+                        .insert({
+                            nome: name,
+                            whatsapp: whatsapp,
+                            cep: cep,
+                            rua: rua,
+                            numero: numero,
+                            complemento: complemento || null,
+                            bairro: bairro,
+                            cidade: cidade,
+                            pontos: 0
+                        })
+                        .select()
+                        .single();
+                    
+                    if (error) {
+                        console.error('Erro ao salvar no Supabase:', error);
+                        alert('Erro ao salvar: ' + (error.message || 'WhatsApp já cadastrado'));
+                        return;
+                    }
+                    
+                    data = newClient;
+                }
+                
+                // Salvar localmente
+                const userData = { 
+                    nome: name, 
+                    whatsapp: whatsapp,
+                    endereco: `${rua}, ${numero}${complemento ? ', ' + complemento : ''}, ${bairro}, ${cidade} - ${cep}`
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+                localStorage.setItem('userRegistered', 'true');
+                
+                if (data && data.id) {
+                    localStorage.setItem('userId', data.id);
+                }
+                
+                // Esconder loading
+                document.getElementById('loading').style.display = 'none';
+                
+                // Esconder formulário e mostrar sistema de pontuação
+                document.getElementById('customer-info').style.display = 'none';
+                document.getElementById('logged-customer-panel').style.display = 'block';
+                
+                // Atualizar dados no painel
+                document.getElementById('logged-customer-name').textContent = name.split(' ')[0];
+                document.getElementById('customer-full-name').textContent = name;
+                document.getElementById('customer-whatsapp').textContent = whatsapp;
+                document.getElementById('customer-points-display').textContent = '0 pontos';
+                
+                // Mostrar mensagem de sucesso
+                const successMsg = document.createElement('div');
+                successMsg.className = 'success-message';
+                successMsg.innerHTML = `
+                    <h3>✅ Cadastro realizado!</h3>
+                    <p>Bem-vindo à Adega do Tio Pancho, ${name.split(' ')[0]}!</p>
+                `;
+                document.body.appendChild(successMsg);
+                
+                setTimeout(() => successMsg.remove(), 3000);
+                
+            } catch (error) {
+                console.error('Erro no cadastro:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Erro ao salvar dados. Tente novamente.';
+            }
         }
-    }
-    
-    // Forçar nome correto
-    const savedConfig = localStorage.getItem('adegaConfig');
-    if (savedConfig) {
-        const configData = JSON.parse(savedConfig);
-        if (configData.adegaName.includes('Punch')) {
-            configData.adegaName = 'Adega do Tio Pancho';
-            localStorage.setItem('adegaConfig', JSON.stringify(configData));
-            location.reload();
+        
+        // Adicionar event listener ao formulário
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('welcome-form');
+            if (form) {
+                form.addEventListener('submit', saveCustomerInfo);
+            }
+        });
+        
+        // Tornar função global
+        window.saveCustomerInfo = saveCustomerInfo;
+        
+        // Função para atualizar status do banco
+        async function updateDatabaseStatus() {
+            const statusEl = document.getElementById('db-status');
+            const lastCheckEl = document.getElementById('last-check');
+            
+            if (!statusEl) return;
+            
+            statusEl.textContent = 'Verificando...';
+            
+            try {
+                const { data, error } = await supabase.from('products').select('count').limit(1);
+                
+                if (error) {
+                    statusEl.textContent = '❌ Erro de conexão';
+                    statusEl.style.color = '#dc3545';
+                } else {
+                    statusEl.textContent = '✅ Conectado';
+                    statusEl.style.color = '#25d366';
+                }
+            } catch (error) {
+                statusEl.textContent = '❌ Falha na conexão';
+                statusEl.style.color = '#dc3545';
+            }
+            
+            if (lastCheckEl) {
+                lastCheckEl.textContent = new Date().toLocaleTimeString('pt-BR');
+            }
         }
-    }
-    
-    // Funções do modal de categoria mobile
-    function openMobileCategoryModal(category) {
-        if (window.innerWidth > 768) {
-            filterProducts(category);
-            return;
+        
+        // Função para sincronizar produtos
+        async function syncProductsToSupabase() {
+            try {
+                console.log('🔄 Iniciando sincronização...');
+                await syncAllProductsToSupabase();
+                alert('Produtos sincronizados com sucesso!');
+                updateDatabaseStatus();
+            } catch (error) {
+                console.error('Erro na sincronização:', error);
+                alert('Erro na sincronização: ' + error.message);
+            }
         }
         
-        const modal = document.getElementById('mobile-category-modal');
-        const title = document.getElementById('mobile-category-title');
-        const content = document.getElementById('mobile-category-content');
+        // Tornar funções globais
+        window.updateDatabaseStatus = updateDatabaseStatus;
+        window.syncProductsToSupabase = syncProductsToSupabase;
         
-        const categoryNames = {
-            'all': 'Todos os Produtos',
-            'cervejas': 'Cervejas',
-            'drinks': 'Drinks',
-            'vinhos': 'Vinhos',
-            'refrigerantes': 'Refrigerantes',
-            'aguas': 'Águas e Gelo',
-            'chopp': 'Chopp'
-        };
-        
-        title.textContent = categoryNames[category] || 'Produtos';
-        
-        const categoryProducts = category === 'all' 
-            ? products 
-            : products.filter(p => p.category === category);
-        
-        content.innerHTML = categoryProducts.map(product => `
-            <div class="mobile-category-product">
-                <img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/150x100/333/fff?text=Produto'">
-                <h4>${product.name}</h4>
-                <div class="price">R$ ${product.price.toFixed(2)}</div>
-                <button class="add-btn" onclick="addToCart(${product.id}); closeMobileCategoryModal();">Adicionar</button>
-            </div>
-        `).join('');
-        
-        modal.classList.add('active');
-    }
-    
-    function closeMobileCategoryModal() {
-        const modal = document.getElementById('mobile-category-modal');
-        modal.classList.remove('active');
-    }
-    
-    function openCategoryPage(category) {
-        filterProducts(category);
-    }
-    
-    function toggleFavorite(productId) {
-        const favoriteBtn = event.target.closest('.product-favorite');
-        const heart = favoriteBtn.querySelector('.heart');
-        
-        favoriteBtn.classList.toggle('active');
-        
-        if (favoriteBtn.classList.contains('active')) {
-            heart.textContent = '♥';
-        } else {
-            heart.textContent = '♡';
+        // Função para carregar produtos do Supabase
+        function loadSupabaseProducts() {
+            const grid = document.getElementById('products-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '<p style="text-align: center; color: #fff; padding: 40px;">Carregando produtos...</p>';
+            
+            // Usar instância global do Supabase
+            if (!window.supabase) {
+                grid.innerHTML = '<p style="text-align: center; color: #ff6b6b; padding: 40px;">Supabase não disponível</p>';
+                return;
+            }
+            
+            const client = window.supabase.createClient(
+                'https://vtrgtorablofhmhizrjr.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+            );
+            
+            client.from('products').select('*').eq('active', true).order('created_at', { ascending: false }).then(result => {
+                const { data, error } = result;
+                
+                if (error) {
+                    grid.innerHTML = `<p style="text-align: center; color: #ff6b6b; padding: 40px;">Erro: ${error.message}</p>`;
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    grid.innerHTML = '<p style="text-align: center; color: #fff; padding: 40px;">Nenhum produto encontrado</p>';
+                    return;
+                }
+                
+                // Renderizar produtos
+                const html = data.map(product => `
+                    <div class="product-card">
+                        <img src="${product.image || 'https://via.placeholder.com/400x200/333/fff?text=Produto'}" 
+                             alt="${product.name}" class="product-image" 
+                             onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">R$ ${parseFloat(product.price).toFixed(2)}</div>
+                        <div class="product-actions">
+                            <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
+                                Adicionar 🛒
+                            </button>
+                            <button class="whatsapp-btn-small" onclick="openWhatsApp('${product.name}')">
+                                WhatsApp 💬
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                grid.innerHTML = html;
+                console.log(`✅ ${data.length} produtos carregados`);
+            }).catch(err => {
+                grid.innerHTML = `<p style="text-align: center; color: #ff6b6b; padding: 40px;">Erro: ${err.message}</p>`;
+            });
         }
-    }
+        
+        // Tornar função global
+        window.loadSupabaseProducts = loadSupabaseProducts;
+        
+        // Função vazia para evitar erro
+        function loadDeliveryAddress() {
+            // Função vazia - implementar se necessário
+        }
+        
+        // Carregar endereço salvo ao inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                if (typeof loadDeliveryAddress === 'function') {
+                    loadDeliveryAddress();
+                }
+            }, 1000);
+        });
+    </script>
     
-    function searchProducts() {
-        const searchTerm = document.getElementById('mobile-product-search').value.toLowerCase();
-        const filteredProducts = products.filter(product => 
-            product.name.toLowerCase().includes(searchTerm)
-        );
-        renderProducts(filteredProducts);
-    }
+    <script>
+        // Inicializar produtos globalmente
+        window.products = [];
+        
+        // Aguardar e carregar produtos
+        function waitForSupabaseAndLoadProducts() {
+            if (window.supabase) {
+                console.log('🚀 Carregando produtos...');
+                loadSupabaseProducts();
+            } else {
+                console.log('⏳ Aguardando Supabase...');
+                setTimeout(waitForSupabaseAndLoadProducts, 1000);
+            }
+        }
+        
+        // Função de teste
+        function testSupabaseProducts() {
+            if (!window.supabase) {
+                console.error('❌ Supabase não disponível');
+                return;
+            }
+            
+            const client = window.supabase.createClient(
+                'https://vtrgtorablofhmhizrjr.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+            );
+            
+            client.from('products').select('*').eq('active', true).limit(10).then(result => {
+                const { data, error } = result;
+                
+                if (error) {
+                    console.error('❌ Erro:', error);
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    console.log(`✅ ${data.length} produtos encontrados`);
+                    data.forEach(p => {
+                        console.log(`- ${p.name}: R$ ${p.price} (${p.category})`);
+                    });
+                } else {
+                    console.log('⚠️ Nenhum produto encontrado');
+                }
+            }).catch(err => {
+                console.error('❌ Erro:', err);
+            });
+        }
+        
+        window.testSupabaseProducts = testSupabaseProducts;
+        
+        // Função para recarregar produtos (alias para loadSupabaseProducts)
+        function reloadProductsFromDatabase() {
+            loadSupabaseProducts();
+        }
+        
+        // Função para filtrar produtos por categoria
+        function filterProducts(category) {
+            const grid = document.getElementById('products-grid');
+            if (!grid) return;
+            
+            // Atualizar botões ativos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (!window.supabase) {
+                grid.innerHTML = '<p style="text-align: center; color: #ff6b6b; padding: 40px;">Supabase não disponível</p>';
+                return;
+            }
+            
+            grid.innerHTML = '<p style="text-align: center; color: #fff; padding: 40px;">Carregando produtos...</p>';
+            
+            const client = window.supabase.createClient(
+                'https://vtrgtorablofhmhizrjr.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+            );
+            
+            let query = client.from('products').select('*').eq('active', true);
+            
+            if (category !== 'all') {
+                query = query.eq('category', category);
+            }
+            
+            query.order('created_at', { ascending: false }).then(result => {
+                const { data, error } = result;
+                
+                if (error) {
+                    grid.innerHTML = `<p style="text-align: center; color: #ff6b6b; padding: 40px;">Erro: ${error.message}</p>`;
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    grid.innerHTML = '<p style="text-align: center; color: #fff; padding: 40px;">Nenhum produto encontrado nesta categoria</p>';
+                    return;
+                }
+                
+                // Renderizar produtos filtrados
+                const html = data.map(product => `
+                    <div class="product-card">
+                        <img src="${product.image || 'https://via.placeholder.com/400x200/333/fff?text=Produto'}" 
+                             alt="${product.name}" class="product-image" 
+                             onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">R$ ${parseFloat(product.price).toFixed(2)}</div>
+                        <div class="product-actions">
+                            <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
+                                Adicionar 🛒
+                            </button>
+                            <button class="whatsapp-btn-small" onclick="openWhatsApp('${product.name}')">
+                                WhatsApp 💬
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                grid.innerHTML = html;
+                console.log(`✅ ${data.length} produtos da categoria '${category}' carregados`);
+            }).catch(err => {
+                grid.innerHTML = `<p style="text-align: center; color: #ff6b6b; padding: 40px;">Erro: ${err.message}</p>`;
+            });
+        }
+        
+        // Tornar funções globais
+        window.filterProducts = filterProducts;
+        window.reloadProductsFromDatabase = reloadProductsFromDatabase;
+        
+        // Verificar se usuário já está cadastrado
+        function checkUserRegistration() {
+            const userData = localStorage.getItem('userData');
+            const userRegistered = localStorage.getItem('userRegistered');
+            
+            if (!userData || userRegistered !== 'true') {
+                // Usuário não cadastrado, redirecionar para página de registro
+                window.location.href = 'registro.html';
+                return;
+            }
+            
+            // Usuário já cadastrado, esconder formulário e mostrar painel
+            const customerInfo = document.getElementById('customer-info');
+            const customerPanel = document.getElementById('logged-customer-panel');
+            
+            if (customerInfo) customerInfo.style.display = 'none';
+            if (customerPanel) customerPanel.style.display = 'block';
+            
+            // Carregar dados do usuário
+            const user = JSON.parse(userData);
+            const loggedName = document.getElementById('logged-customer-name');
+            const fullName = document.getElementById('customer-full-name');
+            const whatsappEl = document.getElementById('customer-whatsapp');
+            
+            if (loggedName) loggedName.textContent = user.nome.split(' ')[0];
+            if (fullName) fullName.textContent = user.nome;
+            if (whatsappEl) whatsappEl.textContent = user.whatsapp;
+            
+            // Carregar pontos do usuário
+            const points = localStorage.getItem('userPoints') || '0';
+            const pointsDisplay = document.getElementById('customer-points-display');
+            if (pointsDisplay) pointsDisplay.textContent = points + ' pontos';
+        }
+        
+        // Carregar produtos automaticamente
+        document.addEventListener('DOMContentLoaded', function() {
+            checkUserRegistration();
+            waitForSupabaseAndLoadProducts();
+        });
+        window.addEventListener('load', waitForSupabaseAndLoadProducts);
     </script>
 </body>
 </html>

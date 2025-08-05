@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo - Adega do Tio Pancho</title>
+    <link rel="stylesheet" href="css/welcome.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+</head>
+<body>
+    <div class="welcome-container">
+        <div class="welcome-header">
+            <h1>🍻 Bem-vindo à Adega do Tio Pancho!</h1>
+            <p>Para garantir uma entrega rápida e personalizada, precisamos de alguns dados:</p>
+        </div>
+
+        <form id="welcome-form" class="welcome-form">
+            <div class="form-section">
+                <h3>✍️ Dados Pessoais</h3>
+                
+                <div class="form-field">
+                    <label for="nome">Nome Completo *</label>
+                    <input type="text" id="nome" name="nome" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="whatsapp">WhatsApp com DDD *</label>
+                    <input type="tel" id="whatsapp" name="whatsapp" placeholder="(11) 99999-9999" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>📦 Endereço de Entrega</h3>
+                
+                <div class="form-field">
+                    <label for="cep">CEP *</label>
+                    <input type="text" id="cep" name="cep" placeholder="12950-660" maxlength="9" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="rua">Rua (Logradouro) *</label>
+                    <input type="text" id="rua" name="rua" placeholder="Rua das Margaridas" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="numero">Número *</label>
+                        <input type="text" id="numero" name="numero" placeholder="375" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="complemento">Complemento</label>
+                        <input type="text" id="complemento" name="complemento" placeholder="Casa">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="bairro">Bairro *</label>
+                    <input type="text" id="bairro" name="bairro" placeholder="Nova Atiaba" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="cidade">Cidade *</label>
+                    <input type="text" id="cidade" name="cidade" value="Atibaia" required>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Continuar para a Adega 🍷</button>
+        </form>
+
+        <div id="loading" class="loading" style="display: none;">
+            <p>Salvando seus dados...</p>
+        </div>
+
+        <div id="error-message" class="error-message" style="display: none;"></div>
+    </div>
+
+    <script src="js/welcome.js"></script>
+</body>
+</html>

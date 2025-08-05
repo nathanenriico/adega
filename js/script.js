@@ -1,7 +1,7 @@
 // Configurações padrão
 let config = {
     adegaName: 'Adega do Tio Pancho',
-    whatsappNumber: '1193394-9002',
+    whatsappNumber: '5511941716617',
     defaultMessage: 'Oi, quero ver as ofertas da adega!',
     paymentLink: 'https://mpago.la/2TkKdAB?amount={valor}&description={descricao}'
 };
@@ -26,7 +26,7 @@ let products = [
     },
     {
         id: 2,
-        name: 'Stella Artois Long Neck',
+        name: 'Stella Artois',
         image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400',
         price: 5.90,
         category: 'cervejas'
@@ -248,64 +248,23 @@ function filterProducts(category) {
     renderProducts(filteredProducts);
 }
 
-// Renderizar produtos com carrossel
-function renderProducts(productsToRender = products) {
+// Renderizar produtos
+function renderProducts(productsToRender) {
     const grid = document.getElementById('products-grid');
+    if (!grid) return;
     
-    if (productsToRender.length === 0) {
-        grid.innerHTML = '<p style="text-align: center; opacity: 0.7;">Nenhum produto encontrado.</p>';
+    // Usar produtos globais se não especificado
+    const products = productsToRender || window.products || [];
+    
+    if (products.length === 0) {
+        grid.innerHTML = '<p style="text-align: center; opacity: 0.7; color: #fff; padding: 40px;">Nenhum produto encontrado. <br><button onclick="reloadProductsFromDatabase()" style="margin-top: 10px; background: #25d366; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">🔄 Recarregar</button></p>';
         return;
     }
     
-    grid.innerHTML = productsToRender.map(product => {
-        const hasMultipleImages = product.images && product.images.length > 1;
-        
-        // Layout mobile
-        if (window.innerWidth <= 768) {
-            return `
-            <div class="mobile-product-card" data-category="${product.category}">
-                <div class="mobile-product-image">
-                    <img src="${product.image}" alt="${product.name}" 
-                         onerror="this.src='https://via.placeholder.com/120x120/333/fff?text=Produto'">
-                    <button class="mobile-favorite" onclick="toggleFavorite(${product.id})">
-                        ♡
-                    </button>
-                </div>
-                <div class="mobile-product-info">
-                    <h4 class="mobile-product-name">${product.name}</h4>
-                    <div class="mobile-product-rating">
-                        <span class="mobile-star">★</span>
-                        <span class="mobile-rating-text">${(Math.random() * 2 + 3).toFixed(1)}</span>
-                    </div>
-                    <div class="mobile-product-price">R$ ${product.price.toFixed(2)}</div>
-                    <button class="mobile-add-btn" onclick="addToCart(${product.id})">Adicionar</button>
-                </div>
-            </div>
-        `;
-        }
-        
-        // Layout desktop original
-        return `
+    grid.innerHTML = products.map(product => `
         <div class="product-card" data-category="${product.category}">
-            <div class="product-image-container">
-                ${hasMultipleImages ? `
-                    <div class="product-carousel" id="carousel-${product.id}">
-                        <div class="carousel-nav prev" onclick="prevProductImage(${product.id})">‹</div>
-                        <img src="${product.images[0]}" alt="${product.name}" class="product-image" 
-                             onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
-                        <div class="carousel-nav next" onclick="nextProductImage(${product.id})">›</div>
-                        <div class="carousel-dots">
-                            ${product.images.map((_, index) => `
-                                <div class="dot ${index === 0 ? 'active' : ''}" onclick="goToProductImage(${product.id}, ${index})"></div>
-                            `).join('')}
-                        </div>
-                        <div class="image-counter">${1}/${product.images.length}</div>
-                    </div>
-                ` : `
-                    <img src="${product.image}" alt="${product.name}" class="product-image" 
-                         onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
-                `}
-            </div>
+            <img src="${product.image}" alt="${product.name}" class="product-image" 
+                 onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
             <div class="product-name">${product.name}</div>
             <div class="product-price">R$ ${product.price.toFixed(2)}</div>
             <div class="product-actions">
@@ -316,14 +275,10 @@ function renderProducts(productsToRender = products) {
                     WhatsApp 💬
                 </button>
             </div>
-            <div class="suggestions" id="suggestions-${product.id}"></div>
         </div>
-    `;
-    }).join('');
+    `).join('');
     
-    updateCartDisplay();
-    loadSuggestions();
-    initializeProductCarousels();
+    console.log(`✅ ${products.length} produtos renderizados`);
 }
 
 // Sugestões de produtos
@@ -421,7 +376,12 @@ function calculateShipping() {
 
 // Modal Admin
 function showAdminLogin() {
-    document.getElementById('admin-modal').style.display = 'block';
+    const modal = document.getElementById('admin-modal');
+    if (modal) {
+        modal.style.display = 'block';
+    } else {
+        console.error('Modal admin não encontrado');
+    }
 }
 
 function closeAdminModal() {
@@ -465,24 +425,100 @@ async function testAI() {
 }
 
 // Carregar dados no admin
-function loadAdminData() {
-    document.getElementById('adega-name').value = config.adegaName;
-    document.getElementById('whatsapp-number').value = config.whatsappNumber;
-    document.getElementById('default-message').value = config.defaultMessage;
-    document.getElementById('payment-link').value = config.paymentLink || '';
+async function loadAdminData() {
+    const adegaNameEl = document.getElementById('adega-name');
+    const whatsappNumberEl = document.getElementById('whatsapp-number');
+    const defaultMessageEl = document.getElementById('default-message');
+    const paymentLinkEl = document.getElementById('payment-link');
+    
+    if (adegaNameEl) adegaNameEl.value = config.adegaName;
+    if (whatsappNumberEl) whatsappNumberEl.value = config.whatsappNumber;
+    if (defaultMessageEl) defaultMessageEl.value = config.defaultMessage;
+    if (paymentLinkEl) paymentLinkEl.value = config.paymentLink || '';
     
     // Mostrar status da API
     const apiKey = localStorage.getItem('openai-api-key');
     const apiKeyInput = document.getElementById('openai-api-key');
-    if (apiKey && !apiKey.startsWith('***')) {
-        apiKeyInput.placeholder = 'Chave configurada (clique para alterar)';
-        apiKeyInput.value = '';
-    } else {
-        apiKeyInput.placeholder = 'Chave da API OpenAI (opcional)';
+    if (apiKeyInput) {
+        if (apiKey && !apiKey.startsWith('***')) {
+            apiKeyInput.placeholder = 'Chave configurada (clique para alterar)';
+            apiKeyInput.value = '';
+        } else {
+            apiKeyInput.placeholder = 'Chave da API OpenAI (opcional)';
+        }
     }
     
     updateAnalyticsDisplay();
-    renderAdminProducts();
+    renderEstoque();
+    
+    // Adicionar event listener para pesquisa
+    const searchInput = document.getElementById('search-products');
+    if (searchInput) {
+        searchInput.addEventListener('input', async function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            // Buscar nos produtos do Supabase
+            try {
+                const client = getSupabaseClient();
+                
+                const { data: supabaseProducts } = await client
+                    .from('products')
+                    .select('*')
+                    .eq('active', true)
+                    .ilike('name', `%${searchTerm}%`);
+                
+                const tbody = document.getElementById('estoque-tbody');
+                
+                if (supabaseProducts && supabaseProducts.length > 0) {
+                    tbody.innerHTML = supabaseProducts.map(product => `
+                        <tr>
+                            <td class="codigo-cell">${String(product.id).padStart(8, '0')}</td>
+                            <td class="componente-cell" title="${product.name}">${product.name}</td>
+                            <td class="estoque-cell">${Math.floor(Math.random() * 100) + 1}</td>
+                            <td>
+                                <button class="action-btn edit-action-btn" onclick="editProduct(${product.id})">
+                                    ✏️
+                                </button>
+                            </td>
+                            <td>
+                                <button class="action-btn delete-action-btn" onclick="deleteProduct(${product.id})">
+                                    🗑️
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum produto encontrado</td></tr>';
+                }
+            } catch (error) {
+                console.log('Erro na pesquisa, usando produtos locais');
+                // Fallback para pesquisa local
+                const filteredProducts = products.filter(product => 
+                    product.name.toLowerCase().includes(searchTerm) ||
+                    String(product.id).includes(searchTerm)
+                );
+                
+                const tbody = document.getElementById('estoque-tbody');
+                tbody.innerHTML = filteredProducts.map(product => `
+                    <tr>
+                        <td class="codigo-cell">${String(product.id).padStart(8, '0')}</td>
+                        <td class="componente-cell" title="${product.name}">${product.name}</td>
+                        <td class="estoque-cell">${Math.floor(Math.random() * 100) + 1}</td>
+                        <td>
+                            <button class="action-btn edit-action-btn" onclick="editProduct(${product.id})">
+                                ✏️
+                            </button>
+                        </td>
+                        <td>
+                            <button class="action-btn delete-action-btn" onclick="deleteProduct(${product.id})">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        });
+    }
 }
 
 // Atualizar display de analytics
@@ -539,68 +575,43 @@ async function testOrderSave() {
     }
 }
 
-// Renderizar produtos no admin
-function renderAdminProducts() {
-    const list = document.getElementById('admin-products-list');
-    const filter = document.getElementById('admin-category-filter');
-    const selectedCategory = filter ? filter.value : 'all';
+// Renderizar produtos no estoque
+async function renderEstoque() {
+    const tbody = document.getElementById('estoque-tbody');
     
-    const filteredProducts = selectedCategory === 'all' 
-        ? products 
-        : products.filter(product => product.category === selectedCategory);
-    
-    if (filteredProducts.length === 0) {
-        list.innerHTML = '<p style="text-align: center; opacity: 0.7; padding: 20px;">Nenhum produto encontrado nesta categoria.</p>';
-        return;
+    try {
+        const client = getSupabaseClient();
+        
+        const { data: supabaseProducts, error } = await client
+            .from('products')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (!error && supabaseProducts && supabaseProducts.length > 0) {
+            tbody.innerHTML = supabaseProducts.map(product => `
+                <tr>
+                    <td class="codigo-cell">${String(product.id).padStart(8, '0')}</td>
+                    <td class="componente-cell" title="${product.name}">${product.name}</td>
+                    <td class="estoque-cell">${Math.floor(Math.random() * 100) + 1}</td>
+                    <td>
+                        <button class="action-btn edit-action-btn" onclick="editProduct(${product.id})">
+                            ✏️
+                        </button>
+                    </td>
+                    <td>
+                        <button class="action-btn delete-action-btn" onclick="deleteProduct(${product.id})">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            return;
+        }
+    } catch (error) {
+        console.log('Erro ao carregar do Supabase:', error);
     }
     
-    // Agrupar por categoria
-    const groupedProducts = {};
-    filteredProducts.forEach(product => {
-        if (!groupedProducts[product.category]) {
-            groupedProducts[product.category] = [];
-        }
-        groupedProducts[product.category].push(product);
-    });
-    
-    const categoryNames = {
-        'cervejas': 'Cervejas',
-        'drinks': 'Drinks',
-        'vinhos': 'Vinhos',
-        'refrigerantes': 'Refrigerantes',
-        'aguas': 'Águas e Gelo',
-        'chopp': 'Chopp'
-    };
-    
-    let html = '';
-    Object.keys(groupedProducts).forEach(category => {
-        html += `<div class="admin-category-group">
-            <h5 style="color: #d4af37; margin: 20px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px;">
-                ${categoryNames[category] || category} (${groupedProducts[category].length})
-            </h5>`;
-        
-        groupedProducts[category].forEach(product => {
-            html += `
-            <div class="product-item">
-                <div class="product-info">
-                    <strong>${product.name}</strong><br>
-                    <span style="color: #d4af37;">R$ ${product.price.toFixed(2)}</span>
-                </div>
-                <div class="product-actions">
-                    <button class="edit-btn" onclick="editProduct(${product.id})">
-                        Editar
-                    </button>
-                    <button class="delete-btn" onclick="deleteProduct(${product.id})">
-                        Excluir
-                    </button>
-                </div>
-            </div>`;
-        });
-        
-        html += '</div>';
-    });
-    
-    list.innerHTML = html;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; opacity: 0.7; padding: 40px;">Nenhum produto encontrado no banco de dados</td></tr>';
 }
 
 // Filtrar produtos no admin
@@ -776,6 +787,7 @@ async function addProduct() {
         saveData();
         clearProductForm();
         refreshProductDisplay();
+        hideAddProductSection();
         alert('Produto adicionado e salvo no banco de dados com sucesso!');
         
     } catch (error) {
@@ -809,10 +821,21 @@ function clearProductForm() {
     document.getElementById('image-preview').innerHTML = '';
 }
 
+// Funções para alternar entre estoque e adicionar produto
+function showAddProductSection() {
+    document.getElementById('estoque-section').style.display = 'none';
+    document.getElementById('add-product-section').style.display = 'block';
+}
+
+function hideAddProductSection() {
+    document.getElementById('add-product-section').style.display = 'none';
+    document.getElementById('estoque-section').style.display = 'block';
+}
+
 // Atualizar display de produtos
 function refreshProductDisplay() {
     renderProducts();
-    renderAdminProducts();
+    renderEstoque();
     
     const filterButtons = document.querySelectorAll('.filter-btn');
     filterButtons.forEach(btn => btn.classList.remove('active'));
@@ -927,7 +950,7 @@ window.onclick = function(event) {
     }
 }
 
-// Enter no campo de senha
+// Enter no campo de senha e garantir que botão admin funcione
 document.addEventListener('DOMContentLoaded', function() {
     const passwordField = document.getElementById('admin-password');
     if (passwordField) {
@@ -935,6 +958,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') {
                 adminLogin();
             }
+        });
+    }
+    
+    // Garantir que botão admin funcione
+    const adminBtn = document.getElementById('admin-btn');
+    if (adminBtn) {
+        adminBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showAdminLogin();
         });
     }
 });
@@ -949,26 +981,40 @@ function clearAdminState() {
 }
 
 // Mostrar painel admin
-function showAdminPanel() {
+async function showAdminPanel() {
     document.getElementById('admin-panel').classList.remove('hidden');
     // Não salvar estado automaticamente
-    loadAdminData();
+    await loadAdminData();
     
     // Verificar status do banco ao abrir o admin
     setTimeout(updateDatabaseStatus, 500);
 }
 
-// Ir para home (ícone da casa)
+// Ir para home (ícone da casa) - esta função será sobrescrita pelo fix-navigation.js
 function goToHome() {
-    // Se admin estiver aberto, fechar
+    console.log('🏠 goToHome chamada do script.js - redirecionando para window.goToHome');
+    
+    // Usar a função global se disponível
+    if (typeof window.goToHome === 'function' && window.goToHome !== goToHome) {
+        window.goToHome();
+        return;
+    }
+    
+    // Fallback local
     const adminPanel = document.getElementById('admin-panel');
-    if (!adminPanel.classList.contains('hidden')) {
+    if (adminPanel && !adminPanel.classList.contains('hidden')) {
         adminPanel.classList.add('hidden');
         clearAdminState();
     }
     
-    // Ir para seção home
-    showSection('home');
+    // Usar showSection se disponível
+    if (typeof showSection === 'function') {
+        showSection('home');
+    } else if (typeof window.showSection === 'function') {
+        window.showSection('home');
+    } else {
+        console.error('❌ Nenhuma função de navegação disponível');
+    }
 }
 
 // Voltar ao site
@@ -1113,33 +1159,7 @@ function loadDeliveryAddress() {
     }
 }
 
-// Função para garantir que o endereço seja carregado
-function ensureAddressLoaded(attempts = 0) {
-    // Limitar o número de tentativas para evitar loops infinitos
-    if (attempts > 10) {
-        console.error('Não foi possível carregar o endereço após várias tentativas');
-        return;
-    }
-    
-    // Verificar se os elementos necessários existem
-    const addressDisplay = document.getElementById('address-display');
-    const savedAddressDiv = document.getElementById('saved-address');
-    const addressForm = document.getElementById('delivery-address-form');
-    
-    if (!addressDisplay || !savedAddressDiv || !addressForm) {
-        console.log(`Elementos ainda não estão prontos, tentativa ${attempts + 1}/10, tentando novamente em 200ms...`);
-        setTimeout(() => ensureAddressLoaded(attempts + 1), 200);
-        return;
-    }
-    
-    console.log('Elementos encontrados, carregando endereço...');
-    const success = loadDeliveryAddress();
-    
-    if (!success) {
-        console.log('Falha ao carregar endereço, tentando novamente em 500ms...');
-        setTimeout(() => ensureAddressLoaded(attempts + 1), 500);
-    }
-}
+// Função removida - endereço é carregado do banco de dados
 
 // Carregar produtos do Supabase
 async function loadProductsFromDatabase() {
@@ -1147,9 +1167,19 @@ async function loadProductsFromDatabase() {
         const dbProducts = await db.getProducts();
         if (dbProducts && dbProducts.length > 0) {
             // Substituir produtos locais pelos do banco (fonte da verdade)
-            products = dbProducts;
+            products = dbProducts.map(product => ({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                category: product.category,
+                image: product.image || product.images?.[0] || 'https://via.placeholder.com/400x200/333/fff?text=Produto',
+                images: product.images || [product.image]
+            }));
             saveData();
             console.log(`✅ ${dbProducts.length} produtos carregados do Supabase`);
+            
+            // Renderizar produtos imediatamente
+            renderProducts();
             return true;
         } else {
             console.log('📎 Nenhum produto encontrado no Supabase');
@@ -1164,17 +1194,18 @@ async function loadProductsFromDatabase() {
 
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 Inicializando aplicação...');
+    
     loadData();
     
     // Carregar produtos do Supabase primeiro
     const hasDbProducts = await loadProductsFromDatabase();
     
-    // Se não há produtos no banco, sincronizar os locais
+    // Se não há produtos no banco, sincronizar os locais e renderizar
     if (!hasDbProducts) {
         await syncAllProductsToSupabase();
+        renderProducts();
     }
-    
-    renderProducts();
     
     if (config.adegaName !== 'Adega do Tio Pancho') {
         updateSiteContent();
@@ -1186,26 +1217,28 @@ document.addEventListener('DOMContentLoaded', async function() {
         initializeCartAnalytics();
     }
     
-    // Carregar endereço de entrega salvo com retry
-    console.log('Iniciando carregamento do endereço de entrega...');
-    ensureAddressLoaded();
-    
     updateCartDisplay();
     
-    // Garantir que a seção home esteja ativa por padrão
-    setTimeout(() => {
-        if (typeof window.showSection === 'function') {
-            window.showSection('home');
-            console.log('Navegação inicializada com sucesso!');
+    // Carregar dados do usuário - PRIORIDADE MÁXIMA
+    console.log('🔄 Carregando perfil do usuário...');
+    await loadUserProfile();
+    
+    // Aguardar um pouco e tentar novamente se não carregou
+    setTimeout(async () => {
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        if (userData.nome) {
+            const panel = document.getElementById('logged-customer-panel');
+            if (!panel || panel.style.display === 'none') {
+                console.log('🔄 Recarregando painel do cliente...');
+                await loadUserProfile();
+            }
         }
-    }, 100);
+    }, 2000);
+    
+    console.log('✅ Aplicação inicializada');
 });
 
-// Garantir que o endereço seja carregado mesmo após o carregamento completo da página
-window.addEventListener('load', function() {
-    console.log('Página totalmente carregada, verificando endereço...');
-    initializeDeliveryAddress();
-});
+// Endereço é carregado automaticamente do banco de dados
 
 // Sincronizar todos os produtos com Supabase
 async function syncAllProductsToSupabase() {
@@ -1240,6 +1273,8 @@ async function syncAllProductsToSupabase() {
         
         if (syncCount > 0) {
             console.log(`🎉 ${syncCount} produtos sincronizados com sucesso!`);
+            // Recarregar produtos do banco após sincronização
+            await loadProductsFromDatabase();
         } else {
             console.log('✅ Todos os produtos já estão sincronizados');
         }
@@ -1250,49 +1285,7 @@ async function syncAllProductsToSupabase() {
     }
 }
 
-// Função de inicialização do endereço de entrega
-function initializeDeliveryAddress() {
-    // Verificar se há um endereço salvo no localStorage
-    const savedAddress = localStorage.getItem('deliveryAddress');
-    console.log('Inicializando endereço de entrega, endereço salvo:', savedAddress);
-    
-    // Obter referências aos elementos
-    const addressDisplay = document.getElementById('address-display');
-    const savedAddressDiv = document.getElementById('saved-address');
-    const addressForm = document.getElementById('delivery-address-form');
-    
-    // Verificar se todos os elementos existem
-    if (!addressDisplay || !savedAddressDiv || !addressForm) {
-        console.error('Elementos não encontrados, tentando novamente em 300ms...');
-        setTimeout(initializeDeliveryAddress, 300);
-        return;
-    }
-    
-    // Configurar os elementos com base no endereço salvo
-    if (savedAddress) {
-        addressDisplay.textContent = savedAddress;
-        savedAddressDiv.style.display = 'block';
-        addressForm.style.display = 'none';
-        console.log('Endereço exibido com sucesso na inicialização');
-    } else {
-        savedAddressDiv.style.display = 'none';
-        addressForm.style.display = 'flex';
-        console.log('Nenhum endereço salvo encontrado na inicialização');
-    }
-    
-    // Adicionar máscara para o CEP
-    const cepInput = document.getElementById('address-cep');
-    if (cepInput) {
-        cepInput.addEventListener('input', function() {
-            let value = this.value.replace(/\D/g, '');
-            if (value.length > 8) value = value.slice(0, 8);
-            if (value.length > 5) {
-                value = value.slice(0, 5) + '-' + value.slice(5);
-            }
-            this.value = value;
-        });
-    }
-}
+// Função removida - endereço é carregado do banco de dados
     
     // Validação em tempo real
     const whatsappInput = document.getElementById('whatsapp-number');
@@ -1362,6 +1355,9 @@ function removeFromCart(productId) {
             total: 0,
             customerPhone: phone
         });
+        
+        // Enviar mensagem no WhatsApp sobre carrinho abandonado
+        sendAbandonedCartMessage();
     } else {
         trackCartEvent('editado', { items: cart.length, total, products: cart });
     }
@@ -1432,20 +1428,35 @@ function updateCartDisplay() {
                         <button onclick="removeFromCart(${item.id})" class="remove-btn">🗑️</button>
                     </div>
                 </div>
-            `).join('');
+            `).join('') + `
+                <div class="cart-footer-content" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div class="cart-total" style="display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: 700; color: #d4af37; margin-bottom: 15px;">
+                        <span>Total:</span>
+                        <span>R$ ${(cartTotal + 8.90).toFixed(2)}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-bottom: 15px; text-align: center;">
+                        Subtotal: R$ ${cartTotal.toFixed(2)} + Taxa de entrega: R$ 8,90
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button onclick="goToCheckout()" class="checkout-btn" style="width: 100%; background: linear-gradient(45deg, #25d366, #128c7e); color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                            📋 Finalizar Pedido
+                        </button>
+                    </div>
+                </div>
+            `;
         }
     }
 }
 
-function showCartNotification() {
+function showCartNotification(message = 'Produto adicionado ao carrinho!') {
     const notification = document.createElement('div');
     notification.className = 'cart-notification';
-    notification.textContent = 'Produto adicionado ao carrinho!';
+    notification.textContent = message;
     document.body.appendChild(notification);
     
     setTimeout(() => {
         notification.remove();
-    }, 2000);
+    }, 3000);
 }
 
 function toggleMenu() {
@@ -1477,42 +1488,21 @@ function goToCheckout() {
         return;
     }
     
-    // Verificar se há endereço de entrega salvo
-    const deliveryAddress = localStorage.getItem('deliveryAddress');
-    if (!deliveryAddress) {
-        const confirmAddress = confirm('Você ainda não cadastrou um endereço de entrega. Deseja cadastrar agora?');
-        if (confirmAddress) {
-            // Mostrar seção de endereço
-            showSection('home');
-            
-            // Mostrar formulário de endereço
-            const addressForm = document.getElementById('delivery-address-form');
-            const savedAddressDiv = document.getElementById('saved-address');
-            
-            if (addressForm) {
-                addressForm.style.display = 'flex';
-                // Focar no primeiro campo
-                const cepInput = document.getElementById('address-cep');
-                if (cepInput) cepInput.focus();
-            }
-            if (savedAddressDiv) savedAddressDiv.style.display = 'none';
-            
-            // Rolar para o formulário de endereço
-            const addressCard = document.querySelector('.delivery-address-card');
-            if (addressCard) {
-                addressCard.scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            return;
-        }
-    }
-    
     // Salvar dados do carrinho para a página de checkout
     localStorage.setItem('checkoutCart', JSON.stringify(cart));
+    
+    // Fechar carrinho antes de redirecionar
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
+    if (cartSidebar) cartSidebar.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
     
     // Redirecionar para a página de checkout
     window.location.href = 'checkout.html';
 }
+
+// Tornar função global
+window.goToCheckout = goToCheckout;
 
 // Função para redirecionar para WhatsApp com bot
 function redirectToWhatsAppBot(orderData) {
@@ -1547,6 +1537,69 @@ ${orderData.address || 'Endereço não informado'}
         window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
     }
 }
+
+// Função alternativa para finalizar pedido direto pelo WhatsApp
+async function finalizarPedidoWhatsApp() {
+    if (cart.length === 0) {
+        alert('Carrinho vazio!');
+        return;
+    }
+    
+    const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const deliveryFee = 8.90;
+    const total = cartTotal + deliveryFee;
+    
+    let message = '🍷 *Adega do Tio Pancho*\n\nOlá! Gostaria de fazer este pedido:\n\n';
+    
+    cart.forEach(item => {
+        message += `• ${item.name} - Qtd: ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2)}\n`;
+    });
+    
+    message += `\n💰 Subtotal: R$ ${cartTotal.toFixed(2)}`;
+    message += `\n🚚 Taxa de entrega: R$ ${deliveryFee.toFixed(2)}`;
+    message += `\n✅ *Total: R$ ${total.toFixed(2)}*`;
+    
+    const deliveryAddress = localStorage.getItem('deliveryAddress');
+    if (deliveryAddress) {
+        message += `\n\n📍 *Endereço de Entrega:*\n${deliveryAddress}`;
+    }
+    
+    message += `\n\nPor favor, confirme meu pedido e me informe a forma de pagamento disponível.`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/5511941716617?text=${encodedMessage}`;
+    
+    // Fechar carrinho
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const cartOverlay = document.getElementById('cart-overlay');
+    if (cartSidebar) cartSidebar.classList.remove('active');
+    if (cartOverlay) cartOverlay.classList.remove('active');
+    
+    // Abrir WhatsApp
+    window.open(whatsappUrl, '_blank');
+    
+    // Atualizar pontos do cliente
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        const pointsToAdd = Math.floor(cartTotal / 10);
+        await updateCustomerPoints(userId, pointsToAdd);
+    }
+    
+    // Limpar carrinho após enviar
+    cart = [];
+    saveCart();
+    updateCartDisplay();
+    
+    // Mostrar confirmação
+    showCartNotification('Pedido enviado para o WhatsApp!');
+    
+    // Analytics - pedido enviado pelo WhatsApp
+    analytics.whatsappClicks++;
+    saveAnalytics();
+}
+
+// Tornar função global
+window.finalizarPedidoWhatsApp = finalizarPedidoWhatsApp;
 
 async function sendCartToWhatsApp() {
     if (cart.length === 0) {
@@ -1588,30 +1641,46 @@ async function sendCartToWhatsApp() {
         };
         
         // Salvar no localStorage
-        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-        orders.push(localOrder);
-        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        const existingOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        existingOrders.push(localOrder);
+        localStorage.setItem('adegaOrders', JSON.stringify(existingOrders));
         console.log('✅ Pedido salvo no localStorage:', localOrder.id);
         
+        // Obter ID do cliente
+        const userId = localStorage.getItem('userId');
+        
         // Salvar no Supabase
-        const { data, error } = await supabase
-            .from('pedidos')
-            .insert({
-                valor_total: cartTotal,
-                pontos_ganhos: Math.floor(cartTotal / 10),
-                status: 'novo',
-                forma_pagamento: paymentText[selectedPayment],
-                endereco: deliveryAddress
-            })
-            .select()
-            .single();
+        const client = getSupabaseClient();
+        let data = null, error = null;
+        
+        if (client) {
+            const result = await client
+                .from('pedidos')
+                .insert({
+                    cliente_id: userId,
+                    valor_total: cartTotal,
+                    pontos_ganhos: Math.floor(cartTotal / 10),
+                    status: 'novo',
+                    forma_pagamento: paymentText[selectedPayment],
+                    endereco: deliveryAddress
+                })
+                .select()
+                .single();
+            data = result.data;
+            error = result.error;
+        }
+            
+        // Atualizar pontos do cliente
+        if (!error && data && userId) {
+            await updateCustomerPoints(userId, Math.floor(cartTotal / 10));
+        }
             
         if (error) {
             console.error('❌ Erro Supabase:', error);
         } else {
             console.log('✅ Pedido salvo no Supabase:', data.id);
             localOrder.supabase_id = data.id;
-            localStorage.setItem('adegaOrders', JSON.stringify(orders));
+            localStorage.setItem('adegaOrders', JSON.stringify(existingOrders));
         }
         
         // Atualizar pedido local com dados do Supabase
@@ -1622,11 +1691,11 @@ async function sendCartToWhatsApp() {
         console.log('💾 SALVANDO NO LOCALSTORAGE:');
         console.log('Pedido a ser salvo:', localOrder);
         
-        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-        console.log('Pedidos existentes:', orders.length);
+        const allOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        console.log('Pedidos existentes:', allOrders.length);
         
-        orders.push(localOrder);
-        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        allOrders.push(localOrder);
+        localStorage.setItem('adegaOrders', JSON.stringify(allOrders));
         
         const savedOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
         console.log('✅ CONFIRMADO - Total de pedidos após salvar:', savedOrders.length);
@@ -1649,6 +1718,8 @@ async function sendCartToWhatsApp() {
         // Remover indicador e mostrar confirmação
         processingIndicator.remove();
         showOrderConfirmation(data.id, cartTotal);
+        
+        // Pontos já são atualizados na função updateCustomerPoints
         
         // Abrir WhatsApp
         const encodedMessage = encodeURIComponent(message);
@@ -1713,6 +1784,13 @@ async function sendCartToWhatsApp() {
         
         showOrderConfirmation(fallbackOrder.id, cartTotal);
         
+        // Atualizar pontos mesmo no fallback
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            await updateCustomerPoints(userId, Math.floor(cartTotal / 10));
+            await loadCustomerPoints();
+        }
+        
         const encodedMessage = encodeURIComponent(message);
         const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
         setTimeout(() => window.open(whatsappUrl, '_blank'), 500);
@@ -1774,8 +1852,12 @@ function trackCartEvent(state, data = {}) {
     analytics[state] = (analytics[state] || 0) + 1;
     analytics.lastUpdate = new Date().toISOString();
     
-    // Coletar informações do cliente se disponível
-    const customerInfo = getCustomerInfo();
+    // Coletar informações do cliente do localStorage
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const customerInfo = {
+        phone: userData.whatsapp || null,
+        name: userData.nome || null
+    };
     
     events.push({
         state,
@@ -1952,84 +2034,38 @@ function updateProductCarousel(productId) {
     counter.textContent = `${state.currentIndex + 1}/${state.images.length}`;
 }
 
-// Definir todas as funções no escopo global
-window.showSection = function(sectionId) {
-    console.log('Navegando para seção:', sectionId);
-    
-    // Esconder todas as seções
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => {
-        section.classList.remove('active');
-        console.log('Removendo active de:', section.id);
-    });
-    
-    // Mostrar seção selecionada
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.classList.add('active');
-        console.log('Adicionando active para:', sectionId);
-    } else {
-        console.error('Seção não encontrada:', sectionId);
+// Interceptar navegação para produtos
+const originalShowSection = window.showSection;
+window.showSection = async function(sectionId) {
+    // Chamar função original
+    if (originalShowSection) {
+        originalShowSection(sectionId);
     }
     
-    // Atualizar menu ativo
-    const navLinks = document.querySelectorAll('.nav-menu a');
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    // Buscar link ativo por onclick em vez de href
-    const activeLink = Array.from(navLinks).find(link => 
-        link.getAttribute('onclick') && link.getAttribute('onclick').includes(`'${sectionId}'`)
-    );
-    
-    if (activeLink) {
-        activeLink.classList.add('active');
-        console.log('Link ativo definido para:', sectionId);
-    } else {
-        console.log('Link ativo não encontrado para:', sectionId);
+    // Se for a seção de produtos, garantir que estejam carregados
+    if (sectionId === 'products') {
+        console.log('🍷 Verificando produtos...');
+        if (!window.products || window.products.length === 0) {
+            if (typeof window.reloadProductsFromDatabase === 'function') {
+                await window.reloadProductsFromDatabase();
+            }
+        } else {
+            renderProducts();
+        }
     }
-    
-    // Fechar menus laterais se estiverem abertos
-    const sideMenu = document.getElementById('side-menu');
-    const menuOverlay = document.getElementById('menu-overlay');
-    const cartSidebar = document.getElementById('cart-sidebar');
-    const cartOverlay = document.getElementById('cart-overlay');
-    
-    if (sideMenu) sideMenu.classList.remove('active');
-    if (menuOverlay) menuOverlay.classList.remove('active');
-    if (cartSidebar) cartSidebar.classList.remove('active');
-    if (cartOverlay) cartOverlay.classList.remove('active');
 };
 
-// Definir outras funções essenciais no escopo global
-window.toggleMenu = function() {
-    const sideMenu = document.getElementById('side-menu');
-    const menuOverlay = document.getElementById('menu-overlay');
-    
-    sideMenu.classList.toggle('active');
-    menuOverlay.classList.toggle('active');
-};
-
-window.goToHome = function() {
-    const adminPanel = document.getElementById('admin-panel');
-    if (!adminPanel.classList.contains('hidden')) {
-        adminPanel.classList.add('hidden');
-    }
-    showSection('home');
-};
-
-window.toggleCart = function() {
-    const cartSidebar = document.getElementById('cart-sidebar');
-    const cartOverlay = document.getElementById('cart-overlay');
-    
-    cartSidebar.classList.toggle('active');
-    cartOverlay.classList.toggle('active');
-    updateCartDisplay();
-    
-    const sideMenu = document.getElementById('side-menu');
-    const menuOverlay = document.getElementById('menu-overlay');
-    sideMenu.classList.remove('active');
-    menuOverlay.classList.remove('active');
-};
+// Garantir que produtos sejam carregados quando a página for totalmente carregada
+window.addEventListener('load', async function() {
+    setTimeout(async () => {
+        console.log('🔄 Carregamento final - verificando produtos...');
+        if (!window.products || window.products.length === 0) {
+            if (typeof window.reloadProductsFromDatabase === 'function') {
+                await window.reloadProductsFromDatabase();
+            }
+        }
+    }, 3000);
+});
 
 
 
@@ -2037,20 +2073,20 @@ window.filterProducts = function(category) {
     const buttons = document.querySelectorAll('.filter-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
     
-    // Atualizar botões mobile
-    const mobilePills = document.querySelectorAll('.mobile-filter-pill');
-    mobilePills.forEach(pill => pill.classList.remove('active'));
-    
     if (event && event.target) {
         event.target.classList.add('active');
     }
     
+    const products = window.products || [];
     const filteredProducts = category === 'all' 
         ? products 
         : products.filter(product => product.category === category);
     
     renderProducts(filteredProducts);
 };
+
+// Tornar renderProducts global
+window.renderProducts = renderProducts;
 
 window.addToCart = function(productId) {
     const product = products.find(p => p.id === productId);
@@ -2128,15 +2164,20 @@ async function sendChatMessage() {
     sendBtn.disabled = true;
     addTypingIndicator();
     
-    // Sempre usar resposta local
-    setTimeout(() => {
+    try {
+        // Tentar usar IA primeiro
+        const aiResponse = await getAIResponse(message);
+        removeTypingIndicator();
+        addChatMessage(aiResponse, 'bot');
+    } catch (error) {
+        // Fallback para resposta local
         removeTypingIndicator();
         const response = getBotResponse(message.toLowerCase());
         addChatMessage(response, 'bot');
-        
-        sendBtn.innerHTML = '➤';
-        sendBtn.disabled = false;
-    }, 1000);
+    }
+    
+    sendBtn.innerHTML = '➤';
+    sendBtn.disabled = false;
 }
 
 function addChatMessage(message, sender) {
@@ -2161,15 +2202,10 @@ function getSiteData() {
 
 // Resposta IA usando OpenAI API
 async function getAIResponse(message) {
-    const apiKey = localStorage.getItem('openai-api-key');
+    const apiKey = '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';
     
     if (!apiKey) {
         throw new Error('API key não configurada');
-    }
-    
-    // Limpar chave se estiver mascarada
-    if (apiKey.startsWith('***')) {
-        throw new Error('Chave mascarada - insira a chave real');
     }
     
     const siteData = getSiteData();
@@ -2288,46 +2324,88 @@ function getBotResponse(message) {
         return `Olá! 👋\nRecebemos seu pedido #${orderId} com sucesso!\nEle já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅`;
     }
     
-    // Respostas com dados reais do site
-    if (message.includes('produto') || message.includes('bebida') || message.includes('o que tem')) {
+    // Respostas expandidas com dados reais do site
+    if (message.includes('produto') || message.includes('bebida') || message.includes('o que tem') || message.includes('catálogo') || message.includes('menu')) {
         return `Temos estes produtos disponíveis:\n\n${siteData.products}\n\nQual produto te interessa? Posso adicionar ao seu carrinho!`;
     }
-    if (message.includes('preço') || message.includes('valor') || message.includes('quanto custa')) {
+    if (message.includes('preço') || message.includes('valor') || message.includes('quanto custa') || message.includes('custo')) {
         const productMentioned = products.find(p => message.toLowerCase().includes(p.name.toLowerCase().split(' ')[0]));
         if (productMentioned) {
             return `${productMentioned.name} custa R$ ${productMentioned.price.toFixed(2)}. Quer adicionar ao carrinho?`;
         }
         return `Nossos preços:\n\n${siteData.products}\n\nQual produto te interessa?`;
     }
-    if (message.includes('carrinho') || message.includes('pedido')) {
+    if (message.includes('carrinho') || message.includes('pedido') || message.includes('compra')) {
         if (cart.length === 0) {
             return 'Seu carrinho está vazio. Que tal ver nossos produtos? Posso recomendar algo!';
         }
         return `Seu carrinho atual:\n\n${siteData.cart}\n\nTotal: R$ ${siteData.cartTotal}\n\nQuer finalizar pelo WhatsApp?`;
     }
-    if (message.includes('horário') || message.includes('funcionamento')) {
+    if (message.includes('horário') || message.includes('funcionamento') || message.includes('aberto') || message.includes('fechado')) {
         return 'Horários:\n• Domingo: 09:00-18:00\n• Segunda: 09:00-17:00\n• Terça-Quinta: 10:00-20:00\n• Sexta-Sábado: 10:00-22:00\n\n🚚 Entregas: 10:00-20:00';
     }
-    if (message.includes('endereço') || message.includes('localização')) {
+    if (message.includes('endereço') || message.includes('localização') || message.includes('onde') || message.includes('local')) {
         return 'Estamos na R. Oswaldo Barreto, 708 E - Alvinópolis, Atibaia - SP, 12942-570.';
     }
-    if (message.includes('entrega') || message.includes('frete')) {
-        return 'Fazemos entregas das 10:00 às 20:00! Use nossa calculadora de frete no carrinho para ver preços e prazos.';
+    if (message.includes('entrega') || message.includes('frete') || message.includes('delivery') || message.includes('envio')) {
+        return 'Fazemos entregas das 10:00 às 20:00! Use nossa calculadora de frete no carrinho para ver preços e prazos. Taxa de entrega varia conforme a distância.';
     }
-    if (message.includes('whatsapp') || message.includes('contato')) {
+    if (message.includes('whatsapp') || message.includes('contato') || message.includes('telefone') || message.includes('falar')) {
         return 'Nosso WhatsApp: (11) 93394-9002. Ou use os botões do site para contato direto!';
     }
-    if (message.includes('oi') || message.includes('olá') || message.includes('bom dia') || message.includes('boa tarde')) {
-        return 'Olá! Como posso ajudar? Posso falar sobre nossos produtos, preços, seu carrinho, entregas ou horários!';
+    if (message.includes('pagamento') || message.includes('pagar') || message.includes('pix') || message.includes('cartão') || message.includes('dinheiro')) {
+        return 'Aceitamos PIX, cartão de crédito/débito e dinheiro na entrega. PIX tem desconto especial!';
+    }
+    if (message.includes('promoção') || message.includes('desconto') || message.includes('oferta') || message.includes('cupom')) {
+        return 'Temos promoções especiais! Siga nosso WhatsApp para receber ofertas exclusivas. Cupons disponíveis no sistema de pontos!';
+    }
+    if (message.includes('vinho') || message.includes('cerveja') || message.includes('drink') || message.includes('refrigerante')) {
+        const category = message.includes('vinho') ? 'vinhos' : message.includes('cerveja') ? 'cervejas' : message.includes('drink') ? 'drinks' : 'refrigerantes';
+        const categoryProducts = products.filter(p => p.category === category);
+        if (categoryProducts.length > 0) {
+            return `Temos ${categoryProducts.length} opções de ${category}:\n\n${categoryProducts.map(p => `${p.name} - R$ ${p.price.toFixed(2)}`).join('\n')}\n\nQual te interessa?`;
+        }
+    }
+    if (message.includes('pontos') || message.includes('fidelidade') || message.includes('recompensa')) {
+        return 'Temos sistema de pontos! A cada R$ 10 gastos, você ganha 1 ponto. Troque por descontos e brindes especiais!';
+    }
+    if (message.includes('cadastro') || message.includes('registrar') || message.includes('conta')) {
+        return 'Para se cadastrar, basta fazer seu primeiro pedido! Coletamos seus dados para entregas futuras e sistema de pontos.';
+    }
+    if (message.includes('oi') || message.includes('olá') || message.includes('bom dia') || message.includes('boa tarde') || message.includes('boa noite')) {
+        return 'Olá! Como posso ajudar? Posso falar sobre produtos, preços, carrinho, entregas, horários, pagamentos, promoções e muito mais!';
+    }
+    if (message.includes('obrigado') || message.includes('valeu') || message.includes('tchau') || message.includes('até logo')) {
+        return 'Por nada! Foi um prazer ajudar. Volte sempre à Adega do Tio Pancho! 🍷';
     }
     
-    // Resposta padrão
-    return 'Desculpe, não consegui processar sua pergunta. Posso ajudar com produtos, preços, carrinho, entregas ou horários. WhatsApp: (11) 93394-9002';
+    // Resposta inteligente baseada em palavras-chave
+    const keywords = message.toLowerCase().split(' ');
+    const responses = {
+        'como': 'Como posso ajudar? Fale sobre produtos, preços, entregas, horários ou qualquer dúvida!',
+        'qual': 'Qual informação você precisa? Produtos, preços, horários, entregas?',
+        'quando': 'Nossos horários: Dom 09-18h, Seg 09-17h, Ter-Qui 10-20h, Sex-Sáb 10-22h. Entregas 10-20h.',
+        'onde': 'R. Oswaldo Barreto, 708 E - Alvinópolis, Atibaia - SP. WhatsApp: (11) 93394-9002',
+        'porque': 'Somos a Adega do Tio Pancho, especializada em bebidas premium com entrega rápida!',
+        'ajuda': 'Claro! Posso ajudar com produtos, preços, pedidos, entregas, horários e muito mais. O que precisa?'
+    };
+    
+    for (const keyword of keywords) {
+        if (responses[keyword]) {
+            return responses[keyword];
+        }
+    }
+    
+    // Resposta padrão mais útil
+    return `Não entendi exatamente sua pergunta, mas posso ajudar com:\n\n• 🍷 Produtos e preços\n• 🛒 Carrinho e pedidos\n• 🚚 Entregas e frete\n• 🕒 Horários\n• 💳 Pagamentos\n• 🎁 Promoções\n• 📍 Localização\n\nOu fale direto no WhatsApp: (11) 93394-9002`;
 }
 
 // Função de busca de produtos
 function searchProducts() {
-    const searchTerm = document.getElementById('mobile-product-search').value.toLowerCase();
+    const searchInput = document.getElementById('product-search') || document.getElementById('mobile-product-search');
+    if (!searchInput) return;
+    
+    const searchTerm = searchInput.value.toLowerCase();
     const filteredProducts = products.filter(product => 
         product.name.toLowerCase().includes(searchTerm)
     );
@@ -2336,3 +2414,463 @@ function searchProducts() {
 
 // Função global para busca de produtos
 window.searchProducts = searchProducts;
+
+// Funções de usuário
+async function loadUserProfile() {
+    console.log('👤 Carregando perfil do usuário...');
+    
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    console.log('📊 Dados do usuário:', userData);
+    
+    if (userData.nome) {
+        console.log('✅ Usuário encontrado, carregando painel...');
+        // Carregar painel do cliente
+        await loadCustomerPanel(userData);
+    } else {
+        console.log('⚠️ Nenhum usuário logado encontrado');
+        // Mostrar formulário de informações se não houver usuário
+        const customerInfo = document.getElementById('customer-info');
+        if (customerInfo) {
+            customerInfo.style.display = 'block';
+        }
+    }
+}
+
+async function loadCustomerPanel(userData) {
+    console.log('🔄 Carregando painel do cliente:', userData);
+    
+    const customerPanel = document.getElementById('logged-customer-panel');
+    const customerInfo = document.getElementById('customer-info');
+    
+    if (userData.nome) {
+        // Esconder formulário e mostrar painel
+        if (customerInfo) {
+            customerInfo.style.display = 'none';
+            console.log('✅ Formulário escondido');
+        }
+        if (customerPanel) {
+            customerPanel.style.display = 'block';
+            console.log('✅ Painel do cliente exibido');
+        }
+        
+        // Preencher dados
+        const firstName = userData.nome.split(' ')[0];
+        const loggedNameEl = document.getElementById('logged-customer-name');
+        const fullNameEl = document.getElementById('customer-full-name');
+        const whatsappEl = document.getElementById('customer-whatsapp');
+        
+        if (loggedNameEl) {
+            loggedNameEl.textContent = firstName;
+            console.log('✅ Nome definido:', firstName);
+        }
+        if (fullNameEl) fullNameEl.textContent = userData.nome;
+        if (whatsappEl) whatsappEl.textContent = userData.whatsapp;
+        
+        // Carregar pontos do banco
+        await loadCustomerPoints();
+        
+        // Mostrar perfil no header
+        showCustomerProfile({ name: userData.nome });
+        
+        console.log('✅ Painel do cliente carregado completamente');
+    }
+}
+
+// Mostrar perfil do cliente no header
+function showCustomerProfile(customerData) {
+    const profileElement = document.getElementById('customer-profile');
+    const profileName = document.getElementById('profile-name');
+    
+    if (profileElement && profileName) {
+        profileName.textContent = customerData.name.split(' ')[0];
+        profileElement.style.display = 'flex';
+        
+        // Adicionar evento de clique para mostrar menu
+        profileElement.onclick = function() {
+            toggleUserMenu();
+        };
+    }
+}
+
+function toggleUserMenu() {
+    // Criar menu dropdown simples
+    const existingMenu = document.getElementById('user-dropdown');
+    if (existingMenu) {
+        existingMenu.remove();
+        return;
+    }
+    
+    const dropdown = document.createElement('div');
+    dropdown.id = 'user-dropdown';
+    dropdown.style.cssText = `
+        position: absolute;
+        top: 60px;
+        right: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        min-width: 150px;
+    `;
+    
+    dropdown.innerHTML = `
+        <div style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showSection('home'); document.getElementById('user-dropdown').remove();">
+            🏠 Meu Perfil
+        </div>
+        <div style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showOrderHistory(); document.getElementById('user-dropdown').remove();">
+            📋 Meus Pedidos
+        </div>
+        <div style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;" onclick="showCoupons(); document.getElementById('user-dropdown').remove();">
+            🎁 Meus Cupons
+        </div>
+        <div style="padding: 10px; cursor: pointer; color: #dc3545;" onclick="logout(); document.getElementById('user-dropdown').remove();">
+            🚪 Sair
+        </div>
+    `;
+    
+    document.body.appendChild(dropdown);
+    
+    // Fechar ao clicar fora
+    setTimeout(() => {
+        document.addEventListener('click', function closeDropdown(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+            }
+        });
+    }, 100);
+}
+
+async function loadCustomerPoints() {
+    try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+        
+        const client = getSupabaseClient();
+        if (!client) return;
+        
+        const { data, error } = await client
+            .from('clientes')
+            .select('pontos')
+            .eq('id', userId)
+            .single();
+        
+        if (!error && data) {
+            const points = data.pontos || 0;
+            const pointsDisplay = document.getElementById('customer-points-display');
+            if (pointsDisplay) {
+                pointsDisplay.textContent = `${points} pontos`;
+            }
+        }
+    } catch (error) {
+        console.log('Erro ao carregar pontos:', error);
+    }
+}
+
+// Atualizar pontos do cliente no banco
+async function updateCustomerPoints(userId, pointsToAdd) {
+    try {
+        // Buscar pontos atuais
+        const client = getSupabaseClient();
+        if (!client) {
+            console.error('Supabase não disponível para atualizar pontos');
+            return;
+        }
+        
+        const { data: currentData, error: fetchError } = await client
+            .from('clientes')
+            .select('pontos')
+            .eq('id', userId)
+            .single();
+            
+        if (fetchError) {
+            console.error('Erro ao buscar pontos atuais:', fetchError);
+            return;
+        }
+        
+        const currentPoints = currentData.pontos || 0;
+        const newPoints = currentPoints + pointsToAdd;
+        
+        // Atualizar pontos
+        const { error: updateError } = await client
+            .from('clientes')
+            .update({ pontos: newPoints })
+            .eq('id', userId);
+            
+        if (updateError) {
+            console.error('Erro ao atualizar pontos:', updateError);
+        } else {
+            console.log(`✅ Pontos atualizados: +${pointsToAdd} (total: ${newPoints})`);
+            
+            // Atualizar exibição na tela imediatamente
+            updatePointsDisplay(newPoints);
+            
+            // Mostrar notificação de pontos ganhos
+            showPointsNotification(pointsToAdd, newPoints);
+        }
+    } catch (error) {
+        console.error('Erro na atualização de pontos:', error);
+    }
+}
+
+// Atualizar exibição de pontos na tela
+function updatePointsDisplay(newPoints) {
+    const pointsDisplay = document.getElementById('customer-points-display');
+    if (pointsDisplay) {
+        pointsDisplay.textContent = `${newPoints} pontos`;
+    }
+}
+
+// Mostrar notificação de pontos ganhos
+function showPointsNotification(pointsAdded, totalPoints) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #d4af37, #b8941f);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 10000;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+    `;
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 24px;">🎆</div>
+            <div>
+                <div style="font-size: 14px; font-weight: bold;">Pontos Ganhos!</div>
+                <div style="font-size: 12px; opacity: 0.9;">+${pointsAdded} pontos</div>
+                <div style="font-size: 12px; opacity: 0.8;">Total: ${totalPoints} pontos</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
+}
+
+async function exchangeCoupon(title, cost) {
+    try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            alert('Erro: usuário não identificado');
+            return;
+        }
+        
+        // Verificar pontos atuais
+        const client = getSupabaseClient();
+        if (!client) {
+            alert('Erro: banco de dados não disponível');
+            return;
+        }
+        
+        const { data: userData, error: userError } = await client
+            .from('clientes')
+            .select('pontos')
+            .eq('id', userId)
+            .single();
+        
+        if (userError || !userData) {
+            alert('Erro ao verificar pontos');
+            return;
+        }
+        
+        const currentPoints = userData.pontos || 0;
+        
+        if (currentPoints < cost) {
+            alert(`Você precisa de ${cost} pontos. Você tem apenas ${currentPoints} pontos.`);
+            return;
+        }
+        
+        // Confirmar troca
+        const confirmExchange = window.confirm(`Trocar ${cost} pontos por ${title}?`);
+        if (!confirmExchange) return;
+        
+        // Descontar pontos
+        const newPoints = currentPoints - cost;
+        const { error: updateError } = await client
+            .from('clientes')
+            .update({ pontos: newPoints })
+            .eq('id', userId);
+        
+        if (updateError) {
+            alert('Erro ao processar troca');
+            return;
+        }
+        
+        // Criar cupom
+        const { error: couponError } = await client
+            .from('cupons')
+            .insert({
+                cliente_id: userId,
+                titulo: title,
+                descricao: `Cupom de ${title}`,
+                desconto: title,
+                usado: false
+            });
+        
+        if (couponError) {
+            alert('Erro ao criar cupom');
+            return;
+        }
+        
+        // Atualizar exibição imediatamente
+        updatePointsDisplay(newPoints);
+        
+        alert(`Cupom ${title} adquirido com sucesso!\nPontos restantes: ${newPoints}`);
+        
+    } catch (error) {
+        console.error('Erro na troca:', error);
+        alert('Erro ao processar troca');
+    }
+}
+
+// Tornar função global
+window.exchangeCoupon = exchangeCoupon;
+
+function toggleUserMenu() {
+    const confirmLogout = confirm('Deseja sair da sua conta?');
+    if (confirmLogout) {
+        logout();
+    }
+}
+
+// Funções do sistema de pontos
+function makeNewOrder() {
+    showSection('products');
+}
+
+function showOrderHistory() {
+    const historyDiv = document.getElementById('order-history');
+    const couponsDiv = document.getElementById('coupons-list');
+    
+    if (historyDiv.style.display === 'none') {
+        historyDiv.style.display = 'block';
+        couponsDiv.style.display = 'none';
+        loadOrderHistory();
+    } else {
+        historyDiv.style.display = 'none';
+    }
+}
+
+function showCoupons() {
+    const historyDiv = document.getElementById('order-history');
+    const couponsDiv = document.getElementById('coupons-list');
+    
+    if (couponsDiv.style.display === 'none') {
+        couponsDiv.style.display = 'block';
+        historyDiv.style.display = 'none';
+        loadAvailableCoupons();
+    } else {
+        couponsDiv.style.display = 'none';
+    }
+}
+
+function loadOrderHistory() {
+    const historyList = document.getElementById('history-list');
+    const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    
+    if (orders.length === 0) {
+        historyList.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+        return;
+    }
+    
+    historyList.innerHTML = orders.slice(-5).reverse().map(order => `
+        <div class="order-item">
+            <div class="order-header">
+                <span class="order-id">#${order.id}</span>
+                <span class="order-date">${new Date(order.date).toLocaleDateString('pt-BR')}</span>
+            </div>
+            <div class="order-total">R$ ${order.total.toFixed(2)}</div>
+            <div class="order-status">${order.status}</div>
+        </div>
+    `).join('');
+}
+
+async function loadAvailableCoupons() {
+    const couponsList = document.getElementById('available-coupons');
+    const userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+        couponsList.innerHTML = '<p>Faça login para ver seus cupons.</p>';
+        return;
+    }
+    
+    try {
+        const client = getSupabaseClient();
+        if (!client) {
+            couponsList.innerHTML = '<p>Erro: banco de dados não disponível.</p>';
+            return;
+        }
+        
+        const { data, error } = await client
+            .from('cupons')
+            .select('*')
+            .eq('cliente_id', userId)
+            .eq('usado', false);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+            couponsList.innerHTML = '<p>Você não possui cupons disponíveis.</p>';
+            return;
+        }
+        
+        couponsList.innerHTML = data.map(coupon => `
+            <div class="coupon-item">
+                <div class="coupon-title">${coupon.titulo}</div>
+                <div class="coupon-description">${coupon.descricao || coupon.desconto}</div>
+                <button onclick="useCoupon(${coupon.id})" class="use-coupon-btn">Usar Cupom</button>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Erro ao carregar cupons:', error);
+        couponsList.innerHTML = '<p>Erro ao carregar cupons.</p>';
+    }
+}
+
+function useCoupon(couponId) {
+    alert('Cupom será aplicado no próximo pedido!');
+}
+
+function logoutCustomer() {
+    logout();
+}
+
+function logout() {
+    const confirmLogout = confirm('Tem certeza que deseja sair?');
+    if (confirmLogout) {
+        localStorage.removeItem('userRegistered');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('deliveryAddress');
+        localStorage.removeItem('deliveryAddressData');
+        window.location.href = 'registro.html';
+    }
+}
+
+// Enviar mensagem de carrinho abandonado
+function sendAbandonedCartMessage() {
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    if (userData.whatsapp) {
+        const message = `🛒 CARRINHO ABANDONADO\n\nCliente: ${userData.nome}\nWhatsApp: ${userData.whatsapp}\nHorário: ${new Date().toLocaleString('pt-BR')}\n\nO cliente esvaziou o carrinho. Considere entrar em contato para oferecer ajuda.`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+    }
+}
+
+// Tornar funções globais
+window.makeNewOrder = makeNewOrder;
+window.showOrderHistory = showOrderHistory;
+window.showCoupons = showCoupons;
+window.logoutCustomer = logoutCustomer;

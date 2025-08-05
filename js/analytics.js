@@ -12,6 +12,13 @@ const CART_STATES = {
 
 // Inicializar sistema
 document.addEventListener('DOMContentLoaded', function() {
+    // Carregar Supabase se não estiver disponível
+    if (!window.supabase) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        document.head.appendChild(script);
+    }
+    
     setupCartTracking();
     loadAnalyticsData();
     updateCharts();
@@ -134,13 +141,9 @@ function setupCartTracking() {
                 previousStatus: oldStatus
             });
             
-
-            
             // Enviar notificação automática via WhatsApp
             sendWhatsAppNotification(newStatus, orderId);
-        },
-        
-
+        }
     };
 }
 
@@ -387,7 +390,7 @@ function switchTab(tab) {
 }
 
 // Carregar carrinhos abandonados
-function loadAbandonedCarts() {
+async function loadAbandonedCarts() {
     const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
     const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
     const list = document.getElementById('abandoned-carts-list');
@@ -422,6 +425,32 @@ function loadAbandonedCarts() {
     const uniqueAbandoned = allAbandoned.filter((cart, index, self) => 
         index === self.findIndex(c => c.sessionId === cart.sessionId)
     ).slice(-15).reverse();
+    
+    // Buscar WhatsApp do banco de dados para clientes sem telefone
+    for (let cart of uniqueAbandoned) {
+        if (!cart.customerPhone && cart.customerName && cart.customerName !== 'Cliente não identificado') {
+            try {
+                const client = window.supabase?.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+                
+                if (client) {
+                    const { data } = await client
+                        .from('clientes')
+                        .select('whatsapp')
+                        .ilike('nome', `%${cart.customerName}%`)
+                        .single();
+                    
+                    if (data?.whatsapp) {
+                        cart.customerPhone = data.whatsapp;
+                    }
+                }
+            } catch (error) {
+                console.log('Erro ao buscar WhatsApp:', error);
+            }
+        }
+    }
     
     if (uniqueAbandoned.length === 0) {
         list.innerHTML = '<p>Nenhum carrinho abandonado encontrado</p>';
@@ -461,10 +490,16 @@ function loadAbandonedCarts() {
                     </div>
                 </div>
                 <div class="cart-actions">
-                    <button class="recovery-btn ${hasPhone ? '' : 'disabled'}" 
-                            onclick="sendRecoveryMessage('${cart.sessionId}', '${products.replace(/'/g, "\\'").replace(/"/g, '\\"')}', '${total}', '${cart.customerPhone || ''}', '${customerName.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">
-                        ${hasPhone ? '💬 Enviar WhatsApp' : '📋 Sem WhatsApp'}
-                    </button>
+                    ${hasPhone ? `
+                        <button class="recovery-btn web-btn" 
+                                onclick="sendRecoveryMessage('${cart.sessionId}', '${products.replace(/'/g, "\\'").replace(/"/g, '\\"')}', '${total}', '${cart.customerPhone || ''}', '${customerName.replace(/'/g, "\\'").replace(/"/g, '\\"')}', true)">
+                            💬 Enviar WhatsApp
+                        </button>
+                    ` : `
+                        <button class="recovery-btn disabled">
+                            📋 Sem WhatsApp
+                        </button>
+                    `}
                 </div>
             </div>
         `;
@@ -472,27 +507,25 @@ function loadAbandonedCarts() {
 }
 
 // Enviar mensagem de recuperação
-function sendRecoveryMessage(sessionId, products, total, customerPhone = null, customerName = 'Cliente') {
+function sendRecoveryMessage(sessionId, products, total, customerPhone = null, customerName = 'Cliente', useWeb = false) {
     const message = `🍷 *Adega do Tio Pancho*\n\nOlá ${customerName}! 😊\n\n😢 Notamos que você esqueceu alguns itens no seu carrinho:\n\n📦 Produtos: ${products}\n💰 Total: ${total}\n\n🎁 Que tal finalizar sua compra? Temos vinhos especiais esperando por você!\n\n✨ *Oferta especial*: Use o cupom VOLTA10 e ganhe 10% de desconto!\n\n👉 Finalize agora: ${window.location.origin.replace('/analytics', '')}\n\n🍷 Adega do Tio Pancho - Os melhores vinhos da região!`;
     
     const encodedMessage = encodeURIComponent(message);
     let whatsappUrl;
     
     if (customerPhone) {
-        // Enviar para número específico
         const cleanPhone = customerPhone.replace(/\D/g, '');
-        // Adicionar código do país se não tiver
         const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-        whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodedMessage}`;
+        
+        // Sempre usar WhatsApp Web
+        whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodedMessage}`;
     } else {
-        // Abrir sem número (para copiar mensagem)
-        whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        whatsappUrl = `https://web.whatsapp.com/`;
         alert('Número de telefone não disponível. A mensagem será copiada para você enviar manualmente.');
     }
     
     window.open(whatsappUrl, '_blank');
     
-    // Marcar como recuperação enviada
     const recoveries = JSON.parse(localStorage.getItem('cartRecoveries') || '[]');
     recoveries.push({
         sessionId,
@@ -500,11 +533,12 @@ function sendRecoveryMessage(sessionId, products, total, customerPhone = null, c
         products,
         total,
         customerPhone,
-        customerName
+        customerName,
+        platform: useWeb ? 'web' : 'app'
     });
     localStorage.setItem('cartRecoveries', JSON.stringify(recoveries));
     
-    showRecoveryNotification(customerName);
+    showRecoveryNotification(customerName, useWeb ? 'WhatsApp Web' : 'WhatsApp App');
 }
 
 // Carregar carrinhos desistidos
@@ -600,9 +634,9 @@ function sendDesistedMessage(sessionId, products, total, customerPhone = null, c
     if (customerPhone) {
         const cleanPhone = customerPhone.replace(/\D/g, '');
         const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-        whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${encodedMessage}`;
+        whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodedMessage}`;
     } else {
-        whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+        whatsappUrl = `https://web.whatsapp.com/`;
         alert('Número de telefone não disponível. A mensagem será copiada para você enviar manualmente.');
     }
     
@@ -761,7 +795,7 @@ function showBulkNotification(count) {
 }
 
 // Mostrar notificação de recuperação enviada
-function showRecoveryNotification(customerName = 'Cliente') {
+function showRecoveryNotification(customerName = 'Cliente', platform = 'WhatsApp') {
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
@@ -779,10 +813,10 @@ function showRecoveryNotification(customerName = 'Cliente') {
     
     notification.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.2rem;">💬</span>
+            <span style="font-size: 1.2rem;">${platform.includes('Web') ? '💻' : '📱'}</span>
             <div>
                 <div style="font-weight: bold;">Mensagem Enviada!</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">WhatsApp aberto para ${customerName}</div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">${platform} aberto para ${customerName}</div>
             </div>
         </div>
     `;
