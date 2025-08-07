@@ -7,6 +7,7 @@
 # Chaves de API
 config/keys.js
 config/secrets.js
+js/config.js
 
 # Logs
 *.log

@@ -2202,7 +2202,7 @@ function getSiteData() {
 
 // Resposta IA usando OpenAI API
 async function getAIResponse(message) {
-    const apiKey = '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';
+    const apiKey = localStorage.getItem('openai-api-key') || CONFIG?.OPENAI_API_KEY;
     
     if (!apiKey) {
         throw new Error('API key não configurada');
