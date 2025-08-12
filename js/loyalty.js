@@ -197,74 +197,85 @@ async function loadSavedCustomerInfo() {
 }
 // Função para trocar pontos por cupons
 async function exchangePoints(couponType, pointsCost) {
-    const customerData = JSON.parse(localStorage.getItem('customerInfo') || '{}');
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    const userId = localStorage.getItem('userId');
     
-    if (!customerData.id || !supabaseClient) {
-        alert('Erro: sistema não inicializado');
+    if (!userId) {
+        alert('Erro: usuário não identificado');
         return;
     }
     
-    // Buscar pontos atuais do banco
-    const { data: currentData, error: fetchError } = await supabaseClient
-        .from('clientes')
-        .select('pontos')
-        .eq('id', customerData.id)
-        .single();
-    
-    if (fetchError) {
-        alert('Erro ao verificar pontos');
+    const client = getSupabaseClient();
+    if (!client) {
+        alert('Erro: sistema indisponível');
         return;
     }
-    
-    const currentPoints = currentData.pontos || 0;
-    
-    if (currentPoints < pointsCost) {
-        alert(`Pontos insuficientes! Você tem ${currentPoints} pontos e precisa de ${pointsCost}.`);
-        return;
-    }
-    
-    const coupons = {
-        '5off': { title: '5% OFF', description: 'Desconto de 5% em qualquer pedido', discount: '5%' },
-        '10off': { title: '10% OFF', description: 'Desconto de 10% em qualquer pedido', discount: '10%' },
-        'frete': { title: 'Frete Grátis', description: 'Entrega gratuita no próximo pedido', discount: 'Frete Grátis' },
-        '15off': { title: '15% OFF', description: 'Desconto de 15% em qualquer pedido', discount: '15%' }
-    };
-    
-    const coupon = coupons[couponType];
     
     try {
-        const newPoints = currentPoints - pointsCost;
-        
-        // Atualizar pontos no banco
-        const { error: updateError } = await supabaseClient
+        // Buscar pontos atuais
+        const { data: currentData, error: fetchError } = await client
             .from('clientes')
-            .update({ pontos: newPoints })
-            .eq('id', customerData.id);
+            .select('pontos')
+            .eq('id', userId)
+            .single();
+        
+        if (fetchError) {
+            alert('Erro ao verificar pontos');
+            return;
+        }
+        
+        const currentPoints = currentData.pontos || 0;
+        
+        if (currentPoints < pointsCost) {
+            alert(`Pontos insuficientes! Você tem ${currentPoints} pontos e precisa de ${pointsCost}.`);
+            return;
+        }
+        
+        const coupons = {
+            '5off': { title: '5% OFF', description: 'Desconto de 5% em qualquer pedido', discount: '5%' },
+            '10off': { title: '10% OFF', description: 'Desconto de 10% em qualquer pedido', discount: '10%' },
+            'frete': { title: 'Frete Grátis', description: 'Entrega gratuita no próximo pedido', discount: 'Frete Grátis' },
+            '15off': { title: '15% OFF', description: 'Desconto de 15% em qualquer pedido', discount: '15%' }
+        };
+        
+        const coupon = coupons[couponType];
+        
+        // Debitar pontos
+        const { error: updateError } = await client
+            .from('clientes')
+            .update({ pontos: currentPoints - pointsCost })
+            .eq('id', userId);
         
         if (updateError) throw updateError;
         
-        // Criar cupom no banco
-        const { error: insertError } = await supabaseClient
+        // Criar cupom
+        const { error: insertError } = await client
             .from('cupons')
-            .insert([{
-                cliente_id: customerData.id,
+            .insert({
+                cliente_id: parseInt(userId),
                 titulo: coupon.title,
                 descricao: coupon.description,
-                desconto: coupon.discount
-            }]);
+                desconto: coupon.discount,
+                usado: false
+            });
         
         if (insertError) throw insertError;
         
-        // Atualizar dados locais e interface
-        customerData.points = newPoints;
-        localStorage.setItem('customerInfo', JSON.stringify(customerData));
-        showSavedCustomerInfo(customerData);
+        // Salvar IDs para checkout
+        localStorage.setItem('loyaltyCustomerId', userId);
         
-        alert(`Cupom ${coupon.title} adquirido com sucesso!`);
+        // Atualizar display de pontos
+        const newPoints = currentPoints - pointsCost;
+        const pointsDisplay = document.getElementById('customer-points-display');
+        if (pointsDisplay) {
+            pointsDisplay.textContent = newPoints + ' pontos';
+        }
+        
+        alert(`Cupom ${coupon.title} adquirido com sucesso! Use no checkout.`);
         
     } catch (error) {
         console.error('Erro ao trocar cupom:', error);
-        alert('Erro ao trocar cupom. Tente novamente.');
+        alert('Erro ao criar cupom. Verifique se a tabela existe no banco.');
     }
 }
 

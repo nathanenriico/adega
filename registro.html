@@ -82,6 +82,8 @@
         async function saveRegistro(event) {
             event.preventDefault();
             
+            console.log('🚀 Iniciando processo de cadastro...');
+            
             const name = document.getElementById('nome').value.trim();
             const whatsapp = document.getElementById('whatsapp').value.trim();
             const cep = document.getElementById('cep').value.trim();
@@ -90,6 +92,8 @@
             const complemento = document.getElementById('complemento').value.trim();
             const bairro = document.getElementById('bairro').value.trim();
             const cidade = document.getElementById('cidade').value.trim();
+            
+            console.log('📋 Dados coletados:', { name, whatsapp, cep, rua, numero, complemento, bairro, cidade });
             
             // Mostrar loading
             document.getElementById('loading').style.display = 'block';
@@ -103,84 +107,99 @@
                 return;
             }
             
-            // Validar WhatsApp
-            const whatsappRegex = /^\(?\d{2}\)?[\s-]?9?\d{4}[\s-]?\d{4}$/;
-            if (!whatsappRegex.test(whatsapp)) {
+            // Limpar e formatar WhatsApp
+            const cleanWhatsapp = whatsapp.replace(/\D/g, '');
+            
+            // Validar WhatsApp (deve ter 10 ou 11 dígitos)
+            if (cleanWhatsapp.length < 10 || cleanWhatsapp.length > 11) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error-message').style.display = 'block';
-                document.getElementById('error-message').textContent = 'Por favor, insira um número de WhatsApp válido!';
+                document.getElementById('error-message').textContent = 'Número de WhatsApp inválido! Use formato: 11999887766';
                 return;
             }
             
+            // Garantir que tenha 11 dígitos (adicionar 9 se necessário)
+            let formattedWhatsapp = cleanWhatsapp;
+            if (cleanWhatsapp.length === 10 && !cleanWhatsapp.startsWith('9', 2)) {
+                formattedWhatsapp = cleanWhatsapp.substring(0, 2) + '9' + cleanWhatsapp.substring(2);
+            }
+            
             try {
-                // Criar cliente Supabase
+                console.log('🔄 Salvando no banco de dados...');
+                
+                if (!window.supabase) {
+                    throw new Error('Supabase não carregado');
+                }
+                
                 const client = window.supabase.createClient(
                     'https://vtrgtorablofhmhizrjr.supabase.co',
                     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
                 );
                 
-                // Verificar se cliente já existe
-                const { data: existingClient } = await client
+                const clienteData = {
+                    nome: name,
+                    whatsapp: formattedWhatsapp,
+                    cep: cep,
+                    rua: rua,
+                    numero: numero,
+                    complemento: complemento || null,
+                    bairro: bairro,
+                    cidade: cidade,
+                    pontos: 50
+                };
+                
+                console.log('📝 Inserindo:', clienteData);
+                
+                const { data: clientData, error } = await client
                     .from('clientes')
-                    .select('id, nome')
-                    .eq('whatsapp', whatsapp)
+                    .insert([clienteData])
+                    .select()
                     .single();
                 
-                let clientData;
+                if (error) {
+                    console.error('❌ Erro no banco:', error);
+                    throw new Error(`Falha ao salvar: ${error.message}`);
+                }
                 
-                if (existingClient) {
-                    // Cliente já existe, usar dados existentes
-                    clientData = existingClient;
-                } else {
-                    // Criar novo cliente
-                    const { data, error } = await client
-                        .from('clientes')
+                console.log('✅ Cliente salvo no banco:', clientData);
+                
+                // Registrar pontos de bônus no histórico
+                try {
+                    await client
+                        .from('pontos_historico')
                         .insert({
-                            nome: name,
-                            whatsapp: whatsapp,
-                            cep: cep,
-                            rua: rua,
-                            numero: numero,
-                            complemento: complemento || null,
-                            bairro: bairro,
-                            cidade: cidade,
-                            pontos: 0
-                        })
-                        .select()
-                        .single();
-                    
-                    if (error) {
-                        console.error('Erro ao salvar no Supabase:', error);
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('error-message').style.display = 'block';
-                        document.getElementById('error-message').textContent = 'Erro ao salvar: ' + (error.message || 'WhatsApp já cadastrado');
-                        return;
-                    }
-                    
-                    clientData = data;
+                            cliente_id: clientData.id,
+                            cliente_nome: name,
+                            cliente_telefone: formattedWhatsapp,
+                            cliente_endereco: `${rua}, ${numero}${complemento ? ', ' + complemento : ''}, ${bairro}, ${cidade} - ${cep}`,
+                            pontos: 50,
+                            tipo: 'bonus',
+                            descricao: 'Bônus de boas-vindas por criar conta'
+                        });
+                    console.log('🎁 50 pontos de bônus adicionados!');
+                } catch (pointsError) {
+                    console.error('⚠️ Erro ao registrar pontos:', pointsError);
                 }
                 
                 // Salvar localmente
                 const userData = { 
                     nome: name, 
-                    whatsapp: whatsapp,
+                    whatsapp: formattedWhatsapp,
                     endereco: `${rua}, ${numero}${complemento ? ', ' + complemento : ''}, ${bairro}, ${cidade} - ${cep}`
                 };
                 localStorage.setItem('userData', JSON.stringify(userData));
                 localStorage.setItem('userRegistered', 'true');
+                localStorage.setItem('userId', clientData.id);
                 
-                if (clientData && clientData.id) {
-                    localStorage.setItem('userId', clientData.id);
-                }
-                
-                // Redirecionar para página principal
+                document.getElementById('loading').style.display = 'none';
+                alert('Cadastro realizado com sucesso!');
                 window.location.href = 'index.html';
                 
             } catch (error) {
-                console.error('Erro no cadastro:', error);
+                console.error('❌ Erro crítico:', error);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error-message').style.display = 'block';
-                document.getElementById('error-message').textContent = 'Erro ao salvar dados. Tente novamente.';
+                document.getElementById('error-message').textContent = 'Erro ao processar cadastro. Tente novamente.';
             }
         }
         

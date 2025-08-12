@@ -50,7 +50,7 @@ async function loadOrdersFromDB() {
         
         // Usar apenas pedidos do Supabase, ignorar localStorage para evitar duplicatas
         orders = dbOrders.map(dbOrder => {
-            console.log('Pedido do Supabase:', dbOrder.id, 'Endereço:', dbOrder.endereco);
+            console.log('Pedido do Supabase:', dbOrder.id, 'Data:', dbOrder.data_pedido);
             return {
                 id: dbOrder.id,
                 customer: dbOrder.cliente_nome || 'Cliente WhatsApp',
@@ -58,7 +58,8 @@ async function loadOrdersFromDB() {
                 paymentMethod: dbOrder.forma_pagamento || 'Não informado',
                 address: dbOrder.endereco || 'Endereço não informado',
                 endereco: dbOrder.endereco || 'Endereço não informado',
-                date: dbOrder.data_pedido,
+                date: dbOrder.data_pedido || dbOrder.created_at,
+                data_pedido: dbOrder.data_pedido || dbOrder.created_at,
                 status: dbOrder.status,
                 items: dbOrder.itens_json ? JSON.parse(dbOrder.itens_json) : [],
                 pontos_ganhos: dbOrder.pontos_ganhos || 0
@@ -195,7 +196,7 @@ function renderActiveOrders(activeOrders) {
                     <strong>Cliente:</strong> Cliente WhatsApp
                 </div>
                 <div class="order-detail">
-                    <strong>Data:</strong> ${formatDate(order.data_pedido || order.date)}
+                    <strong>Data:</strong> ${formatDate(order.date || order.data_pedido)}
                 </div>
                 <div class="order-detail">
                     <strong>Total:</strong> R$ ${(order.valor_total || order.total || 0).toFixed(2)}

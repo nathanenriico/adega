@@ -2569,9 +2569,8 @@ async function loadCustomerPoints() {
 }
 
 // Atualizar pontos do cliente no banco
-async function updateCustomerPoints(userId, pointsToAdd) {
+async function updateCustomerPoints(userId, pointsToAdd, orderId = null, description = null) {
     try {
-        // Buscar pontos atuais
         const client = getSupabaseClient();
         if (!client) {
             console.error('Supabase não disponível para atualizar pontos');
@@ -2600,15 +2599,28 @@ async function updateCustomerPoints(userId, pointsToAdd) {
             
         if (updateError) {
             console.error('Erro ao atualizar pontos:', updateError);
-        } else {
-            console.log(`✅ Pontos atualizados: +${pointsToAdd} (total: ${newPoints})`);
-            
-            // Atualizar exibição na tela imediatamente
-            updatePointsDisplay(newPoints);
-            
-            // Mostrar notificação de pontos ganhos
-            showPointsNotification(pointsToAdd, newPoints);
+            return;
         }
+        
+        // Registrar no histórico
+        const { error: historyError } = await client
+            .from('pontos_historico')
+            .insert({
+                cliente_id: userId,
+                pontos: pointsToAdd,
+                tipo: 'ganho',
+                descricao: description || `Pontos ganhos na compra`,
+                pedido_id: orderId
+            });
+        
+        if (historyError) {
+            console.error('Erro ao salvar histórico:', historyError);
+        }
+        
+        console.log(`✅ Pontos atualizados: +${pointsToAdd} (total: ${newPoints})`);
+        updatePointsDisplay(newPoints);
+        showPointsNotification(pointsToAdd, newPoints);
+        
     } catch (error) {
         console.error('Erro na atualização de pontos:', error);
     }

@@ -71,7 +71,7 @@ function calculateTotals() {
 
 // Carregar cupons disponíveis
 async function loadAvailableCoupons() {
-    const customerId = localStorage.getItem('loyaltyCustomerId');
+    const customerId = localStorage.getItem('loyaltyCustomerId') || localStorage.getItem('userId');
     const couponSelect = document.getElementById('coupon-select');
     
     if (!customerId) {
@@ -79,21 +79,35 @@ async function loadAvailableCoupons() {
         return;
     }
     
-    // Verificar se Supabase está disponível
+    // Aguardar Supabase estar disponível
+    let attempts = 0;
+    while ((!window.supabase || typeof supabase === 'undefined') && attempts < 20) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    
     if (typeof supabase === 'undefined') {
         console.error('Supabase não está carregado');
-        couponSelect.innerHTML = '<option value="">Erro: Sistema indisponível</option>';
+        couponSelect.innerHTML = '<option value="">Sistema indisponível</option>';
         return;
     }
     
     try {
+        console.log('Carregando cupons para cliente:', customerId);
+        
         const { data, error } = await supabase
             .from('cupons')
             .select('*')
             .eq('cliente_id', customerId)
-            .eq('usado', false);
+            .eq('usado', false)
+            .order('data_criacao', { ascending: false });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Erro na consulta:', error);
+            throw error;
+        }
+        
+        console.log('Cupons encontrados:', data);
         
         if (!data || data.length === 0) {
             couponSelect.innerHTML = '<option value="">Nenhum cupom disponível</option>';
@@ -104,6 +118,8 @@ async function loadAvailableCoupons() {
             data.map(coupon => 
                 `<option value="${coupon.id}">${coupon.titulo} - ${coupon.desconto}</option>`
             ).join('');
+            
+        console.log('Cupons carregados com sucesso:', data.length);
     } catch (error) {
         console.error('Erro ao carregar cupons:', error);
         couponSelect.innerHTML = '<option value="">Erro ao carregar cupons</option>';
@@ -136,7 +152,11 @@ async function applyCoupon() {
             .eq('usado', false)
             .single();
         
-        if (error) throw error;
+        if (error) {
+            console.error('Erro ao buscar cupom:', error);
+            alert('Cupom não encontrado ou já utilizado.');
+            return;
+        }
         
         const coupon = {
             id: data.id,
@@ -147,10 +167,35 @@ async function applyCoupon() {
         
         localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
         calculateTotals();
-        alert(`Cupom ${coupon.title} aplicado com sucesso!`);
+        
+        console.log('Cupom aplicado:', coupon);
+        
     } catch (error) {
         console.error('Erro ao aplicar cupom:', error);
         alert('Erro ao aplicar cupom.');
+    }
+}
+
+// Função para marcar cupom como usado
+async function markCouponAsUsed(couponId) {
+    if (!couponId || typeof supabase === 'undefined') return;
+    
+    try {
+        const { error } = await supabase
+            .from('cupons')
+            .update({ 
+                usado: true, 
+                data_uso: new Date().toISOString() 
+            })
+            .eq('id', couponId);
+        
+        if (error) {
+            console.error('Erro ao marcar cupom como usado:', error);
+        } else {
+            console.log('Cupom marcado como usado:', couponId);
+        }
+    } catch (error) {
+        console.error('Erro ao marcar cupom como usado:', error);
     }
 }
 
@@ -275,10 +320,13 @@ function saveCard() {
     }
 }
 
-async function updateCustomerPoints(customerId, pointsToAdd) {
+async function updateCustomerPoints(customerId, pointsToAdd, orderId = null, description = null) {
     try {
+        const client = getSupabaseClient();
+        if (!client) throw new Error('Supabase não disponível');
+        
         // Buscar pontos atuais
-        const { data: currentData, error: fetchError } = await supabase
+        const { data: currentData, error: fetchError } = await client
             .from('clientes')
             .select('pontos')
             .eq('id', customerId)
@@ -290,17 +338,32 @@ async function updateCustomerPoints(customerId, pointsToAdd) {
         const newPoints = currentPoints + pointsToAdd;
         
         // Atualizar pontos no banco
-        const { error: updateError } = await supabase
+        const { error: updateError } = await client
             .from('clientes')
             .update({ pontos: newPoints })
             .eq('id', customerId);
         
         if (updateError) throw updateError;
         
-        console.log(`Pontos atualizados: ${currentPoints} + ${pointsToAdd} = ${newPoints}`);
+        // Registrar no histórico
+        const { error: historyError } = await client
+            .from('pontos_historico')
+            .insert({
+                cliente_id: customerId,
+                pontos: pointsToAdd,
+                tipo: 'ganho',
+                descricao: description || `Pontos ganhos na compra`,
+                pedido_id: orderId
+            });
+        
+        if (historyError) {
+            console.error('Erro ao salvar histórico:', historyError);
+        }
+        
+        console.log(`✅ Pontos: ${currentPoints} + ${pointsToAdd} = ${newPoints}`);
         
     } catch (error) {
-        console.error('Erro ao atualizar pontos:', error);
+        console.error('❌ Erro ao atualizar pontos:', error);
     }
 }
 
@@ -330,14 +393,35 @@ async function confirmOrder() {
     const orderId = Date.now();
     localStorage.setItem('currentOrderId', orderId.toString());
     
-    // Calcular total
+    // Verificar se há cupom aplicado
+    const appliedCoupon = JSON.parse(localStorage.getItem('appliedCoupon') || 'null');
+    
+    // Calcular total com desconto
     const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const deliveryFee = 8.90;
-    const total = subtotal + deliveryFee;
+    let deliveryFee = 8.90;
+    let discount = 0;
+    
+    if (appliedCoupon) {
+        if (appliedCoupon.discount.includes('%')) {
+            const percentage = parseInt(appliedCoupon.discount);
+            discount = subtotal * (percentage / 100);
+        } else if (appliedCoupon.discount === 'Frete Grátis') {
+            deliveryFee = 0;
+        }
+    }
+    
+    const total = subtotal - discount + deliveryFee;
     localStorage.setItem('currentOrderTotal', total.toFixed(2));
     
     // Salvar pedido na gestão
     await saveOrderToManagement(cart, paymentMethod, cpfCnpj);
+    
+    // Marcar cupom como usado se houver
+    if (appliedCoupon && appliedCoupon.id) {
+        await markCouponAsUsed(appliedCoupon.id);
+        localStorage.removeItem('appliedCoupon');
+        console.log('Cupom marcado como usado:', appliedCoupon.id);
+    }
     
     // Mostrar confirmação imediatamente
     if (paymentMethod === 'pix') {
@@ -422,7 +506,12 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
     // Obter dados do usuário logado
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
     const customerName = userData.nome || 'Cliente';
-    const customerPhone = userData.whatsapp ? userData.whatsapp.replace(/\D/g, '') : '11941716617';
+    let customerPhone = userData.whatsapp ? userData.whatsapp.replace(/\D/g, '') : '11941716617';
+    
+    // Garantir que o número tenha o código do país
+    if (customerPhone && !customerPhone.startsWith('55')) {
+        customerPhone = '55' + customerPhone;
+    }
     
     // Calcular totais rapidamente
     const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -458,7 +547,7 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
     // Tentar salvar no banco
     if (typeof supabase !== 'undefined' && typeof db !== 'undefined' && db.saveOrder) {
         // Obter dados do cliente logado
-        const customerId = localStorage.getItem('loyaltyCustomerId');
+        const customerId = localStorage.getItem('userId');
         let customerName = null;
         
         // Buscar nome do cliente se estiver logado
@@ -486,7 +575,8 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
             status: orderData.status,
             forma_pagamento: paymentText,
             endereco: orderData.address,
-            itens_json: JSON.stringify(orderData.items)
+            itens_json: JSON.stringify(orderData.items),
+            data_pedido: orderData.date
         };
         
         console.log('Dados sendo salvos no Supabase:', supabaseOrderData);
@@ -494,11 +584,21 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         db.saveOrder(supabaseOrderData).then(async () => {
             console.log('✅ Pedido salvo no Supabase:', orderId);
             
-            // Atualizar pontos do cliente em tempo real
+            // Atualizar pontos do cliente
             if (customerId) {
                 const pointsToAdd = Math.floor(orderData.total / 10);
-                await updateCustomerPoints(customerId, pointsToAdd);
-                console.log(`🎯 Pontos adicionados: +${pointsToAdd} para cliente ${customerId}`);
+                console.log(`🎯 Adicionando ${pointsToAdd} pontos para cliente ${customerId}`);
+                
+                await addPointsToCustomer(
+                    customerId, 
+                    pointsToAdd, 
+                    orderId, 
+                    `Compra de R$ ${orderData.total.toFixed(2)} - Pedido #${orderId}`
+                );
+                
+                console.log('✅ Pontos adicionados com sucesso!');
+            } else {
+                console.log('⚠️ CustomerId não encontrado, pontos não adicionados');
             }
             
             // Salvar no localStorage apenas como backup após sucesso no Supabase
@@ -694,14 +794,14 @@ function goToWhatsAppWithOrder(orderId, paymentMethod) {
     }
     
     const encodedMessage = encodeURIComponent(message);
+    const whatsappNumber = '5511941716617';
     
-    // Detectar se é mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-        window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
+        window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, '_blank');
     } else {
-        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
+        window.open(`https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`, '_blank');
     }
     
     // Limpar carrinho após finalizar
