@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (isConnected) {
         console.log('🔄 Carregando pedidos do banco de dados...');
         await loadOrdersFromDB();
-        // setInterval(loadOrdersFromDB, 5000); // Removido para evitar loops
+        // Sincronizar todos os pedidos existentes
+        await syncAllOrdersStatus();
     } else {
         console.log('⚠️ Usando dados locais apenas');
         orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
@@ -38,19 +39,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Recarregar quando a página ganhar foco
-window.addEventListener('focus', function() {
-    loadOrdersFromDB();
-});
+// Recarregar quando a página ganhar foco (desabilitado)
+// window.addEventListener('focus', function() {
+//     loadOrdersFromDB();
+// });
 
 async function loadOrdersFromDB() {
     try {
-        const dbOrders = await db.getOrders();
+        const { data: dbOrders, error } = await supabase
+            .from('pedidos')
+            .select('*')
+            .order('id', { ascending: false });
+        
+        if (error) {
+            throw error;
+        }
+        
         const localOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
         
-        // Usar apenas pedidos do Supabase, ignorar localStorage para evitar duplicatas
+        // Combinar dados do Supabase com localStorage
+        const savedOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        
         orders = dbOrders.map(dbOrder => {
             console.log('Pedido do Supabase:', dbOrder.id, 'Data:', dbOrder.data_pedido);
+            const localOrder = savedOrders.find(lo => lo.id === dbOrder.id);
+            
             return {
                 id: dbOrder.id,
                 customer: dbOrder.cliente_nome || 'Cliente WhatsApp',
@@ -60,10 +73,17 @@ async function loadOrdersFromDB() {
                 endereco: dbOrder.endereco || 'Endereço não informado',
                 date: dbOrder.data_pedido || dbOrder.created_at,
                 data_pedido: dbOrder.data_pedido || dbOrder.created_at,
-                status: dbOrder.status,
+                status: localOrder ? localOrder.status : dbOrder.status,
                 items: dbOrder.itens_json ? JSON.parse(dbOrder.itens_json) : [],
                 pontos_ganhos: dbOrder.pontos_ganhos || 0
             };
+        });
+        
+        // Adicionar pedidos que existem apenas no localStorage
+        savedOrders.forEach(localOrder => {
+            if (!orders.find(o => o.id === localOrder.id)) {
+                orders.push(localOrder);
+            }
         });
         loadOrders();
         updateStats();
@@ -205,12 +225,12 @@ function renderActiveOrders(activeOrders) {
                     <strong>Pagamento:</strong> ${order.paymentMethod || order.forma_pagamento || 'Não informado'}
                 </div>
                 <div class="order-detail">
-                    <strong>Pontos:</strong> ${order.pontos_ganhos || 0} pts
+                    <strong>Pontos:</strong> ${order.pontos_ganhos || Math.floor((order.valor_total || order.total || 0) / 10)} pts
                 </div>
             </div>
             
             <div class="order-address">
-                <strong>Endereço:</strong> ${order.endereco || 'Não informado'}
+                <strong>Endereço:</strong> ${order.endereco || order.address || 'Não informado'}
             </div>
             
             <div class="order-actions">
@@ -350,8 +370,9 @@ function formatDate(dateString) {
 function getActionButtons(order) {
     let buttons = '';
     
-    if (order.status === 'novo') {
+    if (order.status === 'novo' || order.status === 'aguardando_pagamento') {
         buttons += `<button class="action-btn btn-recebido" onclick="updateOrderStatus(${order.id}, 'recebido')">Pedido Recebido</button>`;
+        buttons += `<button class="action-btn btn-confirm-pix" onclick="confirmPixPaymentReceived(${order.id})">✅ Confirmar PIX Recebido</button>`;
     } else if (order.status === 'recebido') {
         buttons += `<button class="action-btn btn-preparar" onclick="updateOrderStatus(${order.id}, 'preparando')">Preparar</button>`;
     } else if (order.status === 'preparando') {
@@ -359,9 +380,6 @@ function getActionButtons(order) {
     } else if (order.status === 'saindo') {
         buttons += `<button class="action-btn btn-entregar" onclick="updateOrderStatus(${order.id}, 'entregue')">Marcar como Entregue</button>`;
     }
-    
-    // Botão para confirmar pagamento PIX em todos os pedidos
-    buttons += `<button class="action-btn btn-confirm-pix" onclick="confirmPixPaymentReceived(${order.id})">✅ Confirmar PIX Recebido</button>`;
     
     // Adicionar botão de cobrança de pagamento para todos os pedidos
     buttons += `<button class="action-btn btn-payment" onclick="requestPayment(${order.id})">Cobrar Pagamento</button>`;
@@ -381,8 +399,45 @@ async function updateOrderStatus(orderId, newStatus) {
         
         // Atualizar no Supabase
         try {
-            await db.updateOrderStatus(orderId, newStatus);
-            console.log('✅ Status atualizado no Supabase:', orderId, newStatus);
+            const { error } = await supabase
+                .from('pedidos')
+                .update({ status: newStatus })
+                .eq('id', orderId);
+            
+            if (error) {
+                console.error('Erro ao atualizar no Supabase:', error);
+            } else {
+                console.log('✅ Status atualizado no Supabase:', orderId, newStatus);
+                
+                // Registrar na tabela pedido_status
+                const statusMap = {
+                    'recebido': 'pedido_recebido',
+                    'preparando': 'preparando', 
+                    'saindo': 'saindo_entrega',
+                    'entregue': 'entregue'
+                };
+                
+                if (statusMap[newStatus]) {
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    const { error: statusError } = await supabase.from('pedido_status').insert({
+                        pedido_id: orderId,
+                        cliente_nome: userData.nome || order.customer || 'Cliente WhatsApp',
+                        cliente_telefone: userData.whatsapp || '5511941716617',
+                        status: statusMap[newStatus],
+                        valor_total: parseFloat(order.total || order.valor_total || 0)
+                    });
+                    
+                    if (statusError) {
+                        console.error('Erro ao salvar status na pedido_status:', statusError);
+                    } else {
+                        console.log(`✅ Pedido #${orderId} - Status ${statusMap[newStatus]} salvo na tabela pedido_status`);
+                    }
+                }
+                
+                // Não recarregar do banco para evitar sobrescrever alterações
+                // await loadOrdersFromDB();
+                // return; // Sair da função para evitar duplicar as atualizações
+            }
         } catch (error) {
             console.error('Erro ao atualizar no Supabase:', error);
         }
@@ -650,6 +705,8 @@ function updateStats() {
         // Mapear status do banco para status da interface
         if (status === 'aguardando_pagamento') {
             stats.novo++;
+        } else if (status === 'recebido') {
+            stats.recebido++; // Pedido recebido = Pedido confirmado
         } else if (stats.hasOwnProperty(status)) {
             stats[status]++;
         } else {
@@ -680,22 +737,41 @@ async function confirmPixPaymentReceived(orderId) {
     
     if (confirmPayment) {
         // Atualizar status do pedido
-        order.status = 'novo';
+        order.status = 'recebido';
         order.payment_status = 'confirmado';
         order.paymentStatus = 'confirmado';
         order.pixPaymentConfirmed = new Date().toISOString();
         order.updatedAt = new Date().toISOString();
         
-        // Salvar no banco
-        try {
-            await db.updateOrderStatus(orderId, 'novo', 'confirmado');
-        } catch (error) {
-            console.error('Erro ao atualizar no banco:', error);
-        }
+        // Atualizar status
+        order.status = 'recebido';
+        order.payment_status = 'confirmado';
+        order.paymentStatus = 'confirmado';
+        order.pixPaymentConfirmed = new Date().toISOString();
+        order.updatedAt = new Date().toISOString();
         
         saveOrders();
-        loadOrders();
-        updateStats();
+        
+        // Recarregar interface completa
+        setTimeout(() => {
+            loadOrders();
+            updateStats();
+        }, 100);
+        
+        // Registrar na tabela pedido_status
+        try {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            await supabase.from('pedido_status').insert({
+                pedido_id: orderId,
+                cliente_nome: userData.nome || order.customer || 'Cliente WhatsApp',
+                cliente_telefone: userData.whatsapp || '5511941716617',
+                status: 'pedido_recebido',
+                valor_total: parseFloat(order.total || order.valor_total || 0)
+            });
+            console.log(`✅ Pedido #${orderId} - PIX confirmado - Status pedido_recebido salvo na tabela pedido_status`);
+        } catch (error) {
+            console.error('Erro ao salvar status:', error);
+        }
         
         // Enviar notificação automática de confirmação
         sendPixConfirmationNotification(order);
@@ -713,7 +789,7 @@ function sendPixConfirmationNotification(order) {
     
     // Detectar se é mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const phone = order.phone || '5511941716617';
+    const phone = '5511941716617';
     const encodedMessage = encodeURIComponent(message);
     
     // Pequeno delay para não conflitar com a atualização da tela
@@ -779,7 +855,7 @@ Obrigado por comprar com a gente!`;
     
     // Detectar se é mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const phone = order.phone || '5511941716617';
+    const phone = '5511941716617';
     const encodedMessage = encodeURIComponent(message);
     
     // Abrir WhatsApp Web com a mensagem
@@ -934,6 +1010,48 @@ function syncOrdersSimple() {
     console.log('🚀 Sincronização rápida iniciada...');
     loadOrdersFromDB();
     alert('Sincronização concluída!');
+}
+
+// Sincronizar status de todos os pedidos existentes
+async function syncAllOrdersStatus() {
+    try {
+        console.log('🔄 Sincronizando status de todos os pedidos...');
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        
+        for (const order of orders) {
+            const statusMap = {
+                'novo': 'novo',
+                'aguardando_pagamento': 'aguardando_pagamento',
+                'recebido': 'pedido_recebido',
+                'preparando': 'preparando',
+                'saindo': 'saindo_entrega',
+                'entregue': 'entregue'
+            };
+            
+            const mappedStatus = statusMap[order.status] || 'novo';
+            
+            try {
+                const { error } = await supabase.from('pedido_status').insert({
+                    pedido_id: order.id,
+                    cliente_nome: userData.nome || order.customer || 'Cliente WhatsApp',
+                    cliente_telefone: userData.whatsapp || '5511941716617',
+                    status: mappedStatus,
+                    valor_total: parseFloat(order.total || order.valor_total || 0)
+                });
+                
+                if (error) {
+                    console.error(`Erro ao salvar pedido #${order.id}:`, error);
+                } else {
+                    console.log(`✅ Pedido #${order.id} - Status ${mappedStatus} sincronizado`);
+                }
+            } catch (insertError) {
+                console.error(`Erro na inserção do pedido #${order.id}:`, insertError);
+            }
+        }
+        console.log('✅ Sincronização de status concluída');
+    } catch (error) {
+        console.error('Erro na sincronização:', error);
+    }
 }
 
 // Função de teste para demonstrar sincronização em tempo real

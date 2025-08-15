@@ -1305,7 +1305,7 @@ async function syncAllProductsToSupabase() {
     }
 
 // Funções do Carrinho
-function addToCart(productId) {
+async function addToCart(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
     
@@ -1326,6 +1326,27 @@ function addToCart(productId) {
     saveCart();
     updateCartDisplay();
     showCartNotification();
+    
+    // Salvar no banco de dados
+    try {
+        const client = getSupabaseClient();
+        if (client) {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const status = wasEmpty ? 'ativo' : 'editado';
+            
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            await client.from('carrinho_status').insert({
+                cliente_nome: userData.nome || 'Cliente WhatsApp',
+                cliente_telefone: userData.whatsapp || '5511941716617',
+                status: status,
+                valor_total: parseFloat(total),
+                pedido_id: status
+            });
+            console.log(`✅ Carrinho ${status} salvo no banco`);
+        }
+    } catch (error) {
+        console.error('Erro ao salvar no banco:', error);
+    }
     
     // Analytics do carrinho
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -1363,7 +1384,7 @@ function removeFromCart(productId) {
     }
 }
 
-function updateCartQuantity(productId, quantity) {
+async function updateCartQuantity(productId, quantity) {
     const cartItem = cart.find(item => item.id === productId);
     
     if (cartItem) {
@@ -1373,6 +1394,24 @@ function updateCartQuantity(productId, quantity) {
             cartItem.quantity = quantity;
             saveCart();
             updateCartDisplay();
+            
+            // Salvar alteração no banco de dados
+            try {
+                const client = getSupabaseClient();
+                if (client) {
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    await client.from('carrinho_status').insert({
+                        cliente_nome: userData.nome || 'Cliente WhatsApp',
+                        cliente_telefone: userData.whatsapp || '5511941716617',
+                        status: 'editado',
+                        valor_total: parseFloat(cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)),
+                        pedido_id: 'editado'
+                    });
+                    console.log('✅ Edição do carrinho salva no banco');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar edição:', error);
+            }
             
             // Analytics - carrinho editado
             const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
