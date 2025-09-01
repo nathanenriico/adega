@@ -722,7 +722,7 @@ window.sendCartToWhatsApp = function() {
     }
     
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/5511933949002?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/5511941716617?text=${encodedMessage}`;
     
     window.open(whatsappUrl, '_blank');
     

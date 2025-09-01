@@ -382,6 +382,93 @@ body {
     border: 1px solid rgba(212, 175, 55, 0.1);
 }
 
+.items-list {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.item-name {
+    flex: 1;
+    font-weight: 500;
+    color: #fff;
+}
+
+.item-quantity {
+    color: #d4af37;
+    font-weight: 600;
+    margin: 0 15px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.item-price {
+    color: #25d366;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Estilos para itens no modal */
+.modal-items-container {
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 10px;
+    margin: 15px 0;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.modal-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-item-row:last-child {
+    border-bottom: none;
+}
+
+.modal-item-name {
+    flex: 1;
+    color: #fff;
+    font-weight: 500;
+}
+
+.modal-item-quantity {
+    color: #d4af37;
+    font-weight: 600;
+    margin: 0 20px;
+    min-width: 50px;
+    text-align: center;
+}
+
+.modal-item-price {
+    color: #25d366;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: right;
+}
+
+.no-items {
+    text-align: center;
+    color: rgba(255,255,255,0.6);
+    padding: 20px;
+    font-style: italic;
+}
+
 .order-actions {
     display: flex;
     gap: 12px;

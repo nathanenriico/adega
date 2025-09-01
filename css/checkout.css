@@ -228,14 +228,40 @@ section h2 {
 
 .change-info {
     margin-top: 1rem;
+    padding: 1rem;
+    background: #fff8e1;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+}
+
+.change-info label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #d4af37;
+    font-size: 0.9rem;
 }
 
 .change-info input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid #d4af37;
     border-radius: 8px;
     font-size: 0.9rem;
+    background: white;
+}
+
+.change-info input:focus {
+    outline: none;
+    border-color: #b8941f;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+.change-info small {
+    display: block;
+    margin-top: 0.5rem;
+    color: #666;
+    font-size: 0.8rem;
 }
 
 /* CPF/CNPJ */

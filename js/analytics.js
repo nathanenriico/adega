@@ -1,6 +1,6 @@
 // Estados do carrinho
 const CART_STATES = {
-    ATIVO: 'ativo',
+    ADICIONADO: 'adicionado',
     EDITADO: 'editado',
     INCOMPLETO: 'incompleto',
     CONFIRMADO: 'confirmado',
@@ -11,7 +11,7 @@ const CART_STATES = {
 };
 
 // Inicializar sistema
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Carregar Supabase se não estiver disponível
     if (!window.supabase) {
         const script = document.createElement('script');
@@ -20,10 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     setupCartTracking();
-    loadAnalyticsData();
-    updateCharts();
-    loadActivityLog();
+    await loadAnalyticsData();
     startAbandonmentCheck();
+    await loadDesistedCarts();
 });
 
 // Configurar sistema de rastreamento
@@ -56,7 +55,7 @@ function setupCartTracking() {
             console.log(`📊 Cart Event: ${state}`, data);
             
             // Atualizar interface se estiver aberta
-            if (document.getElementById('stat-ativo')) {
+            if (document.getElementById('stat-editado')) {
                 setTimeout(() => {
                     loadAnalyticsData();
                     updateCharts();
@@ -65,22 +64,7 @@ function setupCartTracking() {
             }
         },
         
-        // 1. Início da Compra - Carrinho Ativo
-        onCartActivated: (items, total) => {
-            const sessionId = getSessionId();
-            const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
-            
-            activeCarts[sessionId] = {
-                state: CART_STATES.ATIVO,
-                created: Date.now(),
-                lastActivity: Date.now(),
-                items,
-                total
-            };
-            
-            localStorage.setItem('activeCarts', JSON.stringify(activeCarts));
-            CartAnalytics.trackEvent(CART_STATES.ATIVO, { items: items.length, total });
-        },
+
         
         // 3. Atualização do Carrinho - Carrinho Editado
         onCartEdited: (items, total) => {
@@ -147,6 +131,73 @@ function setupCartTracking() {
     };
 }
 
+// Instância única do Supabase
+let supabaseClient = null;
+
+function getSupabaseClient() {
+    if (!supabaseClient && window.supabase) {
+        supabaseClient = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+    }
+    return supabaseClient;
+}
+
+// Carregar dados da tabela carrinho_status
+async function loadCarrinhoStatusData() {
+    try {
+        const client = getSupabaseClient();
+        if (!client) return;
+        
+        const { data, error } = await client
+            .from('carrinho_status')
+            .select('*')
+            .order('data_criacao', { ascending: false })
+            .limit(100);
+        
+        if (error) {
+            console.error('Erro ao carregar carrinho_status:', error);
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            // Remover duplicatas por cliente_telefone + status
+            const uniqueData = data.filter((item, index, self) => 
+                index === self.findIndex(t => 
+                    t.cliente_telefone === item.cliente_telefone && 
+                    t.status === item.status
+                )
+            );
+            
+            // Contar por status usando dados únicos
+            const statusCount = {};
+            uniqueData.forEach(item => {
+                statusCount[item.status] = (statusCount[item.status] || 0) + 1;
+            });
+            
+            // Atualizar analytics com dados do banco
+            const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
+            
+            // Sobrescrever com dados do banco
+            analytics.adicionado = statusCount.adicionado || 0;
+            analytics.editado = statusCount.editado || 0;
+            analytics.confirmado = statusCount.confirmado || 0;
+            analytics.preparando = statusCount.preparando || 0;
+            analytics.em_entrega = statusCount.em_entrega || 0;
+            analytics.entregue = statusCount.entregue || 0;
+            analytics.desistido = statusCount.desistido || 0;
+            
+            analytics.lastUpdate = new Date().toISOString();
+            localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
+            
+            console.log('✅ Dados únicos do carrinho_status:', statusCount);
+        }
+    } catch (error) {
+        console.error('Erro ao conectar com carrinho_status:', error);
+    }
+}
+
 // Obter ID da sessão
 function getSessionId() {
     let sessionId = sessionStorage.getItem('cartSessionId');
@@ -170,12 +221,12 @@ function checkAbandonedCarts() {
     
     Object.keys(activeCarts).forEach(sessionId => {
         const cart = activeCarts[sessionId];
-        if (now - cart.lastActivity > abandonThreshold && cart.state === 'ativo') {
+        if (now - cart.lastActivity > abandonThreshold && cart.state === 'editado') {
             cart.state = 'incompleto';
             
             const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
             analytics.incompleto = (analytics.incompleto || 0) + 1;
-            if (analytics.ativo > 0) analytics.ativo = analytics.ativo - 1;
+            if (analytics.editado > 0) analytics.editado = analytics.editado - 1;
             analytics.lastUpdate = new Date().toISOString();
             localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
             
@@ -224,11 +275,14 @@ function sendWhatsAppNotification(status, orderId) {
 }
 
 // Carregar dados de analytics
-function loadAnalyticsData() {
+async function loadAnalyticsData() {
+    // Carregar dados do banco carrinho_status
+    await loadCarrinhoStatusData();
+    
     const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
     
     // Atualizar contadores - incluindo mapeamento dos status da gestão
-    const states = ['ativo', 'editado', 'incompleto', 'confirmado', 'preparando', 'em_entrega', 'entregue', 'desistido'];
+    const states = ['adicionado', 'editado', 'incompleto', 'confirmado', 'preparando', 'em_entrega', 'entregue', 'desistido'];
     
     states.forEach(state => {
         const el = document.getElementById(`stat-${state}`);
@@ -248,7 +302,7 @@ function loadAnalyticsData() {
     });
     
     // Atualizar fluxo
-    const flowStates = ['ativo', 'editado', 'confirmado', 'preparando', 'entregue'];
+    const flowStates = ['adicionado', 'editado', 'confirmado', 'preparando', 'entregue'];
     flowStates.forEach(state => {
         const el = document.getElementById(`flow-${state}`);
         if (el) {
@@ -266,42 +320,12 @@ function loadAnalyticsData() {
         }
     });
     
-    // Calcular taxas
-    const totalCarts = (analytics.ativo || 0) + (analytics.editado || 0) + (analytics.incompleto || 0) + (analytics.confirmado || 0);
-    const confirmedOrders = analytics.confirmado || 0;
-    const deliveredOrders = analytics.entregue || 0;
-    const abandonedCarts = analytics.incompleto || 0;
-    
-    const conversionRate = totalCarts > 0 ? ((confirmedOrders / totalCarts) * 100).toFixed(1) : 0;
-    const completionRate = confirmedOrders > 0 ? ((deliveredOrders / confirmedOrders) * 100).toFixed(1) : 0;
-    const abandonmentRate = totalCarts > 0 ? ((abandonedCarts / totalCarts) * 100).toFixed(1) : 0;
-    
-    document.getElementById('conversion-percentage').textContent = `${conversionRate}%`;
-    document.getElementById('completion-percentage').textContent = `${completionRate}%`;
-    document.getElementById('abandonment-percentage').textContent = `${abandonmentRate}%`;
-    
-    // Forçar atualização dos gráficos circulares
-    updateCharts();
+    // Elementos removidos - não calcular taxas
 }
 
-// Atualizar gráficos circulares
+// Função removida - gráficos não existem mais
 function updateCharts() {
-    const charts = [
-        { id: 'conversion-percentage', class: 'conversion', color: '#28a745' },
-        { id: 'completion-percentage', class: 'completion', color: '#17a2b8' },
-        { id: 'abandonment-percentage', class: 'abandonment', color: '#dc3545' }
-    ];
-    
-    charts.forEach(chart => {
-        const el = document.getElementById(chart.id);
-        const circle = document.querySelector(`.rate-circle.${chart.class}`);
-        
-        if (el && circle) {
-            const percentage = parseFloat(el.textContent);
-            const degrees = (percentage / 100) * 360;
-            circle.style.background = `conic-gradient(${chart.color} 0deg, ${chart.color} ${degrees}deg, rgba(255,255,255,0.1) ${degrees}deg)`;
-        }
-    });
+    // Elementos removidos
 }
 
 // Variável para controlar última atualização das atividades
@@ -309,8 +333,9 @@ let lastActivityUpdate = '';
 
 // Carregar log de atividades
 function loadActivityLog() {
-    const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
-    const list = document.getElementById('activity-list');
+    // Elemento removido do HTML
+    return;
+    return; // Elemento removido
     
     // Verificar se houve mudanças
     const currentHash = JSON.stringify(events.slice(-20));
@@ -325,7 +350,8 @@ function loadActivityLog() {
     }
     
     const statusText = {
-        'ativo': '🟢 Carrinho ativado',
+
+        'adicionado': '🛒 Carrinho adicionado',
         'editado': '✏️ Carrinho editado',
         'incompleto': '⚠️ Carrinho abandonado',
         'confirmado': '✅ Pedido confirmado',
@@ -371,22 +397,17 @@ function loadActivityLog() {
     loadAbandonedCarts();
 }
 
-let currentTab = 'abandoned';
+let currentTab = 'desisted';
 
 // Alternar entre abas
-function switchTab(tab) {
+async function switchTab(tab) {
     currentTab = tab;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`tab-${tab}`).classList.add('active');
     
     const description = document.getElementById('section-description');
-    if (tab === 'abandoned') {
-        description.textContent = 'Clientes que adicionaram produtos ao carrinho mas não finalizaram a compra. Use o WhatsApp para recuperar essas vendas!';
-        loadAbandonedCarts();
-    } else {
-        description.textContent = 'Clientes que desistiram da compra após confirmação. Envie mensagens para reconquistar esses clientes!';
-        loadDesistedCarts();
-    }
+    description.textContent = 'Clientes que desistiram da compra após confirmação. Envie mensagens para reconquistar esses clientes!';
+    await loadDesistedCarts();
 }
 
 // Carregar carrinhos abandonados
@@ -542,7 +563,7 @@ function sendRecoveryMessage(sessionId, products, total, customerPhone = null, c
 }
 
 // Carregar carrinhos desistidos
-function loadDesistedCarts() {
+async function loadDesistedCarts() {
     const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
     const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
     const list = document.getElementById('abandoned-carts-list');
@@ -575,6 +596,32 @@ function loadDesistedCarts() {
     const uniqueDesisted = allDesisted.filter((cart, index, self) => 
         index === self.findIndex(c => c.sessionId === cart.sessionId)
     ).slice(-15).reverse();
+    
+    // Buscar WhatsApp do banco de dados para clientes sem telefone
+    for (let cart of uniqueDesisted) {
+        if (!cart.customerPhone && cart.customerName && cart.customerName !== 'Cliente não identificado') {
+            try {
+                const client = window.supabase?.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+                
+                if (client) {
+                    const { data } = await client
+                        .from('clientes')
+                        .select('whatsapp')
+                        .ilike('nome', `%${cart.customerName}%`)
+                        .single();
+                    
+                    if (data?.whatsapp) {
+                        cart.customerPhone = data.whatsapp;
+                    }
+                }
+            } catch (error) {
+                console.log('Erro ao buscar WhatsApp:', error);
+            }
+        }
+    }
     
     if (uniqueDesisted.length === 0) {
         list.innerHTML = '<p>Nenhuma compra desistida encontrada</p>';
@@ -897,28 +944,33 @@ function simulateAbandonedCart() {
 }
 
 // Resetar analytics
-function resetAnalytics() {
-    if (confirm('Tem certeza que deseja resetar todos os dados de analytics?')) {
-        localStorage.removeItem('cartAnalytics');
-        localStorage.removeItem('cartEvents');
-        localStorage.removeItem('activeCarts');
-        localStorage.removeItem('analyticsOrders');
-        
-        // Resetar interface
-        document.querySelectorAll('[id^="stat-"]').forEach(el => el.textContent = '0');
-        document.querySelectorAll('[id^="flow-"]').forEach(el => el.textContent = '0');
-        
-        ['conversion-percentage', 'completion-percentage', 'abandonment-percentage'].forEach(id => {
-            document.getElementById(id).textContent = '0%';
-        });
-        
-        document.getElementById('activity-list').innerHTML = '<p>Nenhuma atividade registrada</p>';
-        
-        document.querySelectorAll('.rate-circle').forEach(circle => {
-            circle.style.background = 'conic-gradient(#28a745 0deg, #28a745 0deg, rgba(255,255,255,0.1) 0deg)';
-        });
-        
-        alert('Dados resetados com sucesso!');
+async function resetAnalytics() {
+    if (confirm('Tem certeza que deseja resetar todos os dados de analytics? Isso limpará dados da página E do banco de dados.')) {
+        try {
+            // Limpar banco de dados
+            const client = getSupabaseClient();
+            if (client) {
+                await client.from('carrinho_status').delete().neq('id', 0);
+                await client.from('carrinho_abandonado').delete().neq('id', 0);
+                console.log('✅ Dados do banco limpos');
+            }
+            
+            // Limpar localStorage
+            localStorage.removeItem('cartAnalytics');
+            localStorage.removeItem('cartEvents');
+            localStorage.removeItem('activeCarts');
+            localStorage.removeItem('analyticsOrders');
+            
+            // Resetar interface
+            document.querySelectorAll('[id^="stat-"]').forEach(el => el.textContent = '0');
+            document.querySelectorAll('[id^="flow-"]').forEach(el => el.textContent = '0');
+            
+            alert('Dados resetados com sucesso (página + banco de dados)!');
+            
+        } catch (error) {
+            console.error('Erro ao limpar banco:', error);
+            alert('Erro ao limpar banco de dados: ' + error.message);
+        }
     }
 }
 
@@ -929,7 +981,7 @@ function createTestData() {
     const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
     
     // Simular dados realistas
-    analytics.ativo = 5;
+
     analytics.editado = 8;
     analytics.incompleto = 3;
     analytics.confirmado = 12;
@@ -962,7 +1014,7 @@ function createActiveCart() {
     const activeCarts = JSON.parse(localStorage.getItem('activeCarts') || '{}');
     
     activeCarts[sessionId] = {
-        state: 'ativo',
+        state: 'editado',
         created: Date.now(),
         lastActivity: Date.now() - (6 * 60 * 1000),
         items: [{name: 'Vinho Teste', price: 89.90}],
@@ -972,7 +1024,7 @@ function createActiveCart() {
     localStorage.setItem('activeCarts', JSON.stringify(activeCarts));
     
     const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
-    analytics.ativo = (analytics.ativo || 0) + 1;
+
     localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
     
     setTimeout(checkAbandonedCarts, 1000);
@@ -984,7 +1036,7 @@ function exportData() {
     const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
     
     // Calcular taxas
-    const totalCarts = (analytics.ativo || 0) + (analytics.editado || 0) + (analytics.incompleto || 0) + (analytics.confirmado || 0);
+    const totalCarts = (analytics.adicionado || 0) + (analytics.editado || 0) + (analytics.incompleto || 0) + (analytics.confirmado || 0);
     const conversionRate = totalCarts > 0 ? ((analytics.confirmado || 0) / totalCarts * 100).toFixed(1) : 0;
     const completionRate = (analytics.confirmado || 0) > 0 ? ((analytics.entregue || 0) / (analytics.confirmado || 0) * 100).toFixed(1) : 0;
     const abandonmentRate = totalCarts > 0 ? ((analytics.incompleto || 0) / totalCarts * 100).toFixed(1) : 0;
@@ -999,7 +1051,7 @@ function exportData() {
     // Contadores
     csvContent += 'CONTADORES\n';
     csvContent += 'Status,Quantidade\n';
-    csvContent += `Carrinho Ativo,${analytics.ativo || 0}\n`;
+
     csvContent += `Carrinho Editado,${analytics.editado || 0}\n`;
     csvContent += `Carrinho Abandonado,${analytics.incompleto || 0}\n`;
     csvContent += `Pedido Confirmado,${analytics.confirmado || 0}\n`;
@@ -1041,28 +1093,22 @@ function exportData() {
 
 
 
-// Atualizar dados automaticamente a cada 500ms para tempo real mais rápido
-setInterval(() => {
-    loadAnalyticsData();
-    updateCharts();
-    loadActivityLog();
-}, 500);
+// Atualizar dados automaticamente a cada 5 segundos para incluir banco
+setInterval(async () => {
+    await loadAnalyticsData();
+}, 5000);
 
 // Escutar mudanças no localStorage para atualização instantânea
-window.addEventListener('storage', function(e) {
+window.addEventListener('storage', async function(e) {
     if (e.key === 'cartAnalytics' || e.key === 'cartEvents') {
-        loadAnalyticsData();
-        updateCharts();
-        loadActivityLog();
+        await loadAnalyticsData();
     }
 });
 
 // Escutar eventos customizados para atualização imediata na mesma aba
-window.addEventListener('cartAnalyticsUpdate', function(e) {
+window.addEventListener('cartAnalyticsUpdate', async function(e) {
     console.log('🔄 Atualizando analytics em tempo real:', e.detail);
-    loadAnalyticsData();
-    updateCharts();
-    loadActivityLog();
+    await loadAnalyticsData();
 });
 
 function simulateDesistedCart() {

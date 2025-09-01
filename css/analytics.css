@@ -61,6 +61,8 @@ body {
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
+.refresh-btn { background: #17a2b8; color: white; }
+
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -517,6 +519,85 @@ body {
 .abandoned-cart-item.no-phone {
     border-left-color: #6c757d;
     opacity: 0.7;
+}
+
+/* Estilos para recuperação */
+.abandoned-cart-item {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.cart-products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.product-tag {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.customer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.phone {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.cart-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #d4af37;
+}
+
+.abandon-time {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.recovery-item {
+    background: rgba(40, 167, 69, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border-left: 4px solid #28a745;
+}
+
+.recovery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.recovery-status {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.recovery-details {
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.refresh-btn {
+    background: #17a2b8;
+    color: white;
 }
 
 @media (max-width: 768px) {

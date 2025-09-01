@@ -97,6 +97,22 @@
                 </div>
             </div>
 
+            <!-- Ferramentas de Banco de Dados -->
+            <div class="database-tools-section">
+                <h3>🛠️ Ferramentas de Banco</h3>
+                <div class="tools-grid">
+                    <button onclick="checkPedidoStatusDuplicates()" class="tool-btn btn-check">
+                        🔍 Verificar Duplicatas
+                    </button>
+                    <button onclick="removePedidoStatusDuplicates()" class="tool-btn btn-fix">
+                        🧹 Limpar Duplicatas
+                    </button>
+                    <button onclick="showPedidoStatusStats()" class="tool-btn btn-stats">
+                        📊 Estatísticas
+                    </button>
+                </div>
+            </div>
+
             <div class="products-table-section">
                 <div class="table-header">
                     <h3>📦 Produtos</h3>
@@ -132,6 +148,7 @@
 
     <script src="js/script.js"></script>
     <script src="js/admin.js"></script>
+    <script src="js/fix-duplicates.js"></script>
 
 </body>
 </html>

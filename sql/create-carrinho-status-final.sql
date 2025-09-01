@@ -15,10 +15,8 @@ ALTER TABLE carrinho_status ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON carrinho_status FOR ALL USING (true);
 
 -- Índices
-CREATE INDEX idx_carrinho_status ON carrinho_status(status);
-CREATE INDEX idx_carrinho_cliente ON carrinho_status(cliente_nome);
-CREATE INDEX idx_carrinho_telefone ON carrinho_status(cliente_telefone);
-CREATE INDEX idx_carrinho_desistido ON carrinho_status(desistido);
-CREATE INDEX idx_pedido_id ON carrinho_status(pedido_id);
-
--- Cada registro é uma nova entrada, sem updates
+CREATE INDEX IF NOT EXISTS idx_carrinho_status ON carrinho_status(status);
+CREATE INDEX IF NOT EXISTS idx_carrinho_cliente ON carrinho_status(cliente_nome);
+CREATE INDEX IF NOT EXISTS idx_carrinho_telefone ON carrinho_status(cliente_telefone);
+CREATE INDEX IF NOT EXISTS idx_carrinho_desistido ON carrinho_status(desistido);
+CREATE INDEX IF NOT EXISTS idx_pedido_id ON carrinho_status(pedido_id);

@@ -1304,6 +1304,98 @@ async function syncAllProductsToSupabase() {
         });
     }
 
+// Função para salvar carrinho abandonado
+async function saveAbandonedCart(cartItems, total, userData) {
+    console.log(`🚫 Registrando carrinho abandonado: R$ ${total}`);
+    
+    try {
+        const client = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+        
+        const { error } = await client.from('carrinho_abandonado').insert({
+            cliente_nome: userData.nome || null,
+            cliente_telefone: userData.whatsapp || '5511941716617',
+            produtos_json: JSON.stringify(cartItems),
+            valor_total: total
+        });
+        
+        if (error) {
+            console.error('❌ Erro ao salvar carrinho abandonado:', error);
+        } else {
+            console.log(`✅ Carrinho abandonado registrado: ${userData.whatsapp} - R$ ${total}`);
+        }
+    } catch (error) {
+        console.error('❌ Erro geral ao registrar abandono:', error);
+    }
+}
+
+// Função para salvar produto excluído no analytics
+async function saveRemovedProductAnalytics(removedProduct) {
+    console.log(`🗑️ Registrando produto excluído: ${removedProduct.name}`);
+    
+    try {
+        const client = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+        
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const clienteTelefone = userData.whatsapp || '5511941716617';
+        
+        const { error } = await client.from('produtos_excluidos').insert({
+            produto_id: removedProduct.id,
+            produto_nome: removedProduct.name,
+            produto_preco: removedProduct.price,
+            quantidade: removedProduct.quantity,
+            cliente_telefone: clienteTelefone,
+            data_exclusao: new Date().toISOString()
+        });
+        
+        if (error) {
+            console.error('❌ Erro ao salvar produto excluído:', error);
+        } else {
+            console.log(`✅ Produto excluído registrado: ${removedProduct.name} - Tel: ${clienteTelefone}`);
+        }
+    } catch (error) {
+        console.error('❌ Erro geral ao registrar exclusão:', error);
+    }
+}
+
+// Função para salvar no banco carrinho_status
+async function saveToCarrinhoStatus(status, total) {
+    console.log(`🔄 Tentando salvar: ${status} - R$ ${total}`);
+    
+    try {
+        const client = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+        
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const clienteNome = userData.nome || 'Cliente WhatsApp';
+        const clienteTelefone = userData.whatsapp || '5511941716617';
+        
+        const { data, error } = await client.from('carrinho_status').insert({
+            cliente_nome: clienteNome,
+            cliente_telefone: clienteTelefone,
+            status: status,
+            valor_total: parseFloat(total),
+            pedido_id: `${status}_${Date.now()}`,
+            produtos_json: JSON.stringify(cart)
+        });
+        
+        if (error) {
+            console.error('❌ Erro:', error);
+        } else {
+            console.log(`✅ SALVO: ${status} - ${clienteNome} - ${cart.length} produtos - R$ ${total}`);
+        }
+    } catch (error) {
+        console.error('❌ Erro geral:', error);
+    }
+}
+
 // Funções do Carrinho
 async function addToCart(productId) {
     const product = products.find(p => p.id === productId);
@@ -1327,58 +1419,58 @@ async function addToCart(productId) {
     updateCartDisplay();
     showCartNotification();
     
-    // Salvar no banco de dados
-    try {
-        const client = getSupabaseClient();
-        if (client) {
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const status = wasEmpty ? 'ativo' : 'editado';
-            
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            await client.from('carrinho_status').insert({
-                cliente_nome: userData.nome || 'Cliente WhatsApp',
-                cliente_telefone: userData.whatsapp || '5511941716617',
-                status: status,
-                valor_total: parseFloat(total),
-                pedido_id: status
-            });
-            console.log(`✅ Carrinho ${status} salvo no banco`);
-        }
-    } catch (error) {
-        console.error('Erro ao salvar no banco:', error);
-    }
+    // Salvar no banco carrinho_status
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const status = wasEmpty ? 'adicionado' : 'editado';
+    
+    await saveToCarrinhoStatus(status, total);
     
     // Analytics do carrinho
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     if (wasEmpty) {
-        console.log('🛍️ Carrinho ativado:', cart.length, 'itens, R$', total);
-        trackCartEvent('ativo', { items: cart.length, total, products: cart });
+        console.log('🛍️ Carrinho adicionado:', cart.length, 'itens, R$', total);
+        trackCartEvent('adicionado', { items: cart.length, total, products: cart });
     } else {
         console.log('✏️ Carrinho editado:', cart.length, 'itens, R$', total);
         trackCartEvent('editado', { items: cart.length, total, products: cart });
     }
 }
 
-function removeFromCart(productId) {
+async function removeFromCart(productId) {
+    // Capturar dados ANTES de remover
+    const originalCart = [...cart];
+    const originalTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const removedProduct = cart.find(item => item.id === productId);
+    
+    // Registrar produto excluído no banco
+    if (removedProduct) {
+        await saveRemovedProductAnalytics(removedProduct);
+    }
+    
     cart = cart.filter(item => item.id !== productId);
     saveCart();
     updateCartDisplay();
     
-    // Analytics - carrinho editado ou abandonado
+    // Salvar remoção no banco
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const status = cart.length === 0 ? 'desistido' : 'editado';
+    await saveToCarrinhoStatus(status, total);
+    
+    // Analytics - carrinho editado ou abandonado
     if (cart.length === 0) {
         console.log('🚫 Carrinho esvaziado');
-        // Solicitar telefone antes de abandonar
-        const phone = requestPhoneForRecovery();
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        
+        // Registrar carrinho abandonado para recuperação
+        await saveAbandonedCart(originalCart, originalTotal, userData);
+        
         trackCartEvent('desistido', { 
             reason: 'manual_clear', 
-            items: 0, 
-            total: 0,
-            customerPhone: phone
+            items: originalCart.length,
+            total: originalTotal,
+            products: originalCart,
+            customerName: userData.nome || 'Cliente não identificado',
+            customerPhone: userData.whatsapp || null
         });
-        
-        // Enviar mensagem no WhatsApp sobre carrinho abandonado
-        sendAbandonedCartMessage();
     } else {
         trackCartEvent('editado', { items: cart.length, total, products: cart });
     }
@@ -1395,26 +1487,11 @@ async function updateCartQuantity(productId, quantity) {
             saveCart();
             updateCartDisplay();
             
-            // Salvar alteração no banco de dados
-            try {
-                const client = getSupabaseClient();
-                if (client) {
-                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                    await client.from('carrinho_status').insert({
-                        cliente_nome: userData.nome || 'Cliente WhatsApp',
-                        cliente_telefone: userData.whatsapp || '5511941716617',
-                        status: 'editado',
-                        valor_total: parseFloat(cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)),
-                        pedido_id: 'editado'
-                    });
-                    console.log('✅ Edição do carrinho salva no banco');
-                }
-            } catch (error) {
-                console.error('Erro ao salvar edição:', error);
-            }
+            // Salvar alteração no banco
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            await saveToCarrinhoStatus('editado', total);
             
             // Analytics - carrinho editado
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             trackCartEvent('editado', { items: cart.length, total, products: cart });
         }
     }
@@ -1932,12 +2009,7 @@ function getCustomerInfo() {
 
 // Solicitar telefone para recuperação
 function requestPhoneForRecovery() {
-    const phone = prompt('📱 Para recuperar seu carrinho caso saia da página, informe seu WhatsApp (opcional):');
-    if (phone && phone.trim()) {
-        localStorage.setItem('customerPhone', phone.trim());
-        localStorage.setItem('customerPhoneTime', Date.now());
-        return phone.trim();
-    }
+    // Função removida - não solicitar mais telefone
     return null;
 }
 
@@ -2015,6 +2087,11 @@ window.openOrdersManagement = function() {
 // Abrir analytics do carrinho
 window.openCartAnalytics = function() {
     window.open('analytics.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+};
+
+// Abrir analytics de produtos excluídos
+window.openRemovedProductsAnalytics = function() {
+    window.open('produtos-excluidos.html', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
 };
 
 // Funções do carrossel de produtos
@@ -2124,14 +2201,18 @@ window.filterProducts = function(category) {
     renderProducts(filteredProducts);
 };
 
-// Tornar renderProducts global
+// Tornar funções globais
 window.renderProducts = renderProducts;
+window.saveToCarrinhoStatus = saveToCarrinhoStatus;
 
-window.addToCart = function(productId) {
+window.addToCart = async function(productId) {
+    console.log(`🛒 Adicionando produto ${productId}`);
+    
     const product = products.find(p => p.id === productId);
     if (!product) return;
     
     const cartItem = cart.find(item => item.id === productId);
+    const wasEmpty = cart.length === 0;
     
     if (cartItem) {
         cartItem.quantity++;
@@ -2147,6 +2228,13 @@ window.addToCart = function(productId) {
     saveCart();
     updateCartDisplay();
     showCartNotification();
+    
+    // Salvar no banco
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const status = wasEmpty ? 'adicionado' : 'editado';
+    console.log(`📊 Status: ${status}, Total: R$ ${total}`);
+    
+    await saveToCarrinhoStatus(status, total);
 };
 
 window.openWhatsApp = function(productName = null) {
@@ -2505,8 +2593,13 @@ async function loadCustomerPanel(userData) {
         if (fullNameEl) fullNameEl.textContent = userData.nome;
         if (whatsappEl) whatsappEl.textContent = userData.whatsapp;
         
-        // Carregar pontos do banco
+        // Carregar pontos do banco SEMPRE
         await loadCustomerPoints();
+        
+        // Forçar atualização dos pontos após 1 segundo
+        setTimeout(async () => {
+            await loadCustomerPoints();
+        }, 1000);
         
         // Mostrar perfil no header
         showCustomerProfile({ name: userData.nome });
@@ -2597,14 +2690,35 @@ async function loadCustomerPoints() {
         
         if (!error && data) {
             const points = data.pontos || 0;
-            const pointsDisplay = document.getElementById('customer-points-display');
-            if (pointsDisplay) {
-                pointsDisplay.textContent = `${points} pontos`;
-            }
+            
+            // Atualizar todos os elementos de pontos
+            const pointsElements = [
+                document.getElementById('customer-points-display'),
+                document.getElementById('dropdown-points')
+            ];
+            
+            pointsElements.forEach(element => {
+                if (element) {
+                    element.textContent = `${points} pontos`;
+                }
+            });
         }
     } catch (error) {
         console.log('Erro ao carregar pontos:', error);
     }
+}
+
+// Função para obter cliente Supabase
+function getSupabaseClient() {
+    if (!window.supabase) {
+        console.error('Supabase não disponível');
+        return null;
+    }
+    
+    return window.supabase.createClient(
+        'https://vtrgtorablofhmhizrjr.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+    );
 }
 
 // Atualizar pontos do cliente no banco
@@ -2616,18 +2730,19 @@ async function updateCustomerPoints(userId, pointsToAdd, orderId = null, descrip
             return;
         }
         
-        const { data: currentData, error: fetchError } = await client
+        // Buscar dados completos do cliente
+        const { data: clientData, error: fetchError } = await client
             .from('clientes')
-            .select('pontos')
+            .select('*')
             .eq('id', userId)
             .single();
             
         if (fetchError) {
-            console.error('Erro ao buscar pontos atuais:', fetchError);
+            console.error('Erro ao buscar dados do cliente:', fetchError);
             return;
         }
         
-        const currentPoints = currentData.pontos || 0;
+        const currentPoints = clientData.pontos || 0;
         const newPoints = currentPoints + pointsToAdd;
         
         // Atualizar pontos
@@ -2641,7 +2756,7 @@ async function updateCustomerPoints(userId, pointsToAdd, orderId = null, descrip
             return;
         }
         
-        // Registrar no histórico
+        // Registrar no histórico com dados do cliente
         const { error: historyError } = await client
             .from('pontos_historico')
             .insert({
@@ -2649,7 +2764,10 @@ async function updateCustomerPoints(userId, pointsToAdd, orderId = null, descrip
                 pontos: pointsToAdd,
                 tipo: 'ganho',
                 descricao: description || `Pontos ganhos na compra`,
-                pedido_id: orderId
+                pedido_id: orderId,
+                cliente_nome: clientData.nome,
+                cliente_telefone: clientData.whatsapp,
+                cliente_endereco: `${clientData.rua}, ${clientData.numero}, ${clientData.bairro}, ${clientData.cidade}`
             });
         
         if (historyError) {
@@ -2717,16 +2835,16 @@ async function exchangeCoupon(title, cost) {
             return;
         }
         
-        // Verificar pontos atuais
         const client = getSupabaseClient();
         if (!client) {
             alert('Erro: banco de dados não disponível');
             return;
         }
         
+        // Buscar dados completos do cliente
         const { data: userData, error: userError } = await client
             .from('clientes')
-            .select('pontos')
+            .select('*')
             .eq('id', userId)
             .single();
         
@@ -2742,12 +2860,12 @@ async function exchangeCoupon(title, cost) {
             return;
         }
         
-        // Confirmar troca
         const confirmExchange = window.confirm(`Trocar ${cost} pontos por ${title}?`);
         if (!confirmExchange) return;
         
-        // Descontar pontos
         const newPoints = currentPoints - cost;
+        
+        // Descontar pontos
         const { error: updateError } = await client
             .from('clientes')
             .update({ pontos: newPoints })
@@ -2758,7 +2876,9 @@ async function exchangeCoupon(title, cost) {
             return;
         }
         
-        // Criar cupom
+        // Criar cupom com dados completos do cliente
+        const endereco = `${userData.rua}, ${userData.numero}${userData.complemento ? ', ' + userData.complemento : ''}, ${userData.bairro}, ${userData.cidade}, CEP: ${userData.cep}`;
+        
         const { error: couponError } = await client
             .from('cupons')
             .insert({
@@ -2766,7 +2886,10 @@ async function exchangeCoupon(title, cost) {
                 titulo: title,
                 descricao: `Cupom de ${title}`,
                 desconto: title,
-                usado: false
+                usado: false,
+                cliente_nome: userData.nome,
+                cliente_telefone: userData.whatsapp,
+                cliente_endereco: endereco
             });
         
         if (couponError) {
@@ -2774,9 +2897,20 @@ async function exchangeCoupon(title, cost) {
             return;
         }
         
-        // Atualizar exibição imediatamente
-        updatePointsDisplay(newPoints);
+        // Registrar no histórico de pontos com dados completos
+        await client
+            .from('pontos_historico')
+            .insert({
+                cliente_id: userId,
+                pontos: -cost,
+                tipo: 'troca',
+                descricao: `Troca por cupom: ${title}`,
+                cliente_nome: userData.nome,
+                cliente_telefone: userData.whatsapp,
+                cliente_endereco: endereco
+            });
         
+        updatePointsDisplay(newPoints);
         alert(`Cupom ${title} adquirido com sucesso!\nPontos restantes: ${newPoints}`);
         
     } catch (error) {
@@ -2814,37 +2948,191 @@ function showOrderHistory() {
 }
 
 function showCoupons() {
-    const historyDiv = document.getElementById('order-history');
-    const couponsDiv = document.getElementById('coupons-list');
+    // Criar modal fullscreen
+    const modal = document.createElement('div');
+    modal.className = 'coupons-modal';
+    modal.innerHTML = `
+        <div class="coupons-modal-content">
+            <div class="coupons-header">
+                <button class="back-btn" onclick="closeCouponsModal()">←</button>
+                <h2>MEUS CUPONS</h2>
+            </div>
+            <div class="add-coupon-section">
+                <button class="add-coupon-btn" onclick="showAddCouponForm()">ADICIONAR CUPOM</button>
+            </div>
+            <div class="coupons-body" id="coupons-body">
+                <div class="loading-coupons">Carregando cupons...</div>
+            </div>
+        </div>
+    `;
     
-    if (couponsDiv.style.display === 'none') {
-        couponsDiv.style.display = 'block';
-        historyDiv.style.display = 'none';
-        loadAvailableCoupons();
-    } else {
-        couponsDiv.style.display = 'none';
+    document.body.appendChild(modal);
+    loadCouponsModal();
+}
+
+function closeCouponsModal() {
+    const modal = document.querySelector('.coupons-modal');
+    if (modal) modal.remove();
+}
+
+async function loadCouponsModal() {
+    try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            document.getElementById('coupons-body').innerHTML = `
+                <div class="empty-coupons">
+                    <div class="empty-icon">🎁</div>
+                    <p>Você ainda não possui cupons</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const client = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+        
+        const { data: coupons, error } = await client
+            .from('cupons')
+            .select('*')
+            .eq('cliente_id', userId)
+            .order('data_criacao', { ascending: false });
+        
+        if (error || !coupons || coupons.length === 0) {
+            document.getElementById('coupons-body').innerHTML = `
+                <div class="empty-coupons">
+                    <div class="empty-icon">🎁</div>
+                    <p>Você ainda não possui cupons</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const activeCoupons = coupons.filter(c => !c.usado);
+        const usedCoupons = coupons.filter(c => c.usado);
+        
+        let html = '';
+        
+        if (activeCoupons.length > 0) {
+            html += '<div class="coupons-section"><h3>CUPONS ATIVOS</h3>';
+            activeCoupons.forEach(coupon => {
+                html += `
+                    <div class="coupon-card active">
+                        <div class="coupon-badge">Frete grátis</div>
+                        <div class="coupon-code">${coupon.titulo}</div>
+                        <div class="coupon-description">${coupon.descricao}</div>
+                        <button class="use-coupon-btn" onclick="useCouponModal(${coupon.id})">USAR CUPOM</button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        if (usedCoupons.length > 0) {
+            html += '<div class="coupons-section"><h3>CUPONS VENCIDOS</h3>';
+            usedCoupons.forEach(coupon => {
+                html += `
+                    <div class="coupon-card expired">
+                        <div class="coupon-badge expired">-30%</div>
+                        <div class="coupon-code">${coupon.titulo}</div>
+                        <div class="coupon-description">${coupon.descricao}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        document.getElementById('coupons-body').innerHTML = html;
+        
+    } catch (error) {
+        document.getElementById('coupons-body').innerHTML = `
+            <div class="empty-coupons">
+                <div class="empty-icon">❌</div>
+                <p>Erro ao carregar cupons</p>
+            </div>
+        `;
     }
 }
 
-function loadOrderHistory() {
+function showAddCouponForm() {
+    const code = prompt('Digite o código do cupom:');
+    if (code) {
+        alert('Funcionalidade em desenvolvimento');
+    }
+}
+
+function useCouponModal(couponId) {
+    alert('Cupom será aplicado no próximo pedido!');
+}
+
+async function loadOrderHistory() {
     const historyList = document.getElementById('history-list');
-    const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+    const userId = localStorage.getItem('userId');
     
-    if (orders.length === 0) {
-        historyList.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+    if (!userId) {
+        historyList.innerHTML = '<p>Faça login para ver seus pedidos.</p>';
         return;
     }
     
-    historyList.innerHTML = orders.slice(-5).reverse().map(order => `
-        <div class="order-item">
-            <div class="order-header">
-                <span class="order-id">#${order.id}</span>
-                <span class="order-date">${new Date(order.date).toLocaleDateString('pt-BR')}</span>
+    historyList.innerHTML = '<p>Carregando pedidos...</p>';
+    
+    try {
+        const client = getSupabaseClient();
+        if (!client) {
+            throw new Error('Banco de dados não disponível');
+        }
+        
+        const { data: orders, error } = await client
+            .from('pedidos')
+            .select('*')
+            .eq('cliente_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(10);
+        
+        if (error) {
+            throw error;
+        }
+        
+        if (!orders || orders.length === 0) {
+            historyList.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+            return;
+        }
+        
+        historyList.innerHTML = orders.map(order => `
+            <div class="order-item">
+                <div class="order-header">
+                    <span class="order-id">#${order.id}</span>
+                    <span class="order-date">${new Date(order.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div class="order-total">R$ ${parseFloat(order.valor_total).toFixed(2)}</div>
+                <div class="order-status">${order.status || 'Processando'}</div>
+                <div class="order-payment">${order.forma_pagamento || 'N/A'}</div>
             </div>
-            <div class="order-total">R$ ${order.total.toFixed(2)}</div>
-            <div class="order-status">${order.status}</div>
-        </div>
-    `).join('');
+        `).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar pedidos:', error);
+        
+        // Fallback para localStorage
+        const localOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        
+        if (localOrders.length === 0) {
+            historyList.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+            return;
+        }
+        
+        historyList.innerHTML = localOrders.slice(-5).reverse().map(order => `
+            <div class="order-item">
+                <div class="order-header">
+                    <span class="order-id">#${order.id}</span>
+                    <span class="order-date">${new Date(order.date).toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div class="order-total">R$ ${order.total.toFixed(2)}</div>
+                <div class="order-status">${order.status}</div>
+            </div>
+        `).join('');
+    }
 }
 
 async function loadAvailableCoupons() {
@@ -2909,19 +3197,194 @@ function logout() {
     }
 }
 
-// Enviar mensagem de carrinho abandonado
-function sendAbandonedCartMessage() {
-    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    if (userData.whatsapp) {
-        const message = `🛒 CARRINHO ABANDONADO\n\nCliente: ${userData.nome}\nWhatsApp: ${userData.whatsapp}\nHorário: ${new Date().toLocaleString('pt-BR')}\n\nO cliente esvaziou o carrinho. Considere entrar em contato para oferecer ajuda.`;
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/${config.whatsappNumber}?text=${encodedMessage}`;
-        window.open(whatsappUrl, '_blank');
-    }
-}
+// Função removida - não enviar mais mensagem de carrinho abandonado
 
 // Tornar funções globais
 window.makeNewOrder = makeNewOrder;
 window.showOrderHistory = showOrderHistory;
 window.showCoupons = showCoupons;
+window.closeCouponsModal = closeCouponsModal;
 window.logoutCustomer = logoutCustomer;
+
+async function showOrderHistory() {
+    const historyDiv = document.getElementById('order-history');
+    const historyList = document.getElementById('history-list');
+    
+    if (!historyDiv || !historyList) return;
+    
+    historyDiv.style.display = 'block';
+    historyList.innerHTML = '<p>Carregando pedidos...</p>';
+    
+    try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            historyList.innerHTML = '<p>Usuário não identificado</p>';
+            return;
+        }
+        
+        const client = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+        
+        const { data: orders, error } = await client
+            .from('pedidos')
+            .select('*')
+            .eq('cliente_id', userId)
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            historyList.innerHTML = '<p>Erro ao carregar pedidos</p>';
+            return;
+        }
+        
+        if (!orders || orders.length === 0) {
+            historyList.innerHTML = '<p>Nenhum pedido encontrado</p>';
+            return;
+        }
+        
+        const ordersHtml = orders.map(order => `
+            <div class="order-item">
+                <div class="order-header">
+                    <span class="order-id">#${order.id}</span>
+                    <span class="order-date">${new Date(order.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+                <div class="order-total">R$ ${parseFloat(order.valor_total || 0).toFixed(2)}</div>
+                <div class="order-status">${order.status || 'Novo'}</div>
+                <div class="order-payment">Pagamento: ${order.forma_pagamento || 'Não informado'}</div>
+            </div>
+        `).join('');
+        
+        historyList.innerHTML = ordersHtml;
+        
+    } catch (error) {
+        console.error('Erro ao buscar pedidos:', error);
+        historyList.innerHTML = '<p>Erro ao carregar pedidos</p>';
+    }
+}
+
+window.showOrderHistory = showOrderHistory;
+async function showOrderHistory() {
+    // Criar modal fullscreen
+    const modal = document.createElement('div');
+    modal.className = 'orders-modal';
+    modal.innerHTML = `
+        <div class="orders-modal-content">
+            <div class="orders-header">
+                <button class="back-btn" onclick="closeOrdersModal()">←</button>
+                <h2>MEUS PEDIDOS</h2>
+            </div>
+            <div class="orders-body" id="orders-body">
+                <div class="loading-orders">Carregando pedidos...</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Carregar pedidos
+    try {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            document.getElementById('orders-body').innerHTML = `
+                <div class="empty-orders">
+                    <div class="empty-icon">📋</div>
+                    <p>Você ainda não possui pedidos realizados</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const client = window.supabase.createClient(
+            'https://vtrgtorablofhmhizrjr.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+        );
+        
+        const { data: orders, error } = await client
+            .from('pedidos')
+            .select('*')
+            .eq('cliente_id', userId)
+            .order('data_pedido', { ascending: false });
+        
+        if (error || !orders || orders.length === 0) {
+            document.getElementById('orders-body').innerHTML = `
+                <div class="empty-orders">
+                    <div class="empty-icon">📋</div>
+                    <p>Você ainda não possui pedidos realizados</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const ordersHtml = orders.map(order => `
+            <div class="order-card">
+                <div class="order-info">
+                    <div class="order-number">Pedido #${order.id}</div>
+                    <div class="order-date">${new Date(order.data_pedido).toLocaleDateString('pt-BR')}</div>
+                    <div class="order-status status-${order.status}">${getStatusText(order.status)}</div>
+                </div>
+                <div class="order-total">R$ ${parseFloat(order.valor_total).toFixed(2)}</div>
+            </div>
+        `).join('');
+        
+        document.getElementById('orders-body').innerHTML = ordersHtml;
+        
+    } catch (error) {
+        document.getElementById('orders-body').innerHTML = `
+            <div class="empty-orders">
+                <div class="empty-icon">❌</div>
+                <p>Erro ao carregar pedidos</p>
+            </div>
+        `;
+    }
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'novo': 'Novo',
+        'confirmado': 'Confirmado',
+        'preparando': 'Preparando',
+        'saiu_entrega': 'Saiu para entrega',
+        'entregue': 'Entregue',
+        'cancelado': 'Cancelado'
+    };
+    return statusMap[status] || 'Novo';
+}
+
+function closeOrdersModal() {
+    const modal = document.querySelector('.orders-modal');
+    if (modal) modal.remove();
+}
+
+window.showOrderHistory = showOrderHistory;
+window.closeOrdersModal = closeOrdersModal;
+function showOrderHistory() {
+    window.open('pedidos.html', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes');
+}
+
+window.showOrderHistory = showOrderHistory;
+// Forçar atualização de pontos ao carregar a página
+document.addEventListener('DOMContentLoaded', async function() {
+    setTimeout(async () => {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            await loadCustomerPoints();
+        }
+    }, 2000);
+});
+
+// Atualizar pontos periodicamente
+setInterval(async () => {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        await loadCustomerPoints();
+    }
+}, 10000); // A cada 10 segundos
+// Atualizar informações do cliente periodicamente
+setInterval(async () => {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        await loadCustomerPoints();
+        loadUserDataToDropdown();
+    }
+}, 3000); // A cada 3 segundos

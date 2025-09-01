@@ -68,12 +68,28 @@
 
                 <button type="submit" class="submit-btn">Continuar para a Adega 🍷</button>
             </form>
+            
+            <div class="login-section">
+                <p>Já possui cadastro?</p>
+                <button type="button" class="login-btn" onclick="showLoginForm()">Fazer Login 🔑</button>
+            </div>
+            
+            <div id="login-form" class="login-form" style="display: none;">
+                <h3>🔑 Login</h3>
+                <div class="form-field">
+                    <label for="login-whatsapp">WhatsApp</label>
+                    <input type="tel" id="login-whatsapp" placeholder="(11) 99999-9999">
+                </div>
+                <button type="button" onclick="doLogin()" class="submit-btn">Entrar</button>
+                <button type="button" onclick="hideLoginForm()" class="cancel-btn">Cancelar</button>
+            </div>
 
             <div id="loading" class="loading" style="display: none;">
                 <p>Salvando seus dados...</p>
             </div>
 
             <div id="error-message" class="error-message" style="display: none;"></div>
+            <div id="login-error" class="error-message" style="display: none;"></div>
         </div>
     </div>
 
@@ -125,7 +141,7 @@
             }
             
             try {
-                console.log('🔄 Salvando no banco de dados...');
+                console.log('🔄 Verificando se usuário já existe...');
                 
                 if (!window.supabase) {
                     throw new Error('Supabase não carregado');
@@ -135,6 +151,38 @@
                     'https://vtrgtorablofhmhizrjr.supabase.co',
                     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
                 );
+                
+                // Verificar se usuário já existe
+                const { data: existingUser, error: checkError } = await client
+                    .from('clientes')
+                    .select('id, nome, whatsapp')
+                    .eq('whatsapp', formattedWhatsapp)
+                    .single();
+                
+                if (checkError && checkError.code !== 'PGRST116') {
+                    console.error('❌ Erro ao verificar usuário:', checkError);
+                    throw new Error('Erro ao verificar dados no banco');
+                }
+                
+                if (existingUser) {
+                    console.log('👤 Usuário já existe:', existingUser);
+                    
+                    // Salvar dados do usuário existente localmente
+                    const userData = { 
+                        nome: existingUser.nome, 
+                        whatsapp: existingUser.whatsapp
+                    };
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    localStorage.setItem('userRegistered', 'true');
+                    localStorage.setItem('userId', existingUser.id);
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    alert(`Bem-vindo de volta, ${existingUser.nome}! Você já possui cadastro.`);
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                console.log('🔄 Criando novo usuário...');
                 
                 const clienteData = {
                     nome: name,
@@ -148,7 +196,7 @@
                     pontos: 50
                 };
                 
-                console.log('📝 Inserindo:', clienteData);
+                console.log('📝 Inserindo novo cliente:', clienteData);
                 
                 const { data: clientData, error } = await client
                     .from('clientes')
@@ -158,6 +206,12 @@
                 
                 if (error) {
                     console.error('❌ Erro no banco:', error);
+                    
+                    // Tratamento específico para erro de duplicata
+                    if (error.code === '23505' && error.message.includes('whatsapp')) {
+                        throw new Error('Este número de WhatsApp já está cadastrado. Tente fazer login.');
+                    }
+                    
                     throw new Error(`Falha ao salvar: ${error.message}`);
                 }
                 
@@ -192,14 +246,97 @@
                 localStorage.setItem('userId', clientData.id);
                 
                 document.getElementById('loading').style.display = 'none';
-                alert('Cadastro realizado com sucesso!');
+                alert(`Cadastro realizado com sucesso!`);
                 window.location.href = 'index.html';
                 
             } catch (error) {
                 console.error('❌ Erro crítico:', error);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error-message').style.display = 'block';
-                document.getElementById('error-message').textContent = 'Erro ao processar cadastro. Tente novamente.';
+                
+                // Mostrar mensagem de erro específica
+                if (error.message.includes('whatsapp')) {
+                    document.getElementById('error-message').textContent = 'Este WhatsApp já está cadastrado. Você já possui uma conta!';
+                } else if (error.message.includes('Supabase')) {
+                    document.getElementById('error-message').textContent = 'Erro de conexão. Verifique sua internet e tente novamente.';
+                } else {
+                    document.getElementById('error-message').textContent = error.message || 'Erro ao processar cadastro. Tente novamente.';
+                }
+            }
+        }
+        
+        // Funções de login
+        function showLoginForm() {
+            document.getElementById('registro-form').style.display = 'none';
+            document.querySelector('.login-section').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+        }
+        
+        function hideLoginForm() {
+            document.getElementById('registro-form').style.display = 'block';
+            document.querySelector('.login-section').style.display = 'block';
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('login-error').style.display = 'none';
+        }
+        
+        async function doLogin() {
+            const whatsapp = document.getElementById('login-whatsapp').value.trim();
+            
+            if (!whatsapp) {
+                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('login-error').textContent = 'Digite seu WhatsApp!';
+                return;
+            }
+            
+            // Limpar e formatar WhatsApp
+            const cleanWhatsapp = whatsapp.replace(/\D/g, '');
+            let formattedWhatsapp = cleanWhatsapp;
+            if (cleanWhatsapp.length === 10 && !cleanWhatsapp.startsWith('9', 2)) {
+                formattedWhatsapp = cleanWhatsapp.substring(0, 2) + '9' + cleanWhatsapp.substring(2);
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('login-error').style.display = 'none';
+            
+            try {
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+                
+                const { data: user, error } = await client
+                    .from('clientes')
+                    .select('*')
+                    .eq('whatsapp', formattedWhatsapp)
+                    .single();
+                
+                if (error || !user) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('login-error').style.display = 'block';
+                    document.getElementById('login-error').textContent = 'WhatsApp não encontrado. Faça seu cadastro primeiro!';
+                    return;
+                }
+                
+                // Salvar dados localmente
+                const userData = { 
+                    nome: user.nome, 
+                    whatsapp: user.whatsapp,
+                    endereco: `${user.rua}, ${user.numero}${user.complemento ? ', ' + user.complemento : ''}, ${user.bairro}, ${user.cidade} - ${user.cep}`
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+                localStorage.setItem('userRegistered', 'true');
+                localStorage.setItem('userId', user.id);
+                
+                document.getElementById('loading').style.display = 'none';
+                alert(`Bem-vindo de volta, ${user.nome}!`);
+                window.location.href = 'index.html';
+                
+            } catch (error) {
+                console.error('Erro no login:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('login-error').style.display = 'block';
+                document.getElementById('login-error').textContent = 'Erro ao fazer login. Tente novamente.';
             }
         }
         
@@ -209,7 +346,22 @@
             if (form) {
                 form.addEventListener('submit', saveRegistro);
             }
+            
+            // Enter no campo de login
+            const loginWhatsapp = document.getElementById('login-whatsapp');
+            if (loginWhatsapp) {
+                loginWhatsapp.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        doLogin();
+                    }
+                });
+            }
         });
+        
+        // Tornar funções globais
+        window.showLoginForm = showLoginForm;
+        window.hideLoginForm = hideLoginForm;
+        window.doLogin = doLogin;
     </script>
 </body>
 </html>

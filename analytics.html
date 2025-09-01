@@ -12,8 +12,7 @@
         <header class="analytics-header">
             <h1>📊 Analytics do Carrinho</h1>
             <div class="header-actions">
-                <button onclick="createTestData()" class="test-btn">📊 Dados Teste</button>
-                <button onclick="simulateAbandonedCart()" class="simulate-btn">🛒 + Abandonado</button>
+                <button onclick="loadAbandonedCarts()" class="refresh-btn">🔄 Atualizar</button>
                 <button onclick="resetAnalytics()" class="reset-btn">🔄 Resetar</button>
                 <button onclick="exportData()" class="export-btn">📥 Exportar</button>
                 <button onclick="window.close()" class="close-btn">✕</button>
@@ -21,111 +20,16 @@
         </header>
 
         <div class="stats-grid">
-            <div class="stat-card active">
-                <h3>🟢 Carrinho Ativo</h3>
-                <span id="stat-ativo">0</span>
-            </div>
-            <div class="stat-card edited">
-                <h3>✏️ Carrinho Editado</h3>
-                <span id="stat-editado">0</span>
-            </div>
-            <div class="stat-card incomplete">
-                <h3>⚠️ Carrinho Abandonado</h3>
-                <span id="stat-incompleto">0</span>
-            </div>
-            <div class="stat-card confirmed">
-                <h3>✅ Pedido Confirmado</h3>
-                <span id="stat-confirmado">0</span>
-            </div>
-            <div class="stat-card preparing">
-                <h3>👨‍🍳 Em Preparo</h3>
-                <span id="stat-preparando">0</span>
-            </div>
-            <div class="stat-card delivery">
-                <h3>🛵 Em Entrega</h3>
-                <span id="stat-em_entrega">0</span>
-            </div>
-            <div class="stat-card delivered">
-                <h3>🎉 Entregue</h3>
-                <span id="stat-entregue">0</span>
-            </div>
-
             <div class="stat-card abandoned">
                 <h3>🚫 Desistido</h3>
                 <span id="stat-desistido">0</span>
             </div>
         </div>
 
-        <div class="charts-section">
-            <div class="chart-card">
-                <h3>Taxa de Conversão</h3>
-                <div class="rate-circle conversion">
-                    <span id="conversion-percentage">0%</span>
-                </div>
-                <p>Carrinhos → Pedidos</p>
-            </div>
-            <div class="chart-card">
-                <h3>Taxa de Conclusão</h3>
-                <div class="rate-circle completion">
-                    <span id="completion-percentage">0%</span>
-                </div>
-                <p>Pedidos → Entregas</p>
-            </div>
-            <div class="chart-card">
-                <h3>Taxa de Abandono</h3>
-                <div class="rate-circle abandonment">
-                    <span id="abandonment-percentage">0%</span>
-                </div>
-                <p>Carrinhos Abandonados</p>
-            </div>
-        </div>
-
-        <div class="flow-section">
-            <h2>🔄 Fluxo do Carrinho</h2>
-            <div class="flow-diagram">
-                <div class="flow-step">
-                    <div class="flow-icon">🛒</div>
-                    <div class="flow-label">Ativo</div>
-                    <div class="flow-count" id="flow-ativo">0</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">✏️</div>
-                    <div class="flow-label">Editado</div>
-                    <div class="flow-count" id="flow-editado">0</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">✅</div>
-                    <div class="flow-label">Confirmado</div>
-                    <div class="flow-count" id="flow-confirmado">0</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">👨‍🍳</div>
-                    <div class="flow-label">Preparo</div>
-                    <div class="flow-count" id="flow-preparando">0</div>
-                </div>
-                <div class="flow-arrow">→</div>
-                <div class="flow-step">
-                    <div class="flow-icon">🎉</div>
-                    <div class="flow-label">Entregue</div>
-                    <div class="flow-count" id="flow-entregue">0</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="activity-section">
-            <h2>📋 Atividades Recentes</h2>
-            <div class="activity-log" id="activity-list">
-                <p>Nenhuma atividade registrada</p>
-            </div>
-        </div>
-
         <div class="abandoned-carts-section">
             <div class="section-tabs">
-                <button class="tab-btn active" onclick="switchTab('abandoned')" id="tab-abandoned">🛒 Abandonados</button>
-                <button class="tab-btn" onclick="switchTab('desisted')" id="tab-desisted">🚫 Desistidos</button>
+                <button class="tab-btn active" onclick="switchTab('desisted')" id="tab-desisted">🚫 Desistidos</button>
+                <button class="tab-btn" onclick="switchTab('recovery')" id="tab-recovery">🔄 Recuperação</button>
             </div>
             <div class="section-info">
                 <p id="section-description">Clientes que adicionaram produtos ao carrinho mas não finalizaram a compra. Use o WhatsApp para recuperar essas vendas!</p>
@@ -133,11 +37,177 @@
             <div class="abandoned-carts-list" id="abandoned-carts-list">
                 <p>Carregando carrinhos abandonados...</p>
             </div>
+            <div class="recovery-section" id="recovery-section" style="display: none;">
+                <div class="recovery-list" id="recovery-list">
+                    <p>Carregando dados de recuperação...</p>
+                </div>
+            </div>
         </div>
-
 
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
     <script src="js/analytics.js"></script>
+    <script>
+        // Carregar carrinhos abandonados
+        async function loadAbandonedCarts() {
+            try {
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+
+                const { data, error } = await client
+                    .from('carrinho_abandonado')
+                    .select('*')
+                    .eq('recuperado', false)
+                    .order('data_abandono', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('abandoned-carts-list');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p>Nenhum carrinho abandonado encontrado.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(cart => {
+                    const produtos = JSON.parse(cart.produtos_json || '[]');
+                    return `
+                        <div class="abandoned-cart-item">
+                            <div class="cart-header">
+                                <div class="customer-info">
+                                    <strong>${cart.cliente_nome || 'Cliente'}</strong>
+                                    <span class="phone">${cart.cliente_telefone}</span>
+                                </div>
+                                <div class="cart-value">R$ ${parseFloat(cart.valor_total).toFixed(2)}</div>
+                            </div>
+                            <div class="cart-products">
+                                ${produtos.map(p => `<span class="product-tag">${p.name} (${p.quantity}x)</span>`).join('')}
+                            </div>
+                            <div class="cart-actions">
+                                <span class="abandon-time">${new Date(cart.data_abandono).toLocaleString('pt-BR')}</span>
+                                <button onclick="sendRecoveryMessage('${cart.cliente_telefone}', ${cart.id})" class="recovery-btn">
+                                    💬 Recuperar via WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Erro ao carregar carrinhos abandonados:', error);
+                document.getElementById('abandoned-carts-list').innerHTML = '<p>Erro ao carregar dados.</p>';
+            }
+        }
+
+        // Enviar mensagem de recuperação
+        async function sendRecoveryMessage(phone, cartId) {
+            const message = `🍷 *Adega do Tio Pancho*\n\nOlá! Notamos que você deixou alguns produtos no seu carrinho.\n\nQue tal finalizar sua compra? Temos os melhores preços e entrega rápida!\n\n💬 Responda esta mensagem para continuar sua compra.`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+            
+            // Marcar como tentativa de recuperação
+            try {
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+                
+                await client
+                    .from('carrinho_abandonado')
+                    .update({ recuperado: true, data_recuperacao: new Date().toISOString() })
+                    .eq('id', cartId);
+                    
+                console.log('Carrinho marcado como em recuperação');
+            } catch (error) {
+                console.error('Erro ao marcar recuperação:', error);
+            }
+            
+            window.open(whatsappUrl, '_blank');
+            
+            // Recarregar lista
+            setTimeout(loadAbandonedCarts, 1000);
+        }
+
+        // Alternar abas
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if (tab === 'recovery') {
+                document.getElementById('abandoned-carts-list').style.display = 'none';
+                document.getElementById('recovery-section').style.display = 'block';
+                document.getElementById('section-description').textContent = 'Carrinhos que já tiveram tentativa de recuperação via WhatsApp.';
+                loadRecoveryData();
+            } else {
+                document.getElementById('abandoned-carts-list').style.display = 'block';
+                document.getElementById('recovery-section').style.display = 'none';
+                document.getElementById('section-description').textContent = 'Clientes que adicionaram produtos ao carrinho mas não finalizaram a compra. Use o WhatsApp para recuperar essas vendas!';
+                loadAbandonedCarts();
+            }
+        }
+
+        // Carregar dados de recuperação
+        async function loadRecoveryData() {
+            try {
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+
+                const { data, error } = await client
+                    .from('carrinho_abandonado')
+                    .select('*')
+                    .eq('recuperado', true)
+                    .order('data_recuperacao', { ascending: false });
+
+                if (error) throw error;
+
+                const container = document.getElementById('recovery-list');
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<p>Nenhuma tentativa de recuperação ainda.</p>';
+                    return;
+                }
+
+                container.innerHTML = data.map(cart => {
+                    const produtos = JSON.parse(cart.produtos_json || '[]');
+                    return `
+                        <div class="recovery-item">
+                            <div class="recovery-header">
+                                <div class="customer-info">
+                                    <strong>${cart.cliente_nome || 'Cliente'}</strong>
+                                    <span class="phone">${cart.cliente_telefone}</span>
+                                </div>
+                                <div class="recovery-status">✅ Contatado</div>
+                            </div>
+                            <div class="recovery-details">
+                                <span>Valor: R$ ${parseFloat(cart.valor_total).toFixed(2)}</span>
+                                <span>Abandonado: ${new Date(cart.data_abandono).toLocaleDateString('pt-BR')}</span>
+                                <span>Contatado: ${new Date(cart.data_recuperacao).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Erro ao carregar dados de recuperação:', error);
+                document.getElementById('recovery-list').innerHTML = '<p>Erro ao carregar dados.</p>';
+            }
+        }
+
+        // Carregar dados ao inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAbandonedCarts();
+        });
+
+        // Tornar funções globais
+        window.sendRecoveryMessage = sendRecoveryMessage;
+        window.switchTab = switchTab;
+    </script>
 </body>
 </html>

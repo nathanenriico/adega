@@ -27,7 +27,8 @@
                 <h2>📍 Endereço de Entrega</h2>
                 <div class="address-card">
                     <div class="address-info">
-                        <p>Carregando endereço...</p>
+                        <p><strong>Endereço não cadastrado</strong></p>
+                        <p>Clique em "Alterar" para cadastrar</p>
                     </div>
                     <button class="change-address-btn" onclick="changeAddress()">Alterar</button>
                 </div>
@@ -102,8 +103,10 @@
                             </label>
                         </div>
                     </div>
-                    <div class="change-info">
-                        <input type="text" id="change-amount" placeholder="Troco para quanto? (opcional)" style="display: none;">
+                    <div class="change-info" id="change-info" style="display: none;">
+                        <label for="change-amount">💰 Troco para quanto?</label>
+                        <input type="number" id="change-amount" placeholder="Ex: 50.00" step="0.01" min="0">
+                        <small>Deixe em branco se não precisar de troco</small>
                     </div>
                 </div>
             </section>
@@ -148,9 +151,9 @@
                         <span>Subtotal</span>
                         <span id="subtotal">R$ 0,00</span>
                     </div>
-                    <div class="total-line" id="discount" style="display: none; color: #25D366;">
-                        <span>Desconto</span>
-                        <span>- R$ 0,00</span>
+                    <div class="total-line" id="discount" style="display: none; color: #25D366; background: rgba(37, 211, 102, 0.1); padding: 8px; border-radius: 5px; margin: 5px 0;">
+                        <span style="font-weight: bold;">💰 Você está economizando</span>
+                        <span style="font-weight: bold; font-size: 1.1em;">- R$ 0,00</span>
                     </div>
                     <div class="total-line">
                         <span>Taxa de entrega</span>
@@ -206,5 +209,6 @@
 
     <script src="js/checkout-functions.js"></script>
     <script src="js/checkout-updated.js"></script>
+    <script src="js/debug-checkout.js"></script>
 </body>
 </html>

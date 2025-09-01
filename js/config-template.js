@@ -6,7 +6,7 @@ const CONFIG = {
 ,
     
     // WhatsApp
-    WHATSAPP_NUMBER: '5511933949002',
+    WHATSAPP_NUMBER: '5511941716617',
     
     // OpenAI (opcional)
     OPENAI_API_KEY: 'sk-proj-5V-M2c0YUnQ3rlDWEXZGs9ZjvkZERt9Cgo2rhv24zdQzb3Dttbud4FEUI4FjBfAp4S9v6WigUgT3BlbkFJeNYqIQw8eyS-7xu-RR2CSzmyj5GHGhXtbEA9GglLU9zWd-UWzhgKldtaA3ya2m30A',

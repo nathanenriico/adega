@@ -53,7 +53,11 @@ function calculateTotals() {
     const discountElement = document.getElementById('discount');
     if (discount > 0) {
         discountElement.style.display = 'block';
-        discountElement.textContent = `- R$ ${discount.toFixed(2)}`;
+        const percentage = ((discount / subtotal) * 100).toFixed(0);
+        discountElement.innerHTML = `
+            <span style="font-weight: bold;">💰 Você está economizando ${percentage}%</span>
+            <span style="font-weight: bold; font-size: 1.1em;">- R$ ${discount.toFixed(2)}</span>
+        `;
     } else {
         discountElement.style.display = 'none';
     }
@@ -168,11 +172,49 @@ async function applyCoupon() {
         localStorage.setItem('appliedCoupon', JSON.stringify(coupon));
         calculateTotals();
         
+        // Salvar dados do cliente no banco
+        await saveCouponUsage(coupon);
+        
         console.log('Cupom aplicado:', coupon);
         
     } catch (error) {
         console.error('Erro ao aplicar cupom:', error);
         alert('Erro ao aplicar cupom.');
+    }
+}
+
+// Salvar dados do cliente ao aplicar cupom
+async function saveCouponUsage(coupon) {
+    try {
+        const userId = localStorage.getItem('userId');
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        
+        // Obter endereço do banco
+        let address = 'Endereço não informado';
+        if (userId && typeof supabase !== 'undefined') {
+            const { data: addressData } = await supabase
+                .from('clientes')
+                .select('rua, numero, complemento, bairro, cidade, cep')
+                .eq('id', userId)
+                .single();
+            
+            if (addressData && addressData.rua) {
+                address = `${addressData.rua}, ${addressData.numero}${addressData.complemento ? ` - ${addressData.complemento}` : ''}, ${addressData.bairro}, ${addressData.cidade}, CEP: ${addressData.cep}`;
+            }
+        }
+        
+        // Salvar na tabela de uso de cupons
+        await supabase.from('cupom_uso').insert({
+            cupom_id: coupon.id,
+            cliente_nome: userData.nome || 'Cliente',
+            cliente_telefone: userData.whatsapp || '5511941716617',
+            endereco: address,
+            desconto_aplicado: coupon.discount
+        });
+        
+        console.log('✅ Dados do cliente salvos ao aplicar cupom');
+    } catch (error) {
+        console.error('Erro ao salvar uso do cupom:', error);
     }
 }
 
@@ -378,9 +420,11 @@ async function confirmOrder() {
     // Obter dados do formulário diretamente
     const paymentMethodElement = document.querySelector('input[name="payment"]:checked');
     const paymentMethod = paymentMethodElement ? paymentMethodElement.value : 'pix';
+    const changeAmount = document.getElementById('change-amount')?.value || '';
     
     console.log('Elemento de pagamento encontrado:', paymentMethodElement);
     console.log('Valor do método de pagamento:', paymentMethod);
+    console.log('Valor do troco:', changeAmount);
     const cpfCnpj = document.getElementById('cpf-cnpj')?.value || '';
     
     // Validar CPF/CNPJ se fornecido
@@ -414,13 +458,19 @@ async function confirmOrder() {
     localStorage.setItem('currentOrderTotal', total.toFixed(2));
     
     // Salvar pedido na gestão
-    await saveOrderToManagement(cart, paymentMethod, cpfCnpj);
+    await saveOrderToManagement(cart, paymentMethod, cpfCnpj, changeAmount);
     
     // Marcar cupom como usado se houver
     if (appliedCoupon && appliedCoupon.id) {
         await markCouponAsUsed(appliedCoupon.id);
         localStorage.removeItem('appliedCoupon');
         console.log('Cupom marcado como usado:', appliedCoupon.id);
+    }
+    
+    // Atualizar pontos imediatamente
+    if (typeof window.atualizarPontosAgora === 'function') {
+        setTimeout(window.atualizarPontosAgora, 500);
+        setTimeout(window.atualizarPontosAgora, 2000);
     }
     
     // Mostrar confirmação imediatamente
@@ -463,7 +513,7 @@ function validateCpfCnpj(value) {
     return false;
 }
 
-async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
+async function saveOrderToManagement(cart, paymentMethod, cpfCnpj, changeAmount = '') {
     // Usar o ID já gerado na confirmOrder
     const orderId = parseInt(localStorage.getItem('currentOrderId'));
     
@@ -519,17 +569,22 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
     const total = subtotal + deliveryFee;
     
     // Mapear método de pagamento
-    const paymentText = {
+    let paymentText = {
         'money': 'Dinheiro',
         'credit-card-delivery': 'Cartão de Crédito na Entrega',
         'debit-card-delivery': 'Cartão de Débito na Entrega',
         'pix': 'PIX'
     }[paymentMethod] || paymentMethod;
     
+    // Adicionar informação do troco se for dinheiro
+    if (paymentMethod === 'money' && changeAmount && parseFloat(changeAmount) > 0) {
+        paymentText += ` (Troco para R$ ${parseFloat(changeAmount).toFixed(2)})`;
+    }
+    
     console.log('Método de pagamento original:', paymentMethod);
     console.log('Método de pagamento mapeado:', paymentText);
     
-    // Criar objeto de pedido para o banco
+    // Criar objeto de pedido para o banco com itens detalhados
     const orderData = {
         id: orderId,
         customer: customerName,
@@ -539,9 +594,16 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         payment_status: paymentMethod === 'pix' ? 'aguardando_comprovante' : 'pagamento_na_entrega',
         paymentMethod: paymentText,
         forma_pagamento: paymentText,
+        troco: paymentMethod === 'money' && changeAmount ? parseFloat(changeAmount) : null,
         total: total,
         address: address,
-        items: cart
+        items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            total: item.price * item.quantity
+        }))
     };
     
     // Tentar salvar no banco
@@ -566,60 +628,96 @@ async function saveOrderToManagement(cart, paymentMethod, cpfCnpj) {
         
         // Preparar dados para o Supabase (conforme estrutura da tabela)
         const supabaseOrderData = {
-            id: orderId,
             cliente_id: customerId ? parseInt(customerId) : null,
             cliente_nome: customerName || orderData.customer,
             cliente_telefone: orderData.phone,
-            valor_total: orderData.total,
+            valor_total: parseFloat(orderData.total),
             pontos_ganhos: Math.floor(orderData.total / 10),
             status: orderData.status,
             forma_pagamento: paymentText,
             endereco: orderData.address,
-            itens_json: JSON.stringify(orderData.items),
-            data_pedido: orderData.date
+            itens_json: JSON.stringify(orderData.items)
         };
         
         console.log('Dados sendo salvos no Supabase:', supabaseOrderData);
         
-        db.saveOrder(supabaseOrderData).then(async () => {
-            console.log('✅ Pedido salvo no Supabase:', orderId);
+        // Salvar diretamente no Supabase com dados completos incluindo itens
+        try {
+            const completeData = {
+                id: orderId,
+                cliente_nome: customerName,
+                cliente_telefone: customerPhone,
+                valor_total: parseFloat(orderData.total),
+                status: 'novo',
+                forma_pagamento: paymentText,
+                endereco: orderData.address,
+                itens_json: JSON.stringify(orderData.items),
+                data_pedido: new Date().toISOString()
+            };
             
-            // Atualizar pontos do cliente
-            if (customerId) {
-                const pointsToAdd = Math.floor(orderData.total / 10);
-                console.log(`🎯 Adicionando ${pointsToAdd} pontos para cliente ${customerId}`);
-                
-                await addPointsToCustomer(
-                    customerId, 
-                    pointsToAdd, 
-                    orderId, 
-                    `Compra de R$ ${orderData.total.toFixed(2)} - Pedido #${orderId}`
-                );
-                
-                console.log('✅ Pontos adicionados com sucesso!');
+            console.log('Dados completos para Supabase:', completeData);
+            
+            const { error } = await supabase
+                .from('pedidos')
+                .insert(completeData);
+            
+            if (error) {
+                console.error('❌ Erro detalhado:', error.message, error.details, error.hint);
             } else {
-                console.log('⚠️ CustomerId não encontrado, pontos não adicionados');
+                console.log('✅ Pedido salvo no Supabase:', orderId);
+                
+                // Registrar pontos no histórico
+                if (customerId) {
+                    const pointsToAdd = Math.floor(orderData.total / 10);
+                    
+                    await supabase.from('pontos_historico').insert({
+                        cliente_id: parseInt(customerId),
+                        pontos: pointsToAdd,
+                        tipo: 'ganho',
+                        descricao: `Pontos ganhos na compra #${orderId}`,
+                        pedido_id: orderId
+                    });
+                    
+                    console.log(`✅ ${pointsToAdd} pontos registrados no histórico`);
+                }
             }
+        } catch (error) {
+            console.error('❌ Erro ao salvar no banco:', error);
+        }
             
-            // Salvar no localStorage apenas como backup após sucesso no Supabase
-            const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-            orders.push(orderData);
-            localStorage.setItem('adegaOrders', JSON.stringify(orders));
-        }).catch(error => {
-            console.error('❌ Erro ao salvar no Supabase:', error);
-            
-            // Se falhar no Supabase, salvar apenas no localStorage
-            const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-            orders.push(orderData);
-            localStorage.setItem('adegaOrders', JSON.stringify(orders));
-        });
+        // Salvar no localStorage como backup com itens completos
+        const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
+        const localOrderData = {
+            ...orderData,
+            items: cart.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                total: item.price * item.quantity
+            }))
+        };
+        orders.push(localOrderData);
+        localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        console.log('✅ Pedido salvo no localStorage com itens:', localOrderData.items);
     } else {
         console.warn('⚠️ Banco de dados não disponível, salvando apenas localmente');
         
-        // Salvar no localStorage se Supabase não estiver disponível
+        // Salvar no localStorage se Supabase não estiver disponível com itens completos
         const orders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-        orders.push(orderData);
+        const localOrderData = {
+            ...orderData,
+            items: cart.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                total: item.price * item.quantity
+            }))
+        };
+        orders.push(localOrderData);
         localStorage.setItem('adegaOrders', JSON.stringify(orders));
+        console.log('✅ Pedido salvo localmente com itens:', localOrderData.items);
     }
     
     return orderId;
@@ -777,6 +875,7 @@ function showSuccessMessage() {
 
 function goToWhatsAppWithOrder(orderId, paymentMethod) {
     const orderTotal = localStorage.getItem('currentOrderTotal') || '0.00';
+    const changeAmount = document.getElementById('change-amount')?.value || '';
     
     // Mensagens diferentes por forma de pagamento
     let message;
@@ -790,7 +889,14 @@ function goToWhatsAppWithOrder(orderId, paymentMethod) {
             'debit-card-delivery': 'Cartão de Débito'
         }[paymentMethod] || 'na entrega';
         
-        message = `🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId} no valor de R$ ${orderTotal}.\n\n💵 Pagamento: ${paymentText} na entrega\n\nPor favor, confirme meu pedido e me informe o tempo de entrega.\n\nObrigado!`;
+        message = `🍷 *Adega do Tio Pancho*\n\nOlá! Acabei de fazer o pedido #${orderId} no valor de R$ ${orderTotal}.\n\n💵 Pagamento: ${paymentText} na entrega`;
+        
+        // Adicionar informação do troco se for dinheiro
+        if (paymentMethod === 'money' && changeAmount && parseFloat(changeAmount) > 0) {
+            message += `\n💰 Troco para: R$ ${parseFloat(changeAmount).toFixed(2)}`;
+        }
+        
+        message += `\n\nPor favor, confirme meu pedido e me informe o tempo de entrega.\n\nObrigado!`;
     }
     
     const encodedMessage = encodeURIComponent(message);
@@ -905,13 +1011,27 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCartData();
     updatePixValue();
     
-    // Carregar endereço imediatamente e repetir até conseguir
+    // Carregar endereço imediatamente
     loadSavedAddressInCheckout();
-    setTimeout(loadSavedAddressInCheckout, 1000);
-    setTimeout(loadSavedAddressInCheckout, 3000);
     
+    // Event listeners para métodos de pagamento
     document.getElementById('money')?.addEventListener('change', function() {
-        document.getElementById('change-amount').style.display = this.checked ? 'block' : 'none';
+        const changeInfo = document.getElementById('change-info');
+        if (changeInfo) {
+            changeInfo.style.display = this.checked ? 'block' : 'none';
+        }
+    });
+    
+    // Esconder campo de troco para outros métodos
+    document.querySelectorAll('input[name="payment"]:not(#money)').forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.checked) {
+                const changeInfo = document.getElementById('change-info');
+                if (changeInfo) {
+                    changeInfo.style.display = 'none';
+                }
+            }
+        });
     });
 });
 
@@ -921,52 +1041,32 @@ async function loadSavedAddressInCheckout() {
     if (!addressInfo) return;
     
     const userId = localStorage.getItem('userId');
-    console.log('🔍 UserId:', userId);
+    console.log('UserId encontrado:', userId);
     
-    if (!userId) {
-        addressInfo.innerHTML = '<p style="color: #ff6b6b;">Usuário não identificado</p>';
-        return;
-    }
-    
-    // Aguardar Supabase estar disponível
-    let attempts = 0;
-    while ((!window.supabase || !supabase || typeof supabase.from !== 'function') && attempts < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-    }
-    
-    if (!supabase || typeof supabase.from !== 'function') {
-        addressInfo.innerHTML = '<p style="color: #ff6b6b;">Sistema indisponível</p>';
+    if (!userId || typeof supabase === 'undefined') {
+        console.log('UserId ou Supabase não disponível');
+        addressInfo.innerHTML = '<p><strong>Endereço não cadastrado</strong></p><p>Clique em "Alterar" para cadastrar</p>';
         return;
     }
     
     try {
-        console.log('🔄 Buscando endereço no banco...');
         const { data, error } = await supabase
             .from('clientes')
-            .select('rua, numero, complemento, bairro, cidade, cep')
+            .select('*')
             .eq('id', userId)
             .single();
         
-        console.log('📊 Resposta do banco:', { data, error });
-        
         if (!error && data && data.rua) {
-            const fullAddress = `${data.rua}, ${data.numero}${data.complemento ? ` - ${data.complemento}` : ''}`;
             addressInfo.innerHTML = `
-                <p><strong>${fullAddress}</strong></p>
+                <p><strong>${data.rua}, ${data.numero}</strong></p>
+                ${data.complemento ? `<p>${data.complemento}</p>` : ''}
                 <p>${data.bairro}, ${data.cidade}</p>
                 <p>CEP: ${data.cep}</p>
             `;
-            console.log('✅ Endereço carregado:', fullAddress);
         } else {
-            addressInfo.innerHTML = `
-                <p style="color: #ff6b6b;"><strong>Endereço não cadastrado</strong></p>
-                <p>Clique em "Alterar" para cadastrar</p>
-            `;
-            console.log('⚠️ Endereço não encontrado');
+            addressInfo.innerHTML = '<p><strong>Endereço não cadastrado</strong></p><p>Clique em "Alterar" para cadastrar</p>';
         }
     } catch (error) {
-        console.error('❌ Erro:', error);
-        addressInfo.innerHTML = '<p style="color: #ff6b6b;">Erro ao carregar endereço</p>';
+        addressInfo.innerHTML = '<p><strong>Endereço não cadastrado</strong></p><p>Clique em "Alterar" para cadastrar</p>';
     }
 }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Pedidos - Adega do Tio Pancho</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="orders-modal">
+        <div class="orders-modal-content">
+            <div class="orders-header">
+                <button class="back-btn" onclick="window.close()">←</button>
+                <h2>MEUS PEDIDOS</h2>
+            </div>
+            <div class="orders-body" id="orders-body">
+                <div class="loading-orders">Carregando pedidos...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadOrders() {
+            try {
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    document.getElementById('orders-body').innerHTML = `
+                        <div class="empty-orders">
+                            <div class="empty-icon">📋</div>
+                            <p>Você ainda não possui pedidos realizados</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+                
+                const { data: orders, error } = await client
+                    .from('pedidos')
+                    .select('*')
+                    .eq('cliente_id', userId)
+                    .order('data_pedido', { ascending: false });
+                
+                if (error || !orders || orders.length === 0) {
+                    document.getElementById('orders-body').innerHTML = `
+                        <div class="empty-orders">
+                            <div class="empty-icon">📋</div>
+                            <p>Você ainda não possui pedidos realizados</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const ordersHtml = orders.map(order => `
+                    <div class="order-card">
+                        <div class="order-info">
+                            <div class="order-number">Pedido #${order.id}</div>
+                            <div class="order-date">${new Date(order.data_pedido).toLocaleDateString('pt-BR')}</div>
+                            <div class="order-status status-${order.status}">${getStatusText(order.status)}</div>
+                        </div>
+                        <div class="order-total">R$ ${parseFloat(order.valor_total).toFixed(2)}</div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('orders-body').innerHTML = ordersHtml;
+                
+            } catch (error) {
+                document.getElementById('orders-body').innerHTML = `
+                    <div class="empty-orders">
+                        <div class="empty-icon">❌</div>
+                        <p>Erro ao carregar pedidos</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'novo': 'Novo',
+                'confirmado': 'Confirmado',
+                'preparando': 'Preparando',
+                'saiu_entrega': 'Saiu para entrega',
+                'entregue': 'Entregue',
+                'cancelado': 'Cancelado'
+            };
+            return statusMap[status] || 'Novo';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+</html>

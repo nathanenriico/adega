@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos Excluídos - Analytics</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/analytics.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <style>
+        .analytics-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #d4af37, #b8941f);
+            border-radius: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d4af37;
+            margin-bottom: 10px;
+        }
+        .products-table {
+            background: #2a2a2a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        .table-header {
+            background: #d4af37;
+            color: #1a1a1a;
+            padding: 15px;
+            font-weight: bold;
+        }
+        .table-content {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .product-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1.5fr 1fr;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid #444;
+            align-items: center;
+        }
+        .product-row:hover {
+            background: #333;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .filters {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #444;
+            background: #1a1a1a;
+            color: white;
+            border-radius: 5px;
+        }
+        .filter-btn {
+            padding: 8px 15px;
+            background: #d4af37;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .filter-btn:hover {
+            background: #b8941f;
+        }
+    </style>
+</head>
+<body>
+    <div class="analytics-container">
+        <div class="header">
+            <h1>📊 Analytics - Produtos Excluídos do Carrinho</h1>
+            <p>Análise dos produtos que os clientes removeram do carrinho</p>
+        </div>
+
+        <div class="filters">
+            <input type="date" id="date-filter" class="filter-input" title="Filtrar por data">
+            <input type="text" id="phone-filter" class="filter-input" placeholder="Filtrar por telefone">
+            <input type="text" id="product-filter" class="filter-input" placeholder="Filtrar por produto">
+            <button onclick="applyFilters()" class="filter-btn">Filtrar</button>
+            <button onclick="clearFilters()" class="filter-btn">Limpar</button>
+            <button onclick="exportData()" class="filter-btn">Exportar CSV</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-exclusions">0</div>
+                <div>Total de Exclusões</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="unique-products">0</div>
+                <div>Produtos Únicos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="unique-customers">0</div>
+                <div>Clientes Únicos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-value">R$ 0</div>
+                <div>Valor Total Perdido</div>
+            </div>
+        </div>
+
+        <div class="products-table">
+            <div class="table-header">
+                Produtos Excluídos Recentemente
+            </div>
+            <div class="table-content">
+                <div class="product-row" style="font-weight: bold; background: #333;">
+                    <div>Produto</div>
+                    <div>Preço</div>
+                    <div>Qtd</div>
+                    <div>Cliente</div>
+                    <div>Data</div>
+                </div>
+                <div id="products-list">
+                    <div class="loading">Carregando dados...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="products-table">
+            <div class="table-header">
+                Top 10 Produtos Mais Excluídos
+            </div>
+            <div class="table-content" id="top-products">
+                <div class="loading">Carregando ranking...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+
+        // Carregar dados ao inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRemovedProducts();
+        });
+
+        async function loadRemovedProducts() {
+            try {
+                const client = window.supabase.createClient(
+                    'https://vtrgtorablofhmhizrjr.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
+                );
+
+                const { data, error } = await client
+                    .from('produtos_excluidos')
+                    .select('*')
+                    .order('data_exclusao', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                allData = data || [];
+                filteredData = [...allData];
+                
+                updateStats();
+                renderProductsList();
+                renderTopProducts();
+
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                document.getElementById('products-list').innerHTML = 
+                    '<div class="loading">Erro ao carregar dados. Verifique a conexão.</div>';
+            }
+        }
+
+        function updateStats() {
+            const totalExclusions = filteredData.length;
+            const uniqueProducts = new Set(filteredData.map(item => item.produto_id)).size;
+            const uniqueCustomers = new Set(filteredData.map(item => item.cliente_telefone)).size;
+            const totalValue = filteredData.reduce((sum, item) => sum + (item.produto_preco * item.quantidade), 0);
+
+            document.getElementById('total-exclusions').textContent = totalExclusions;
+            document.getElementById('unique-products').textContent = uniqueProducts;
+            document.getElementById('unique-customers').textContent = uniqueCustomers;
+            document.getElementById('total-value').textContent = `R$ ${totalValue.toFixed(2)}`;
+        }
+
+        function renderProductsList() {
+            const container = document.getElementById('products-list');
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = '<div class="loading">Nenhum produto excluído encontrado</div>';
+                return;
+            }
+
+            const html = filteredData.slice(0, 50).map(item => `
+                <div class="product-row">
+                    <div>${item.produto_nome}</div>
+                    <div>R$ ${parseFloat(item.produto_preco).toFixed(2)}</div>
+                    <div>${item.quantidade}</div>
+                    <div>${item.cliente_telefone}</div>
+                    <div>${new Date(item.data_exclusao).toLocaleDateString('pt-BR')} ${new Date(item.data_exclusao).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        function renderTopProducts() {
+            const productCounts = {};
+            
+            filteredData.forEach(item => {
+                const key = item.produto_nome;
+                if (!productCounts[key]) {
+                    productCounts[key] = {
+                        name: item.produto_nome,
+                        count: 0,
+                        totalValue: 0
+                    };
+                }
+                productCounts[key].count += item.quantidade;
+                productCounts[key].totalValue += item.produto_preco * item.quantidade;
+            });
+
+            const sortedProducts = Object.values(productCounts)
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+
+            const container = document.getElementById('top-products');
+            
+            if (sortedProducts.length === 0) {
+                container.innerHTML = '<div class="loading">Nenhum dado disponível</div>';
+                return;
+            }
+
+            const html = sortedProducts.map((product, index) => `
+                <div class="product-row">
+                    <div>#${index + 1} ${product.name}</div>
+                    <div>${product.count} exclusões</div>
+                    <div>R$ ${product.totalValue.toFixed(2)}</div>
+                    <div></div>
+                    <div></div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        function applyFilters() {
+            const dateFilter = document.getElementById('date-filter').value;
+            const phoneFilter = document.getElementById('phone-filter').value.toLowerCase();
+            const productFilter = document.getElementById('product-filter').value.toLowerCase();
+
+            filteredData = allData.filter(item => {
+                const matchDate = !dateFilter || item.data_exclusao.startsWith(dateFilter);
+                const matchPhone = !phoneFilter || item.cliente_telefone.toLowerCase().includes(phoneFilter);
+                const matchProduct = !productFilter || item.produto_nome.toLowerCase().includes(productFilter);
+                
+                return matchDate && matchPhone && matchProduct;
+            });
+
+            updateStats();
+            renderProductsList();
+            renderTopProducts();
+        }
+
+        function clearFilters() {
+            document.getElementById('date-filter').value = '';
+            document.getElementById('phone-filter').value = '';
+            document.getElementById('product-filter').value = '';
+            
+            filteredData = [...allData];
+            updateStats();
+            renderProductsList();
+            renderTopProducts();
+        }
+
+        function exportData() {
+            if (filteredData.length === 0) {
+                alert('Nenhum dado para exportar');
+                return;
+            }
+
+            const csv = [
+                ['Produto', 'Preço', 'Quantidade', 'Cliente', 'Data'],
+                ...filteredData.map(item => [
+                    item.produto_nome,
+                    item.produto_preco,
+                    item.quantidade,
+                    item.cliente_telefone,
+                    new Date(item.data_exclusao).toLocaleString('pt-BR')
+                ])
+            ].map(row => row.join(',')).join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `produtos_excluidos_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

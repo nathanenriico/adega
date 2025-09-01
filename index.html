@@ -30,6 +30,7 @@
     <link rel="preconnect" href="https://images.unsplash.com">
     
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/banner.css">
     <link rel="stylesheet" href="css/pix-payment.css">
     <link rel="stylesheet" href="css/mobile-app.css">
     <link rel="stylesheet" href="css/mobile-cards.css">
@@ -41,6 +42,7 @@
     <script src="js/init-cupons.js"></script>
     <script src="js/test-cupons.js"></script>
     <script src="js/update-points-display.js"></script>
+    <script src="js/pontos-realtime.js"></script>
     <script src="js/navigation-fix-final.js"></script>
     <script src="js/script.js"></script>
     <script src="js/products-final.js"></script>
@@ -76,9 +78,12 @@
             
             <div class="nav-right">
                 <!-- Perfil do Cliente -->
-                <div id="customer-profile" class="customer-profile" style="display: none;">
-                    <div class="profile-icon">👤</div>
-                    <span id="profile-name">Cliente</span>
+                <div id="account-menu" class="account-menu" onclick="toggleAccountMenu()">
+                    <div class="account-icon">👤</div>
+                    <div class="account-info">
+                        <span class="account-greeting">Olá, <span id="account-name">Teste</span></span>
+                        <span class="account-subtitle">Conta e pedidos</span>
+                    </div>
                 </div>
                 
                 <!-- Widget do Carrinho -->
@@ -185,98 +190,21 @@
                         </div>
                     </div>
                     
-                    <!-- Painel do Cliente Logado -->
-                    <div id="logged-customer-panel" class="customer-panel" style="display: none;">
-                        <div class="profile-header">
-                            <div class="profile-avatar">👤</div>
-                            <div class="profile-welcome">
-                                <h2>Olá, <span id="logged-customer-name">Cliente</span>! 👋</h2>
-                                <p>Bem-vindo de volta à Adega do Tio Pancho</p>
+                    <!-- Banner Principal -->
+                    <div class="hero-banner">
+                        <div class="banner-content">
+                            <h2>🍷 Bebidas Premium com Entrega Rápida</h2>
+                            <p>As melhores cervejas, vinhos e destilados da região</p>
+                            <div class="banner-actions">
+                                <button onclick="showSection('products')" class="banner-btn primary">
+                                    Ver Produtos 🛒
+                                </button>
+                                <button onclick="openWhatsApp()" class="banner-btn secondary">
+                                    WhatsApp 💬
+                                </button>
                             </div>
                         </div>
-                        
-                        <div class="profile-details">
-                            <div class="detail-item">
-                                <div class="detail-icon">👤</div>
-                                <div class="detail-content">
-                                    <span class="detail-label">Nome Completo</span>
-                                    <span class="detail-value" id="customer-full-name">-</span>
-                                </div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon">📱</div>
-                                <div class="detail-content">
-                                    <span class="detail-label">WhatsApp</span>
-                                    <span class="detail-value" id="customer-whatsapp">-</span>
-                                </div>
-                            </div>
-                            <div class="detail-item points-item">
-                                <div class="detail-icon">🎆</div>
-                                <div class="detail-content">
-                                    <span class="detail-label">Pontos de Fidelidade</span>
-                                    <span class="detail-value" id="customer-points-display">0 pontos</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Sistema de Pontos -->
-                        <div class="points-system">
-                            <h3>🎁 Loja de Cupons</h3>
-                            <p>Troque seus pontos por descontos especiais!</p>
-                            
-                            <div class="coupon-store">
-                                <h4>Cupons Disponíveis:</h4>
-                                <div class="store-grid">
-                                    <div class="coupon-option" onclick="exchangeCoupon('5% de desconto', 50)">
-                                        <div class="coupon-title">5% OFF</div>
-                                        <div class="coupon-cost">50 pontos</div>
-                                    </div>
-                                    <div class="coupon-option" onclick="exchangeCoupon('10% de desconto', 100)">
-                                        <div class="coupon-title">10% OFF</div>
-                                        <div class="coupon-cost">100 pontos</div>
-                                    </div>
-                                    <div class="coupon-option" onclick="exchangeCoupon('R$ 10 de desconto', 150)">
-                                        <div class="coupon-title">R$ 10 OFF</div>
-                                        <div class="coupon-cost">150 pontos</div>
-                                    </div>
-                                    <div class="coupon-option" onclick="exchangeCoupon('Frete Grátis', 80)">
-                                        <div class="coupon-title">Frete Grátis</div>
-                                        <div class="coupon-cost">80 pontos</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="customer-actions">
-                            <button onclick="makeNewOrder()" class="new-order-btn">
-                                🛒 Fazer Novo Pedido
-                            </button>
-                            <button onclick="showOrderHistory()" class="history-btn">
-                                📋 Meus Pedidos
-                            </button>
-                            <button onclick="showCoupons()" class="coupons-btn">
-                                🎁 Meus Cupons
-                            </button>
-                        </div>
-                        
-                        <!-- Histórico de Pedidos -->
-                        <div id="order-history" class="order-history" style="display: none;">
-                            <h4>📋 Histórico de Pedidos</h4>
-                            <div id="history-list"></div>
-                        </div>
-                        
-                        <!-- Lista de Cupons -->
-                        <div id="coupons-list" class="coupons-list" style="display: none;">
-                            <h4>🎁 Meus Cupons</h4>
-                            <div id="available-coupons"></div>
-                        </div>
-                        
-                        <button onclick="logoutCustomer()" class="edit-profile-btn">
-                            🚪 Sair da Conta
-                        </button>
                     </div>
-                    
-
                     
                     <!-- Informações de Contato -->
                     <div class="contact-card">
@@ -346,12 +274,55 @@
                     <h3>🍻 Nossos Produtos</h3>
                     
                     <!-- Filters -->
-                    <div class="filters">
-                        <button class="filter-btn active" onclick="filterProducts('all')">Todos</button>
-                        <button class="filter-btn" onclick="filterProducts('cervejas')">Cervejas</button>
-                        <button class="filter-btn" onclick="filterProducts('vinhos')">Vinhos</button>
-                        <button class="filter-btn" onclick="filterProducts('drinks')">Drinks</button>
-                        <button class="filter-btn" onclick="filterProducts('refrigerantes')">Refrigerantes</button>
+                    <div class="filters category-grid">
+                        <div class="category-item" onclick="filterProducts('all')">
+                            <div class="category-icon">🛒</div>
+                            <span class="category-name">Todos</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('cervejas')">
+                            <div class="category-icon">🍺</div>
+                            <span class="category-name">Cervejas</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('vinhos')">
+                            <div class="category-icon">🍷</div>
+                            <span class="category-name">Vinhos</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('destilados')">
+                            <div class="category-icon">🥃</div>
+                            <span class="category-name">Destilados</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('churrasco')">
+                            <div class="category-icon">🥩</div>
+                            <span class="category-name">Churrasco</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('chopp')">
+                            <div class="category-icon">🍻</div>
+                            <span class="category-name">Chopp</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('aguas')">
+                            <div class="category-icon">💧</div>
+                            <span class="category-name">Águas e Gelo</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('drinks')">
+                            <div class="category-icon">🥤</div>
+                            <span class="category-name">Drinks Prontos</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('petiscos')">
+                            <div class="category-icon">🍿</div>
+                            <span class="category-name">Petiscos</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('sobremesas')">
+                            <div class="category-icon">🍰</div>
+                            <span class="category-name">Sobremesas</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('mercearia')">
+                            <div class="category-icon">🛍️</div>
+                            <span class="category-name">Mercearia</span>
+                        </div>
+                        <div class="category-item" onclick="filterProducts('conveniencia')">
+                            <div class="category-icon">🏪</div>
+                            <span class="category-name">Conveniência</span>
+                        </div>
                     </div>
                     
                     <!-- Products Grid -->
@@ -548,6 +519,9 @@
                     <button onclick="openCartAnalytics()" class="management-btn analytics-btn">
                         📊 Analytics do Carrinho
                     </button>
+                    <button onclick="openRemovedProductsAnalytics()" class="management-btn analytics-btn">
+                        🗑️ Produtos Excluídos
+                    </button>
                 </div>
             </div>
             
@@ -614,6 +588,54 @@
         </div>
     </div>
     <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+    <!-- Dropdown Menu da Conta -->
+    <div id="account-dropdown" class="account-dropdown">
+        <div class="account-dropdown-content">
+            <div class="account-header">
+                <div class="account-avatar">👤</div>
+                <div class="account-welcome">
+                    <h3>Olá, <span id="dropdown-name">Teste</span>! 👋</h3>
+                    <p>Bem-vindo de volta à Adega do Tio Pancho</p>
+                </div>
+            </div>
+            
+            <div class="account-details">
+                <div class="detail-item">
+                    <div class="detail-icon">👤</div>
+                    <div class="detail-content">
+                        <span class="detail-label">Nome Completo</span>
+                        <span class="detail-value" id="dropdown-full-name">Teste</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-icon">📱</div>
+                    <div class="detail-content">
+                        <span class="detail-label">WhatsApp</span>
+                        <span class="detail-value" id="dropdown-whatsapp">11941716615</span>
+                    </div>
+                </div>
+
+            </div>
+            
+
+            
+            <div class="account-actions">
+                <button onclick="makeNewOrder()" class="action-btn new-order">
+                    🛒 Fazer Novo Pedido
+                </button>
+                <button onclick="showOrderHistory()" class="action-btn history">
+                    📋 Meus Pedidos
+                </button>
+
+                <button onclick="logoutCustomer()" class="action-btn logout">
+                    🚪 Sair da Conta
+                </button>
+            </div>
+
+        </div>
+    </div>
+    <div id="account-overlay" class="account-overlay" onclick="toggleAccountMenu()"></div>
 
     <!-- Botão Flutuante do Chat -->
     <div id="chat-float-btn" class="chat-float-btn" onclick="toggleChatBot()">
@@ -876,19 +898,18 @@
                 
                 // Renderizar produtos
                 const html = data.map(product => `
-                    <div class="product-card">
-                        <img src="${product.image || 'https://via.placeholder.com/400x200/333/fff?text=Produto'}" 
-                             alt="${product.name}" class="product-image" 
-                             onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-price">R$ ${parseFloat(product.price).toFixed(2)}</div>
-                        <div class="product-actions">
-                            <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
-                                Adicionar 🛒
+                    <div class="product-card modern-card">
+                        <div class="product-image-container">
+                            <img src="${product.image || 'https://via.placeholder.com/150x150/f0f0f0/999?text=Produto'}" 
+                                 alt="${product.name}" class="product-image" 
+                                 onerror="this.src='https://via.placeholder.com/150x150/f0f0f0/999?text=Produto'">
+                            <button class="add-btn" onclick="addToCart(${product.id})" title="Adicionar ao carrinho">
+                                +
                             </button>
-                            <button class="whatsapp-btn-small" onclick="openWhatsApp('${product.name}')">
-                                WhatsApp 💬
-                            </button>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-price">R$ ${parseFloat(product.price).toFixed(2).replace('.', ',')}</div>
+                            <div class="product-name">${product.name}</div>
                         </div>
                     </div>
                 `).join('');
@@ -978,9 +999,14 @@
             const grid = document.getElementById('products-grid');
             if (!grid) return;
             
-            // Atualizar botões ativos
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            // Atualizar botões ativos (tanto filter-btn quanto category-item)
+            document.querySelectorAll('.filter-btn, .category-item').forEach(btn => btn.classList.remove('active'));
+            
+            // Encontrar e ativar o item clicado
+            if (event && event.target) {
+                const clickedElement = event.target.closest('.category-item') || event.target;
+                clickedElement.classList.add('active');
+            }
             
             if (!window.supabase) {
                 grid.innerHTML = '<p style="text-align: center; color: #ff6b6b; padding: 40px;">Supabase não disponível</p>';
@@ -1015,19 +1041,18 @@
                 
                 // Renderizar produtos filtrados
                 const html = data.map(product => `
-                    <div class="product-card">
-                        <img src="${product.image || 'https://via.placeholder.com/400x200/333/fff?text=Produto'}" 
-                             alt="${product.name}" class="product-image" 
-                             onerror="this.src='https://via.placeholder.com/400x200/333/fff?text=Produto'">
-                        <div class="product-name">${product.name}</div>
-                        <div class="product-price">R$ ${parseFloat(product.price).toFixed(2)}</div>
-                        <div class="product-actions">
-                            <button class="add-to-cart-btn" onclick="addToCart(${product.id})">
-                                Adicionar 🛒
+                    <div class="product-card modern-card">
+                        <div class="product-image-container">
+                            <img src="${product.image || 'https://via.placeholder.com/150x150/f0f0f0/999?text=Produto'}" 
+                                 alt="${product.name}" class="product-image" 
+                                 onerror="this.src='https://via.placeholder.com/150x150/f0f0f0/999?text=Produto'">
+                            <button class="add-btn" onclick="addToCart(${product.id})" title="Adicionar ao carrinho">
+                                +
                             </button>
-                            <button class="whatsapp-btn-small" onclick="openWhatsApp('${product.name}')">
-                                WhatsApp 💬
-                            </button>
+                        </div>
+                        <div class="product-info">
+                            <div class="product-price">R$ ${parseFloat(product.price).toFixed(2).replace('.', ',')}</div>
+                            <div class="product-name">${product.name}</div>
                         </div>
                     </div>
                 `).join('');
@@ -1039,9 +1064,43 @@
             });
         }
         
+        // Função para toggle do menu da conta
+        function toggleAccountMenu() {
+            const dropdown = document.getElementById('account-dropdown');
+            const overlay = document.getElementById('account-overlay');
+            
+            dropdown.classList.toggle('active');
+            overlay.classList.toggle('active');
+            
+            // Carregar dados do usuário
+            if (dropdown.classList.contains('active')) {
+                loadUserDataToDropdown();
+            }
+        }
+        
+        // Função para carregar dados do usuário no dropdown
+        function loadUserDataToDropdown() {
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            const userPoints = localStorage.getItem('userPoints') || '10';
+            
+            if (userData.nome) {
+                const firstName = userData.nome.split(' ')[0];
+                document.getElementById('account-name').textContent = firstName;
+                document.getElementById('dropdown-name').textContent = firstName;
+                document.getElementById('dropdown-full-name').textContent = userData.nome;
+            }
+            
+            if (userData.whatsapp) {
+                document.getElementById('dropdown-whatsapp').textContent = userData.whatsapp;
+            }
+            
+            document.getElementById('dropdown-points').textContent = userPoints + ' pontos';
+        }
+        
         // Tornar funções globais
         window.filterProducts = filterProducts;
         window.reloadProductsFromDatabase = reloadProductsFromDatabase;
+        window.toggleAccountMenu = toggleAccountMenu;
         
         // Verificar se usuário já está cadastrado
         function checkUserRegistration() {
@@ -1081,6 +1140,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkUserRegistration();
             waitForSupabaseAndLoadProducts();
+            loadUserDataToDropdown();
         });
         window.addEventListener('load', waitForSupabaseAndLoadProducts);
     </script>

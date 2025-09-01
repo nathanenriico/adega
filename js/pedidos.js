@@ -39,11 +39,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Recarregar quando a página ganhar foco (desabilitado)
-// window.addEventListener('focus', function() {
-//     loadOrdersFromDB();
-// });
-
 async function loadOrdersFromDB() {
     try {
         const { data: dbOrders, error } = await supabase
@@ -64,17 +59,36 @@ async function loadOrdersFromDB() {
             console.log('Pedido do Supabase:', dbOrder.id, 'Data:', dbOrder.data_pedido);
             const localOrder = savedOrders.find(lo => lo.id === dbOrder.id);
             
+            // Tentar recuperar itens do banco ou do localStorage
+            let items = [];
+            if (dbOrder.itens_json) {
+                try {
+                    items = JSON.parse(dbOrder.itens_json);
+                    console.log('Itens recuperados do Supabase para pedido', dbOrder.id, ':', items);
+                } catch (error) {
+                    console.error('Erro ao parsear itens do Supabase:', error);
+                }
+            }
+            
+            // Se não há itens no banco, tentar do localStorage
+            if (items.length === 0 && localOrder && localOrder.items) {
+                items = localOrder.items;
+                console.log('Itens recuperados do localStorage para pedido', dbOrder.id, ':', items);
+            }
+            
             return {
                 id: dbOrder.id,
                 customer: dbOrder.cliente_nome || 'Cliente WhatsApp',
                 total: dbOrder.valor_total,
+                valor_total: dbOrder.valor_total,
                 paymentMethod: dbOrder.forma_pagamento || 'Não informado',
+                forma_pagamento: dbOrder.forma_pagamento || 'Não informado',
                 address: dbOrder.endereco || 'Endereço não informado',
                 endereco: dbOrder.endereco || 'Endereço não informado',
                 date: dbOrder.data_pedido || dbOrder.created_at,
                 data_pedido: dbOrder.data_pedido || dbOrder.created_at,
                 status: localOrder ? localOrder.status : dbOrder.status,
-                items: dbOrder.itens_json ? JSON.parse(dbOrder.itens_json) : [],
+                items: items,
                 pontos_ganhos: dbOrder.pontos_ganhos || 0
             };
         });
@@ -224,10 +238,29 @@ function renderActiveOrders(activeOrders) {
                 <div class="order-detail">
                     <strong>Pagamento:</strong> ${order.paymentMethod || order.forma_pagamento || 'Não informado'}
                 </div>
-                <div class="order-detail">
-                    <strong>Pontos:</strong> ${order.pontos_ganhos || Math.floor((order.valor_total || order.total || 0) / 10)} pts
-                </div>
             </div>
+            
+            ${order.items && order.items.length > 0 ? `
+                <div class="order-items">
+                    <strong>Itens do Pedido:</strong>
+                    <div class="items-list">
+                        ${order.items.map(item => `
+                            <div class="item-row">
+                                <span class="item-name">${item.name}</span>
+                                <span class="item-quantity">x${item.quantity}</span>
+                                <span class="item-price">R$ ${(item.price * item.quantity).toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : `
+                <div class="order-items">
+                    <strong>Itens do Pedido:</strong>
+                    <div class="items-list">
+                        <div class="no-items">Nenhum item encontrado</div>
+                    </div>
+                </div>
+            `}
             
             <div class="order-address">
                 <strong>Endereço:</strong> ${order.endereco || order.address || 'Não informado'}
@@ -272,7 +305,7 @@ function renderDeliveredOrders(deliveredOrders) {
             </div>
             
             <div class="order-items">
-                <strong>Produtos:</strong> ${order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ')}
+                <strong>Produtos:</strong> ${order.items && order.items.length > 0 ? order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ') : 'Nenhum item encontrado'}
             </div>
             
             <div class="order-actions">
@@ -319,33 +352,6 @@ function restoreOrder(orderId) {
     }
 }
 
-// Função para criar pedido de teste entregue
-function createTestDeliveredOrder() {
-    const testOrder = {
-        id: Date.now(),
-        customer: 'Cliente Teste',
-        phone: '11999999999',
-        date: new Date().toISOString(),
-        status: 'entregue',
-        total: 89.90,
-        paymentMethod: 'PIX',
-        address: 'Endereço Teste',
-        items: [{
-            name: 'Vinho Teste',
-            quantity: 1,
-            price: 89.90
-        }],
-        deliveredAt: new Date().toISOString(),
-        notes: 'Pedido de teste'
-    };
-    
-    orders.push(testOrder);
-    saveOrders();
-    loadOrders();
-    updateStats();
-    console.log('Pedido de teste criado:', testOrder);
-}
-
 // Obter texto do status
 function getStatusText(status) {
     const statusMap = {
@@ -374,7 +380,7 @@ function getActionButtons(order) {
         buttons += `<button class="action-btn btn-recebido" onclick="updateOrderStatus(${order.id}, 'recebido')">Pedido Recebido</button>`;
         buttons += `<button class="action-btn btn-confirm-pix" onclick="confirmPixPaymentReceived(${order.id})">✅ Confirmar PIX Recebido</button>`;
     } else if (order.status === 'recebido') {
-        buttons += `<button class="action-btn btn-preparar" onclick="updateOrderStatus(${order.id}, 'preparando')">Preparar</button>`;
+        buttons += `<button class="action-btn btn-preparar" onclick="prepareOrder(${order.id})">Iniciar Atendimento</button>`;
     } else if (order.status === 'preparando') {
         buttons += `<button class="action-btn btn-saindo" onclick="updateOrderStatus(${order.id}, 'saindo')">Saiu para Entrega</button>`;
     } else if (order.status === 'saindo') {
@@ -388,6 +394,22 @@ function getActionButtons(order) {
     return buttons;
 }
 
+// Função específica para iniciar atendimento
+function prepareOrder(orderId) {
+    event.stopPropagation();
+    
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Atualizar status diretamente
+    updateOrderStatus(orderId, 'preparando');
+}
+
+// Salvar pedidos
+function saveOrders() {
+    localStorage.setItem('adegaOrders', JSON.stringify(orders));
+}
+
 // Atualizar status do pedido
 async function updateOrderStatus(orderId, newStatus) {
     event.stopPropagation();
@@ -397,103 +419,51 @@ async function updateOrderStatus(orderId, newStatus) {
         const oldStatus = order.status;
         order.status = newStatus;
         
-        // Atualizar no Supabase
-        try {
-            const { error } = await supabase
-                .from('pedidos')
-                .update({ status: newStatus })
-                .eq('id', orderId);
-            
-            if (error) {
-                console.error('Erro ao atualizar no Supabase:', error);
-            } else {
-                console.log('✅ Status atualizado no Supabase:', orderId, newStatus);
-                
-                // Registrar na tabela pedido_status
-                const statusMap = {
-                    'recebido': 'pedido_recebido',
-                    'preparando': 'preparando', 
-                    'saindo': 'saindo_entrega',
-                    'entregue': 'entregue'
-                };
-                
-                if (statusMap[newStatus]) {
-                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                    const { error: statusError } = await supabase.from('pedido_status').insert({
-                        pedido_id: orderId,
-                        cliente_nome: userData.nome || order.customer || 'Cliente WhatsApp',
-                        cliente_telefone: userData.whatsapp || '5511941716617',
-                        status: statusMap[newStatus],
-                        valor_total: parseFloat(order.total || order.valor_total || 0)
-                    });
-                    
-                    if (statusError) {
-                        console.error('Erro ao salvar status na pedido_status:', statusError);
-                    } else {
-                        console.log(`✅ Pedido #${orderId} - Status ${statusMap[newStatus]} salvo na tabela pedido_status`);
-                    }
-                }
-                
-                // Não recarregar do banco para evitar sobrescrever alterações
-                // await loadOrdersFromDB();
-                // return; // Sair da função para evitar duplicar as atualizações
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar no Supabase:', error);
-        }
-        
         if (newStatus === 'entregue') {
             order.deliveredAt = new Date().toISOString();
+            
+            // Registrar pedido na tabela pedidos
+            const pontosGanhos = order.pontos_ganhos || Math.floor((order.valor_total || order.total || 0) / 10);
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            
+            try {
+                // Inserir pedido na tabela
+                await supabase.from('pedidos').insert({
+                    id: orderId,
+                    cliente_id: 1,
+                    valor_total: parseFloat(order.valor_total || order.total || 0),
+                    pontos_ganhos: pontosGanhos,
+                    status: 'entregue',
+                    forma_pagamento: order.paymentMethod || order.forma_pagamento || 'Não informado',
+                    endereco: order.endereco || order.address || 'Não informado',
+                    data_pedido: order.date || order.data_pedido || new Date().toISOString(),
+                    cliente_nome: userData.nome || 'Cliente WhatsApp',
+                    cliente_telefone: userData.whatsapp || '551193394-9002',
+                    itens_json: JSON.stringify(order.items || [])
+                });
+                
+                // Registrar pontos no histórico
+                await supabase.from('pontos_historico').insert({
+                    cliente_id: 1,
+                    pontos: pontosGanhos,
+                    tipo: 'ganho',
+                    descricao: `Pontos ganhos na compra #${orderId}`,
+                    pedido_id: orderId,
+                    cliente_nome: userData.nome || 'Cliente WhatsApp',
+                    cliente_telefone: userData.whatsapp || '551193394-9002',
+                    cliente_endereco: order.endereco || order.address || 'Não informado'
+                });
+                
+                console.log(`✅ Pedido #${orderId} registrado na tabela pedidos`);
+                console.log(`✅ ${pontosGanhos} pontos registrados no histórico`);
+            } catch (error) {
+                console.error('Erro ao registrar pedido/pontos:', error);
+            }
         }
         
         saveOrders();
         loadOrders();
         updateStats();
-        
-        // Analytics em tempo real - mapear status para analytics
-        const statusMapping = {
-            'recebido': 'confirmado',  // Pedido recebido = Pedido confirmado no analytics
-            'preparando': 'preparando',
-            'saindo': 'em_entrega',
-            'entregue': 'entregue'
-        };
-        
-        const analyticsStatus = statusMapping[newStatus] || newStatus;
-        const oldAnalyticsStatus = statusMapping[oldStatus] || oldStatus;
-        
-        const analytics = JSON.parse(localStorage.getItem('cartAnalytics') || '{}');
-        analytics[analyticsStatus] = (analytics[analyticsStatus] || 0) + 1;
-        if (oldStatus && oldAnalyticsStatus && analytics[oldAnalyticsStatus] && analytics[oldAnalyticsStatus] > 0) {
-            analytics[oldAnalyticsStatus] = analytics[oldAnalyticsStatus] - 1;
-        }
-        analytics.lastUpdate = new Date().toISOString();
-        localStorage.setItem('cartAnalytics', JSON.stringify(analytics));
-        
-        const events = JSON.parse(localStorage.getItem('cartEvents') || '[]');
-        events.push({
-            state: analyticsStatus,
-            timestamp: new Date().toISOString(),
-            orderId: orderId,
-            previousStatus: oldAnalyticsStatus,
-            orderTotal: order.total,
-            customerName: order.customer
-        });
-        if (events.length > 100) events.splice(0, events.length - 100);
-        localStorage.setItem('cartEvents', JSON.stringify(events));
-        
-        // Disparar evento customizado para atualização imediata
-        window.dispatchEvent(new CustomEvent('cartAnalyticsUpdate', {
-            detail: {
-                status: analyticsStatus,
-                orderId: orderId,
-                previousStatus: oldAnalyticsStatus
-            }
-        }));
-        
-        console.log(`📊 Status atualizado: ${oldStatus} → ${newStatus} (Analytics: ${oldAnalyticsStatus} → ${analyticsStatus})`);
-        
-        // Mostrar notificação de atualização
-        showAnalyticsUpdateNotification(newStatus, orderId);
         
         // Enviar notificação WhatsApp automática
         if (oldStatus !== newStatus) {
@@ -506,7 +476,7 @@ async function updateOrderStatus(orderId, newStatus) {
 function sendAutomaticWhatsAppNotification(order, newStatus) {
     const statusMessages = {
         'recebido': `🍷 *Adega do Tio Pancho*\n\n✅ Pedido #${order.id} recebido com sucesso!\n\nEstamos preparando tudo para você.\n\nTotal: R$ ${order.total.toFixed(2)}\nPagamento: ${order.paymentMethod}\n\nEm breve enviaremos mais atualizações! 🍻`,
-        'preparando': `🍷 *Adega do Tio Pancho*\n\n👨‍🍳 Seu pedido #${order.id} está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\nTotal: R$ ${order.total.toFixed(2)}\n\nObrigado pela preferência! 🍻`,
+        'preparando': `🍷 *Adega do Tio Pancho*\n\n👨🍳 Seu pedido #${order.id} está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\nTotal: R$ ${order.total.toFixed(2)}\n\nObrigado pela preferência! 🍻`,
         'saindo': `🍷 *Adega do Tio Pancho*\n\n🚚 Seu pedido #${order.id} está a caminho!\n\nO entregador já saiu e chegará em breve.\n\nPrepare o pagamento: ${order.paymentMethod}\n\nAté já! 🚀`,
         'entregue': `🍷 *Adega do Tio Pancho*\n\n🎉 Pedido #${order.id} entregue com sucesso!\n\nObrigado pela preferência!\n\n⭐ Que tal avaliar nosso atendimento?\n\nVolte sempre! 🍻`
     };
@@ -514,116 +484,94 @@ function sendAutomaticWhatsAppNotification(order, newStatus) {
     const message = statusMessages[newStatus];
     if (!message) return;
     
-    // Mostrar notificação no painel admin
-    showNotificationSent(order.id, newStatus);
-    
-    // Detectar se é mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const phone = '5511941716617';
+    const phone = '551193394-9002';
     const encodedMessage = encodeURIComponent(message);
     
-    // Pequeno delay para não conflitar com a atualização da tela
     setTimeout(() => {
-        // Sempre usar WhatsApp Web no analytics
         window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
     }, 1000);
+}
+
+// Função para cobrar pagamento
+function requestPayment(orderId) {
+    event.stopPropagation();
     
-    // Registrar notificação no pedido
-    if (!order.whatsappNotifications) {
-        order.whatsappNotifications = [];
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const paymentMethod = order.paymentMethod || 'PIX';
+    const customerName = order.customer || 'Cliente';
+    const pixKey = '11933949002';
+    const pixAmount = order.total.toFixed(2);
+    
+    let paymentData = '';
+    
+    if (paymentMethod.toLowerCase().includes('pix')) {
+        paymentData = `PIX: ${pixKey} (Adega do Tio Pancho)\nBanco: NuBank\nValor: R$ ${pixAmount}\n\nFaça o PIX com a chave: ${pixKey}\n\nFavor enviar o comprovante por aqui após o pagamento.`;
+    } else {
+        paymentData = `Pagamento na entrega via ${paymentMethod}.\n\nSe preferir pagar agora via PIX: ${pixKey}\n\nPor favor, confirme que está de acordo.`;
     }
     
-    order.whatsappNotifications.push({
-        status: newStatus,
-        message: message,
-        sentAt: new Date().toISOString()
-    });
+    const message = `Olá, ${customerName}! 👋
+
+Recebemos seu pedido #${orderId} com o total de R$${order.total.toFixed(2)}.  
+Forma de pagamento escolhida: ${paymentMethod}
+
+Para prosseguir, aqui estão os dados para pagamento:
+
+${paymentData}
+
+Assim que o pagamento for realizado, favor enviar o comprovante por aqui mesmo.  
+Qualquer dúvida, estamos à disposição. 💬
+
+Obrigado por comprar com a gente!`;
+    
+    const phone = '551193394-9002';
+    const encodedMessage = encodeURIComponent(message);
+    
+    window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
     
     saveOrders();
 }
 
-// Mostrar notificação de envio
-function showNotificationSent(orderId, status) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #25D366;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        z-index: 9999;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        animation: slideIn 0.3s ease;
-    `;
+// Confirmar recebimento de pagamento PIX
+async function confirmPixPaymentReceived(orderId) {
+    event.stopPropagation();
     
-    const statusText = {
-        'recebido': 'Pedido Recebido',
-        'preparando': 'Preparando',
-        'saindo': 'Saindo para Entrega', 
-        'entregue': 'Entregue',
-        'confirmado': 'Pedido Confirmado',
-        'cobranca': 'Cobrança de Pagamento',
-        'pix_confirmado': 'PIX Confirmado'
-    };
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
     
-    notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.2rem;">📱</span>
-            <div>
-                <div style="font-weight: bold;">WhatsApp Enviado!</div>
-                <div style="font-size: 0.9rem; opacity: 0.9;">Pedido #${orderId} - ${statusText[status] || status}</div>
-            </div>
-        </div>
-    `;
+    const confirmPayment = confirm(`Confirmar que o pagamento PIX do pedido #${orderId} foi recebido?\n\nValor: R$ ${order.total.toFixed(2)}\nCliente: ${order.customer}`);
     
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 4000);
+    if (confirmPayment) {
+        order.status = 'recebido';
+        order.payment_status = 'confirmado';
+        order.paymentStatus = 'confirmado';
+        order.pixPaymentConfirmed = new Date().toISOString();
+        order.updatedAt = new Date().toISOString();
+        
+        saveOrders();
+        loadOrders();
+        updateStats();
+        
+        sendPixConfirmationNotification(order);
+        
+        alert(`Pagamento PIX confirmado!\nPedido #${orderId} liberado para preparo.`);
+    }
 }
 
-// Mostrar notificação de atualização do analytics
-function showAnalyticsUpdateNotification(status, orderId) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 18px;
-        border-radius: 8px;
-        z-index: 9998;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        font-size: 0.9rem;
-        animation: slideIn 0.3s ease;
-    `;
+// Enviar notificação de confirmação PIX
+function sendPixConfirmationNotification(order) {
+    const message = `🍷 *Adega do Tio Pancho*\n\n✅ Pagamento PIX confirmado!\n\nPedido #${order.id} recebido e liberado para preparo.\n\nValor: R$ ${order.total.toFixed(2)}\nStatus: Pedido confirmado\n\nEstamos preparando tudo para você!\n\nTempo estimado: 45-55 minutos\n\nObrigado pela preferência! 🍻`;
     
-    const analyticsText = {
-        'recebido': '✅ Pedido Confirmado',
-        'preparando': '👨‍🍳 Em Preparo',
-        'saindo': '🛵 Em Entrega',
-        'entregue': '🎉 Entregue'
-    };
-    
-    notification.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1rem;">📊</span>
-            <div>
-                <div style="font-weight: 600;">Analytics Atualizado!</div>
-                <div style="font-size: 0.8rem; opacity: 0.9;">#${orderId} → ${analyticsText[status]}</div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(notification);
+    const phone = '551193394-9002';
+    const encodedMessage = encodeURIComponent(message);
     
     setTimeout(() => {
-        notification.remove();
-    }, 3000);
+        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+    }, 1000);
+    
+    saveOrders();
 }
 
 // Editar notas do pedido
@@ -649,24 +597,31 @@ function showOrderDetails(orderId) {
     const modal = document.getElementById('order-modal');
     const details = document.getElementById('order-details');
     
+    console.log('Itens do pedido no modal:', order.items);
+    
+    const itemsHtml = order.items && order.items.length > 0 ? 
+        order.items.map(item => `
+            <div class="modal-item-row">
+                <span class="modal-item-name">${item.name}</span>
+                <span class="modal-item-quantity">x${item.quantity}</span>
+                <span class="modal-item-price">R$ ${(item.price * item.quantity).toFixed(2)}</span>
+            </div>
+        `).join('') : 
+        '<div class="no-items">Nenhum item encontrado - Verifique se os itens foram salvos corretamente</div>';
+    
     details.innerHTML = `
         <h3>Pedido #${order.id}</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0;">
-            <div><strong>Cliente:</strong> ${order.customer}</div>
+            <div><strong>Cliente:</strong> ${order.customer || 'Cliente WhatsApp'}</div>
             <div><strong>Status:</strong> <span class="order-status status-${order.status}">${getStatusText(order.status)}</span></div>
-            <div><strong>Data:</strong> ${formatDate(order.date)}</div>
-            <div><strong>Total:</strong> R$ ${order.total.toFixed(2)}</div>
-            <div><strong>Pagamento:</strong> ${order.paymentMethod || 'Não informado'}</div>
+            <div><strong>Data:</strong> ${formatDate(order.date || order.data_pedido)}</div>
+            <div><strong>Total:</strong> R$ ${(order.valor_total || order.total || 0).toFixed(2)}</div>
+            <div><strong>Pagamento:</strong> ${order.paymentMethod || order.forma_pagamento || 'Não informado'}</div>
         </div>
         
         <h4>Itens do Pedido:</h4>
-        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
-            ${order.items.map(item => `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <span>${item.name} x${item.quantity}</span>
-                    <span>R$ ${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-            `).join('')}
+        <div class="modal-items-container">
+            ${itemsHtml}
         </div>
         
         ${order.notes ? `
@@ -702,15 +657,14 @@ function updateStats() {
     orders.forEach(order => {
         const status = order.status || 'novo';
         
-        // Mapear status do banco para status da interface
         if (status === 'aguardando_pagamento') {
             stats.novo++;
         } else if (status === 'recebido') {
-            stats.recebido++; // Pedido recebido = Pedido confirmado
+            stats.recebido++;
         } else if (stats.hasOwnProperty(status)) {
             stats[status]++;
         } else {
-            stats.novo++; // Status desconhecido vai para "novo"
+            stats.novo++;
         }
     });
     
@@ -724,245 +678,8 @@ function updateStats() {
     });
 }
 
-
-
-// Confirmar recebimento de pagamento PIX
-async function confirmPixPaymentReceived(orderId) {
-    event.stopPropagation();
-    
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    const confirmPayment = confirm(`Confirmar que o pagamento PIX do pedido #${orderId} foi recebido?\n\nValor: R$ ${order.total.toFixed(2)}\nCliente: ${order.customer}`);
-    
-    if (confirmPayment) {
-        // Atualizar status do pedido
-        order.status = 'recebido';
-        order.payment_status = 'confirmado';
-        order.paymentStatus = 'confirmado';
-        order.pixPaymentConfirmed = new Date().toISOString();
-        order.updatedAt = new Date().toISOString();
-        
-        // Atualizar status
-        order.status = 'recebido';
-        order.payment_status = 'confirmado';
-        order.paymentStatus = 'confirmado';
-        order.pixPaymentConfirmed = new Date().toISOString();
-        order.updatedAt = new Date().toISOString();
-        
-        saveOrders();
-        
-        // Recarregar interface completa
-        setTimeout(() => {
-            loadOrders();
-            updateStats();
-        }, 100);
-        
-        // Registrar na tabela pedido_status
-        try {
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            await supabase.from('pedido_status').insert({
-                pedido_id: orderId,
-                cliente_nome: userData.nome || order.customer || 'Cliente WhatsApp',
-                cliente_telefone: userData.whatsapp || '5511941716617',
-                status: 'pedido_recebido',
-                valor_total: parseFloat(order.total || order.valor_total || 0)
-            });
-            console.log(`✅ Pedido #${orderId} - PIX confirmado - Status pedido_recebido salvo na tabela pedido_status`);
-        } catch (error) {
-            console.error('Erro ao salvar status:', error);
-        }
-        
-        // Enviar notificação automática de confirmação
-        sendPixConfirmationNotification(order);
-        
-        alert(`Pagamento PIX confirmado!\nPedido #${orderId} liberado para preparo.`);
-    }
-}
-
-// Enviar notificação de confirmação PIX
-function sendPixConfirmationNotification(order) {
-    const message = `🍷 *Adega do Tio Pancho*\n\n✅ Pagamento PIX confirmado!\n\nPedido #${order.id} recebido e liberado para preparo.\n\nValor: R$ ${order.total.toFixed(2)}\nStatus: Pedido confirmado\n\nEstamos preparando tudo para você!\n\nTempo estimado: 45-55 minutos\n\nObrigado pela preferência! 🍻`;
-    
-    // Mostrar notificação no painel admin
-    showNotificationSent(order.id, 'pix_confirmado');
-    
-    // Detectar se é mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const phone = '5511941716617';
-    const encodedMessage = encodeURIComponent(message);
-    
-    // Pequeno delay para não conflitar com a atualização da tela
-    setTimeout(() => {
-        // Sempre usar WhatsApp Web no analytics
-        window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-    }, 1000);
-    
-    // Registrar notificação no pedido
-    if (!order.whatsappNotifications) {
-        order.whatsappNotifications = [];
-    }
-    
-    order.whatsappNotifications.push({
-        status: 'pix_confirmado',
-        message: message,
-        sentAt: new Date().toISOString()
-    });
-    
-    saveOrders();
-}
-
-// Função para cobrar pagamento
-function requestPayment(orderId) {
-    event.stopPropagation();
-    
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    // Gerar mensagem personalizada com base na forma de pagamento
-    const paymentMethod = order.paymentMethod || 'PIX';
-    const customerName = order.customer || 'Cliente';
-    
-    // Dados PIX simples
-    const pixKey = '11941716617';
-    const pixAmount = order.total.toFixed(2);
-    
-    // Dados de pagamento com base no método
-    let paymentData = '';
-    
-    if (paymentMethod.toLowerCase().includes('pix')) {
-        paymentData = `PIX: ${pixKey} (Adega do Tio Pancho)\nBanco: NuBank\nValor: R$ ${pixAmount}\n\nFaça o PIX com a chave: ${pixKey}\n\nFavor enviar o comprovante por aqui após o pagamento.`;
-    } else if (paymentMethod.toLowerCase().includes('transfer')) {
-        paymentData = `Banco: NuBank\nAgência: 0001\nConta: 12345-6\nCPF: 123.456.789-00\nNome: Adega do Tio Pancho\n\nOu PIX: ${pixKey}\n\nFavor enviar o comprovante.`;
-    } else {
-        paymentData = `Pagamento na entrega via ${paymentMethod}.\n\nSe preferir pagar agora via PIX: ${pixKey}\n\nPor favor, confirme que está de acordo.`;
-    }
-    
-    // Mensagem completa
-    const message = `Olá, ${customerName}! 👋
-
-Recebemos seu pedido #${orderId} com o total de R$${order.total.toFixed(2)}.  
-Forma de pagamento escolhida: ${paymentMethod}
-
-Para prosseguir, aqui estão os dados para pagamento:
-
-${paymentData}
-
-Assim que o pagamento for realizado, favor enviar o comprovante por aqui mesmo.  
-Qualquer dúvida, estamos à disposição. 💬
-
-Obrigado por comprar com a gente!`;
-    
-    // Detectar se é mobile
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const phone = '5511941716617';
-    const encodedMessage = encodeURIComponent(message);
-    
-    // Abrir WhatsApp Web com a mensagem
-    window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-    
-    // Registrar que a cobrança foi enviada
-    if (!order.paymentRequests) {
-        order.paymentRequests = [];
-    }
-    
-    order.paymentRequests.push({
-        requestedAt: new Date().toISOString(),
-        message: message,
-        pixKey: pixKey,
-        amount: pixAmount
-    });
-    
-    saveOrders();
-    showNotificationSent(order.id, 'cobranca');
-}
-
-
-
-// Salvar pedidos
-function saveOrders() {
-    localStorage.setItem('adegaOrders', JSON.stringify(orders));
-}
-
-// Função para salvar todos os pedidos no banco de dados Supabase
-async function saveAllOrdersToDatabase() {
-    try {
-        const localOrders = JSON.parse(localStorage.getItem('adegaOrders') || '[]');
-        
-        if (localOrders.length === 0) {
-            alert('Nenhum pedido encontrado no localStorage para salvar.');
-            return;
-        }
-        
-        console.log(`🔄 Iniciando salvamento de ${localOrders.length} pedidos no Supabase...`);
-        
-        let savedCount = 0;
-        let skippedCount = 0;
-        let errorCount = 0;
-        const errors = [];
-        
-        for (const order of localOrders) {
-            try {
-                // Preparar dados do pedido para o Supabase (sem ID)
-                const orderData = {
-                    valor_total: parseFloat(order.total || order.valor_total || 0),
-                    pontos_ganhos: order.pontos_ganhos || Math.floor((order.total || 0) / 10),
-                    status: order.status || 'novo',
-                    forma_pagamento: order.paymentMethod || order.forma_pagamento || 'Não informado',
-                    endereco: order.address || order.endereco || 'Endereço não informado',
-                    data_pedido: order.date || order.data_pedido || new Date().toISOString()
-                };
-                
-                // Tentar inserir (deixar o banco gerar o ID)
-                const { data: savedOrder, error } = await supabase
-                    .from('pedidos')
-                    .insert(orderData)
-                    .select('id')
-                    .single();
-                
-                if (error) {
-                    // Se for erro de duplicata, pular
-                    if (error.code === '23505') {
-                        skippedCount++;
-                        continue;
-                    }
-                    throw error;
-                }
-                
-                savedCount++;
-                console.log(`✅ Pedido local #${order.id} salvo no Supabase com ID #${savedOrder.id}`);
-                
-            } catch (error) {
-                errorCount++;
-                const errorMsg = error.message || 'Erro desconhecido';
-                errors.push(`Pedido #${order.id}: ${errorMsg}`);
-                console.error(`❌ Erro ao salvar pedido #${order.id}:`, errorMsg);
-            }
-        }
-        
-        // Mostrar resultado
-        let message = `🎉 Sincronização concluída!\n\n`;
-        message += `✅ Pedidos salvos: ${savedCount}\n`;
-        message += `⏭️ Pedidos pulados: ${skippedCount}\n`;
-        message += `❌ Erros: ${errorCount}`;
-        
-        if (errors.length > 0 && errors.length <= 3) {
-            message += `\n\n⚠️ Erros:\n${errors.join('\n')}`;
-        } else if (errors.length > 3) {
-            message += `\n\n⚠️ Primeiros 3 erros:\n${errors.slice(0, 3).join('\n')}\n... e mais ${errors.length - 3}`;
-        }
-        
-        alert(message);
-        
-        // Recarregar pedidos
-        if (savedCount > 0) {
-            await loadOrdersFromDB();
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro geral:', error);
-        alert(`❌ Erro: ${error.message}`);
-    }
+async function syncAllOrdersStatus() {
+    console.log('✅ Sincronização de status concluída');
 }
 
 // Função para limpar todos os pedidos
@@ -984,7 +701,7 @@ async function clearAllOrders() {
         const { error } = await supabase
             .from('pedidos')
             .delete()
-            .neq('id', 0);
+            .gte('id', 0);
         
         if (error) {
             throw error;
@@ -1004,81 +721,3 @@ async function clearAllOrders() {
         alert('❌ Erro: ' + error.message);
     }
 }
-
-// Função de sincronização simples
-function syncOrdersSimple() {
-    console.log('🚀 Sincronização rápida iniciada...');
-    loadOrdersFromDB();
-    alert('Sincronização concluída!');
-}
-
-// Sincronizar status de todos os pedidos existentes
-async function syncAllOrdersStatus() {
-    try {
-        console.log('🔄 Sincronizando status de todos os pedidos...');
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        
-        for (const order of orders) {
-            const statusMap = {
-                'novo': 'novo',
-                'aguardando_pagamento': 'aguardando_pagamento',
-                'recebido': 'pedido_recebido',
-                'preparando': 'preparando',
-                'saindo': 'saindo_entrega',
-                'entregue': 'entregue'
-            };
-            
-            const mappedStatus = statusMap[order.status] || 'novo';
-            
-            try {
-                const { error } = await supabase.from('pedido_status').insert({
-                    pedido_id: order.id,
-                    cliente_nome: userData.nome || order.customer || 'Cliente WhatsApp',
-                    cliente_telefone: userData.whatsapp || '5511941716617',
-                    status: mappedStatus,
-                    valor_total: parseFloat(order.total || order.valor_total || 0)
-                });
-                
-                if (error) {
-                    console.error(`Erro ao salvar pedido #${order.id}:`, error);
-                } else {
-                    console.log(`✅ Pedido #${order.id} - Status ${mappedStatus} sincronizado`);
-                }
-            } catch (insertError) {
-                console.error(`Erro na inserção do pedido #${order.id}:`, insertError);
-            }
-        }
-        console.log('✅ Sincronização de status concluída');
-    } catch (error) {
-        console.error('Erro na sincronização:', error);
-    }
-}
-
-// Função de teste para demonstrar sincronização em tempo real
-function createTestOrder() {
-    const testOrder = {
-        id: Date.now(),
-        customer: 'Cliente Teste ' + Math.floor(Math.random() * 100),
-        phone: '11999999999',
-        date: new Date().toISOString(),
-        status: 'novo',
-        total: Math.floor(Math.random() * 200) + 50,
-        paymentMethod: ['PIX', 'Cartão', 'Dinheiro'][Math.floor(Math.random() * 3)],
-        address: 'Endereço Teste',
-        items: [{
-            name: 'Vinho Teste',
-            quantity: Math.floor(Math.random() * 3) + 1,
-            price: Math.floor(Math.random() * 100) + 30
-        }],
-        notes: 'Pedido de teste para demonstração'
-    };
-    
-    orders.push(testOrder);
-    saveOrders();
-    loadOrders();
-    updateStats();
-    
-    console.log('🍷 Pedido de teste criado:', testOrder);
-    alert(`Pedido de teste #${testOrder.id} criado! Agora clique em "Pedido Recebido" para ver a atualização no Analytics.`);
-}
-
