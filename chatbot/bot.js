@@ -4,9 +4,9 @@ const { createClient } = require('@supabase/supabase-js');
 const qrcode = require('qrcode-terminal');
 
 // Configurações
-const OPENAI_API_KEY = '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';
-const SUPABASE_URL = 'https://vtrgtorablofhmhizrjr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'SUA_CHAVE_OPENAI_AQUI';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'SUA_URL_SUPABASE_AQUI';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'SUA_CHAVE_SUPABASE_AQUI';
 
 // Inicializar clientes
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });

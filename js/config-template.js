@@ -1,15 +1,14 @@
 // Template de configuração - RENOMEIE para config.js e preencha com suas chaves
 const CONFIG = {
     // Supabase
-    SUPABASE_URL: 'https://vtrgtorablofhmhizrjr.supabase.co',
-    SUPABASE_ANON_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4'
-,
+    SUPABASE_URL: 'SUA_URL_SUPABASE_AQUI',
+    SUPABASE_ANON_KEY: 'SUA_CHAVE_SUPABASE_AQUI',
     
     // WhatsApp
     WHATSAPP_NUMBER: '5511941716617',
     
     // OpenAI (opcional)
-    OPENAI_API_KEY: 'sk-proj-5V-M2c0YUnQ3rlDWEXZGs9ZjvkZERt9Cgo2rhv24zdQzb3Dttbud4FEUI4FjBfAp4S9v6WigUgT3BlbkFJeNYqIQw8eyS-7xu-RR2CSzmyj5GHGhXtbEA9GglLU9zWd-UWzhgKldtaA3ya2m30A',
+    OPENAI_API_KEY: 'SUA_CHAVE_OPENAI_AQUI',
     
     // Configurações da Adega
     ADEGA_NAME: 'Adega do Tio Pancho',
