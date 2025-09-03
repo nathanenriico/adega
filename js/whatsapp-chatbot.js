@@ -1,0 +1,1 @@
+// Funcionalidade de chatbot removida

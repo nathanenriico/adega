@@ -1,7 +1,7 @@
 // Configurações padrão
 let config = {
     adegaName: 'Adega do Tio Pancho',
-    whatsappNumber: '5511941716617',
+    whatsappNumber: '5511999968124',
     defaultMessage: 'Oi, quero ver as ofertas da adega!',
     paymentLink: 'https://mpago.la/2TkKdAB?amount={valor}&description={descricao}'
 };
@@ -1342,7 +1342,7 @@ async function saveRemovedProductAnalytics(removedProduct) {
         );
         
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const clienteTelefone = userData.whatsapp || '5511941716617';
+        const clienteTelefone = userData.whatsapp || '5511999968124';
         
         const { error } = await client.from('produtos_excluidos').insert({
             produto_id: removedProduct.id,
@@ -1375,7 +1375,7 @@ async function saveToCarrinhoStatus(status, total) {
         
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
         const clienteNome = userData.nome || 'Cliente WhatsApp';
-        const clienteTelefone = userData.whatsapp || '5511941716617';
+        const clienteTelefone = userData.whatsapp || '5511999968124';
         
         const { data, error } = await client.from('carrinho_status').insert({
             cliente_nome: clienteNome,
@@ -1648,9 +1648,9 @@ ${orderData.address || 'Endereço não informado'}
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-        window.open(`https://wa.me/5511941716617?text=${encodedMessage}`, '_blank');
+        window.open(`https://wa.me/5511999968124?text=${encodedMessage}`, '_blank');
     } else {
-        window.open(`https://web.whatsapp.com/send?phone=5511941716617&text=${encodedMessage}`, '_blank');
+        window.open(`https://web.whatsapp.com/send?phone=5511999968124&text=${encodedMessage}`, '_blank');
     }
 }
 
@@ -1683,7 +1683,7 @@ async function finalizarPedidoWhatsApp() {
     message += `\n\nPor favor, confirme meu pedido e me informe a forma de pagamento disponível.`;
     
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/5511941716617?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/5511999968124?text=${encodedMessage}`;
     
     // Fechar carrinho
     const cartSidebar = document.getElementById('cart-sidebar');
@@ -2260,13 +2260,61 @@ window.sendChatMessage = sendChatMessage;
 // Chat Bot
 function toggleChatBot() {
     const chatbot = document.getElementById('chatbot-container');
-    chatbot.classList.toggle('active');
-    
-    // Fechar menu se estiver aberto
-    const sideMenu = document.getElementById('side-menu');
-    const menuOverlay = document.getElementById('menu-overlay');
-    sideMenu.classList.remove('active');
-    menuOverlay.classList.remove('active');
+    if (chatbot) {
+        const isActive = chatbot.classList.contains('active');
+        const isMobile = window.innerWidth <= 768;
+        
+        // Fechar menu se estiver aberto
+        const sideMenu = document.getElementById('side-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+        if (sideMenu) sideMenu.classList.remove('active');
+        if (menuOverlay) menuOverlay.classList.remove('active');
+        
+        if (isActive) {
+            // Fechar chat
+            chatbot.classList.remove('active');
+            if (isMobile) {
+                chatbot.style.transform = 'translateY(100%)';
+                chatbot.style.display = 'none';
+                setTimeout(() => {
+                    chatbot.style.display = '';
+                    chatbot.style.transform = '';
+                }, 300);
+            }
+        } else {
+            // Abrir chat
+            if (isMobile) {
+                chatbot.style.display = 'flex';
+                chatbot.style.transform = 'translateY(0)';
+            }
+            chatbot.classList.add('active');
+            initializeChatBot();
+        }
+    }
+}
+
+// Função específica para mobile (alias para toggleChatBot)
+function toggleMobileChatBot() {
+    toggleChatBot();
+}
+
+// Inicializar chatbot
+function initializeChatBot() {
+    const messagesContainer = document.getElementById('chatbot-messages');
+    if (messagesContainer && messagesContainer.children.length <= 1) {
+        // Adicionar mensagem de boas-vindas se não existir
+        const welcomeMessage = document.createElement('div');
+        welcomeMessage.className = 'bot-message';
+        welcomeMessage.innerHTML = `
+            🍷 Olá! Bem-vindo à Adega do Tio Pancho!<br><br>
+            Como posso ajudar você hoje?<br><br>
+            • Ver produtos<br>
+            • Fazer pedido<br>
+            • Horários<br>
+            • Contato
+        `;
+        messagesContainer.appendChild(welcomeMessage);
+    }
 }
 
 function handleChatInput(event) {
@@ -2311,7 +2359,7 @@ function addChatMessage(message, sender) {
     const messagesContainer = document.getElementById('chatbot-messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
-    messageDiv.textContent = message;
+    messageDiv.innerHTML = message; // Usar innerHTML para suportar HTML
     
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -2448,12 +2496,12 @@ function getBotResponse(message) {
         const orderMatch = message.match(/#(\d+)/);
         const orderId = orderMatch ? orderMatch[1] : '123456';
         console.log('Pedido detectado:', orderId);
-        return `Olá! 👋\nRecebemos seu pedido #${orderId} com sucesso!\nEle já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅`;
+        return `Olá! 👋<br>Recebemos seu pedido #${orderId} com sucesso!<br>Ele já está em processamento e em breve você receberá atualizações por aqui sobre cada etapa do seu pedido. ✅`;
     }
     
     // Respostas expandidas com dados reais do site
     if (message.includes('produto') || message.includes('bebida') || message.includes('o que tem') || message.includes('catálogo') || message.includes('menu')) {
-        return `Temos estes produtos disponíveis:\n\n${siteData.products}\n\nQual produto te interessa? Posso adicionar ao seu carrinho!`;
+        return `🍷 <strong>Nossos Produtos:</strong><br><br>${siteData.products.replace(/\n/g, '<br>')}<br><br>Qual produto te interessa? Posso te ajudar!`;
     }
     if (message.includes('preço') || message.includes('valor') || message.includes('quanto custa') || message.includes('custo')) {
         const productMentioned = products.find(p => message.toLowerCase().includes(p.name.toLowerCase().split(' ')[0]));
@@ -2469,7 +2517,7 @@ function getBotResponse(message) {
         return `Seu carrinho atual:\n\n${siteData.cart}\n\nTotal: R$ ${siteData.cartTotal}\n\nQuer finalizar pelo WhatsApp?`;
     }
     if (message.includes('horário') || message.includes('funcionamento') || message.includes('aberto') || message.includes('fechado')) {
-        return 'Horários:\n• Domingo: 09:00-18:00\n• Segunda: 09:00-17:00\n• Terça-Quinta: 10:00-20:00\n• Sexta-Sábado: 10:00-22:00\n\n🚚 Entregas: 10:00-20:00';
+        return '🕐 <strong>Horários:</strong><br>• Domingo: 09:00-18:00<br>• Segunda: 09:00-17:00<br>• Terça-Quinta: 10:00-20:00<br>• Sexta-Sábado: 10:00-22:00<br><br>🚚 Entregas: 10:00-20:00';
     }
     if (message.includes('endereço') || message.includes('localização') || message.includes('onde') || message.includes('local')) {
         return 'Estamos na R. Oswaldo Barreto, 708 E - Alvinópolis, Atibaia - SP, 12942-570.';
@@ -2527,16 +2575,103 @@ function getBotResponse(message) {
     return `Não entendi exatamente sua pergunta, mas posso ajudar com:\n\n• 🍷 Produtos e preços\n• 🛒 Carrinho e pedidos\n• 🚚 Entregas e frete\n• 🕒 Horários\n• 💳 Pagamentos\n• 🎁 Promoções\n• 📍 Localização\n\nOu fale direto no WhatsApp: (11) 93394-9002`;
 }
 
-// Função de busca de produtos
+// Função de busca de produtos - versão melhorada
 function searchProducts() {
-    const searchInput = document.getElementById('product-search') || document.getElementById('mobile-product-search');
-    if (!searchInput) return;
+    // Detectar se é mobile ou desktop
+    const isMobile = window.innerWidth <= 768;
+    const searchInput = isMobile ? 
+        document.getElementById('mobile-search-input') : 
+        document.getElementById('product-search');
     
-    const searchTerm = searchInput.value.toLowerCase();
-    const filteredProducts = products.filter(product => 
-        product.name.toLowerCase().includes(searchTerm)
-    );
-    renderProducts(filteredProducts);
+    if (!searchInput) {
+        console.log('Campo de busca não encontrado');
+        return;
+    }
+    
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    console.log(`🔍 Buscando: "${searchTerm}" (${isMobile ? 'mobile' : 'desktop'})`);
+    
+    // Se não há termo de busca, mostrar todos os produtos
+    if (!searchTerm) {
+        if (isMobile && typeof renderMobileProducts === 'function') {
+            renderMobileProducts();
+        } else if (typeof window.reloadProductsFromDatabase === 'function') {
+            window.reloadProductsFromDatabase();
+        } else {
+            renderProducts();
+        }
+        return;
+    }
+    
+    const products = window.products || [];
+    
+    // Buscar por nome do produto OU categoria
+    const filteredProducts = products.filter(product => {
+        const nameMatch = product.name.toLowerCase().includes(searchTerm);
+        const categoryMatch = product.category.toLowerCase().includes(searchTerm);
+        
+        // Mapear termos comuns para categorias
+        const categoryMappings = {
+            'cerveja': 'cervejas',
+            'vinho': 'vinhos', 
+            'drink': 'drinks',
+            'agua': 'aguas',
+            'água': 'aguas',
+            'refrigerante': 'refrigerantes',
+            'destilado': 'destilados',
+            'whisky': 'destilados',
+            'vodka': 'destilados',
+            'cachaça': 'destilados',
+            'gin': 'destilados',
+            'chopp': 'chopp',
+            'chope': 'chopp'
+        };
+        
+        // Verificar se o termo de busca corresponde a algum mapeamento
+        const mappedCategory = categoryMappings[searchTerm];
+        const mappingMatch = mappedCategory && product.category === mappedCategory;
+        
+        return nameMatch || categoryMatch || mappingMatch;
+    });
+    
+    console.log(`📊 Encontrados ${filteredProducts.length} produtos`);
+    
+    // Renderizar resultados
+    if (isMobile) {
+        // Renderização mobile
+        const mobileGrid = document.getElementById('mobile-products-grid');
+        if (mobileGrid) {
+            if (filteredProducts.length === 0) {
+                mobileGrid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                        <p>Nenhum produto encontrado para "${searchTerm}"</p>
+                        <p style="font-size: 14px; opacity: 0.7;">Tente buscar por: cerveja, vinho, drink, água...</p>
+                    </div>
+                `;
+            } else {
+                mobileGrid.innerHTML = filteredProducts.map(product => `
+                    <div class="mobile-product-card">
+                        <img src="${product.image}" alt="${product.name}" class="mobile-product-image" 
+                             onerror="this.src='https://via.placeholder.com/150x140/f0f0f0/999?text=Produto'">
+                        <div class="mobile-product-badge">-20%</div>
+                        <button class="mobile-product-heart">♥</button>
+                        <div class="mobile-product-info">
+                            <div class="mobile-product-brand">ADEGA</div>
+                            <div class="mobile-product-name">${product.name}</div>
+                            <div class="mobile-product-price">R$ ${product.price.toFixed(2).replace('.', ',')}</div>
+                            <button class="mobile-add-btn" onclick="addToCart(${product.id})">
+                                🛒 Adicionar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+    } else {
+        // Renderização desktop
+        renderProducts(filteredProducts);
+    }
 }
 
 // Função global para busca de produtos

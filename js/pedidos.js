@@ -1,6 +1,8 @@
 // Dados dos pedidos
 let orders = JSON.parse(localStorage.getItem('adegaOrders')) || [];
 
+
+
 // Verificar status da conexão com o banco
 async function checkDatabaseConnection() {
     try {
@@ -438,7 +440,7 @@ async function updateOrderStatus(orderId, newStatus) {
                     endereco: order.endereco || order.address || 'Não informado',
                     data_pedido: order.date || order.data_pedido || new Date().toISOString(),
                     cliente_nome: userData.nome || 'Cliente WhatsApp',
-                    cliente_telefone: userData.whatsapp || '551193394-9002',
+                    cliente_telefone: userData.whatsapp || '5511999968124',
                     itens_json: JSON.stringify(order.items || [])
                 });
                 
@@ -450,7 +452,7 @@ async function updateOrderStatus(orderId, newStatus) {
                     descricao: `Pontos ganhos na compra #${orderId}`,
                     pedido_id: orderId,
                     cliente_nome: userData.nome || 'Cliente WhatsApp',
-                    cliente_telefone: userData.whatsapp || '551193394-9002',
+                    cliente_telefone: userData.whatsapp || '5511999968124',
                     cliente_endereco: order.endereco || order.address || 'Não informado'
                 });
                 
@@ -475,16 +477,16 @@ async function updateOrderStatus(orderId, newStatus) {
 // Enviar notificação WhatsApp automática
 function sendAutomaticWhatsAppNotification(order, newStatus) {
     const statusMessages = {
-        'recebido': `🍷 *Adega do Tio Pancho*\n\n✅ Pedido #${order.id} recebido com sucesso!\n\nEstamos preparando tudo para você.\n\nTotal: R$ ${order.total.toFixed(2)}\nPagamento: ${order.paymentMethod}\n\nEm breve enviaremos mais atualizações! 🍻`,
-        'preparando': `🍷 *Adega do Tio Pancho*\n\n👨🍳 Seu pedido #${order.id} está sendo preparado!\n\nTempo estimado: 30-40 minutos\n\nTotal: R$ ${order.total.toFixed(2)}\n\nObrigado pela preferência! 🍻`,
-        'saindo': `🍷 *Adega do Tio Pancho*\n\n🚚 Seu pedido #${order.id} está a caminho!\n\nO entregador já saiu e chegará em breve.\n\nPrepare o pagamento: ${order.paymentMethod}\n\nAté já! 🚀`,
-        'entregue': `🍷 *Adega do Tio Pancho*\n\n🎉 Pedido #${order.id} entregue com sucesso!\n\nObrigado pela preferência!\n\n⭐ Que tal avaliar nosso atendimento?\n\nVolte sempre! 🍻`
+        'recebido': `🍷 *Adega do Tio Pancho*\\n\\n✅ Pedido #${order.id} recebido com sucesso!\\n\\nEstamos preparando tudo para você.\\n\\nTotal: R$ ${order.total.toFixed(2)}\\nPagamento: ${order.paymentMethod}\\n\\nEm breve enviaremos mais atualizações! 🍻`,
+        'preparando': `🍷 *Adega do Tio Pancho*\\n\\n👨🍳 Seu pedido #${order.id} está sendo preparado!\\n\\nTempo estimado: 30-40 minutos\\n\\nTotal: R$ ${order.total.toFixed(2)}\\n\\nObrigado pela preferência! 🍻`,
+        'saindo': `🍷 *Adega do Tio Pancho*\\n\\n🚚 Seu pedido #${order.id} está a caminho!\\n\\nO entregador já saiu e chegará em breve.\\n\\nPrepare o pagamento: ${order.paymentMethod}\\n\\nAté já! 🚀`,
+        'entregue': `🍷 *Adega do Tio Pancho*\\n\\n🎉 Pedido #${order.id} entregue com sucesso!\\n\\nObrigado pela preferência!\\n\\n⭐ Que tal avaliar nosso atendimento?\\n\\nVolte sempre! 🍻`
     };
     
     const message = statusMessages[newStatus];
     if (!message) return;
     
-    const phone = '551193394-9002';
+    const phone = '5511999968124';
     const encodedMessage = encodeURIComponent(message);
     
     setTimeout(() => {
@@ -501,15 +503,15 @@ function requestPayment(orderId) {
     
     const paymentMethod = order.paymentMethod || 'PIX';
     const customerName = order.customer || 'Cliente';
-    const pixKey = '11933949002';
+    const pixKey = '11999968124';
     const pixAmount = order.total.toFixed(2);
     
     let paymentData = '';
     
     if (paymentMethod.toLowerCase().includes('pix')) {
-        paymentData = `PIX: ${pixKey} (Adega do Tio Pancho)\nBanco: NuBank\nValor: R$ ${pixAmount}\n\nFaça o PIX com a chave: ${pixKey}\n\nFavor enviar o comprovante por aqui após o pagamento.`;
+        paymentData = `PIX: ${pixKey} (Adega do Tio Pancho)\\nBanco: NuBank\\nValor: R$ ${pixAmount}\\n\\nFaça o PIX com a chave: ${pixKey}\\n\\nFavor enviar o comprovante por aqui após o pagamento.`;
     } else {
-        paymentData = `Pagamento na entrega via ${paymentMethod}.\n\nSe preferir pagar agora via PIX: ${pixKey}\n\nPor favor, confirme que está de acordo.`;
+        paymentData = `Pagamento na entrega via ${paymentMethod}.\\n\\nSe preferir pagar agora via PIX: ${pixKey}\\n\\nPor favor, confirme que está de acordo.`;
     }
     
     const message = `Olá, ${customerName}! 👋
@@ -526,7 +528,7 @@ Qualquer dúvida, estamos à disposição. 💬
 
 Obrigado por comprar com a gente!`;
     
-    const phone = '551193394-9002';
+    const phone = '5511999968124';
     const encodedMessage = encodeURIComponent(message);
     
     window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
@@ -541,7 +543,7 @@ async function confirmPixPaymentReceived(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     
-    const confirmPayment = confirm(`Confirmar que o pagamento PIX do pedido #${orderId} foi recebido?\n\nValor: R$ ${order.total.toFixed(2)}\nCliente: ${order.customer}`);
+    const confirmPayment = confirm(`Confirmar que o pagamento PIX do pedido #${orderId} foi recebido?\\n\\nValor: R$ ${order.total.toFixed(2)}\\nCliente: ${order.customer}`);
     
     if (confirmPayment) {
         order.status = 'recebido';
@@ -556,15 +558,15 @@ async function confirmPixPaymentReceived(orderId) {
         
         sendPixConfirmationNotification(order);
         
-        alert(`Pagamento PIX confirmado!\nPedido #${orderId} liberado para preparo.`);
+        alert(`Pagamento PIX confirmado!\\nPedido #${orderId} liberado para preparo.`);
     }
 }
 
 // Enviar notificação de confirmação PIX
 function sendPixConfirmationNotification(order) {
-    const message = `🍷 *Adega do Tio Pancho*\n\n✅ Pagamento PIX confirmado!\n\nPedido #${order.id} recebido e liberado para preparo.\n\nValor: R$ ${order.total.toFixed(2)}\nStatus: Pedido confirmado\n\nEstamos preparando tudo para você!\n\nTempo estimado: 45-55 minutos\n\nObrigado pela preferência! 🍻`;
+    const message = `🍷 *Adega do Tio Pancho*\\n\\n✅ Pagamento PIX confirmado!\\n\\nPedido #${order.id} recebido e liberado para preparo.\\n\\nValor: R$ ${order.total.toFixed(2)}\\nStatus: Pedido confirmado\\n\\nEstamos preparando tudo para você!\\n\\nTempo estimado: 45-55 minutos\\n\\nObrigado pela preferência! 🍻`;
     
-    const phone = '551193394-9002';
+    const phone = '5511999968124';
     const encodedMessage = encodeURIComponent(message);
     
     setTimeout(() => {
@@ -684,7 +686,7 @@ async function syncAllOrdersStatus() {
 
 // Função para limpar todos os pedidos
 async function clearAllOrders() {
-    if (!confirm('⚠️ ATENÇÃO: Isso irá deletar TODOS os pedidos!\n\nLocalStorage + Supabase\n\nTem certeza?')) {
+    if (!confirm('⚠️ ATENÇÃO: Isso irá deletar TODOS os pedidos!\\n\\nLocalStorage + Supabase\\n\\nTem certeza?')) {
         return;
     }
     
@@ -714,10 +716,24 @@ async function clearAllOrders() {
         loadOrders();
         updateStats();
         
-        alert('🗑️ Todos os pedidos foram deletados!\n\nPronto para novos testes.');
+        alert('🗑️ Todos os pedidos foram deletados!\\n\\nPronto para novos testes.');
         
     } catch (error) {
         console.error('❌ Erro ao limpar:', error);
         alert('❌ Erro: ' + error.message);
     }
 }
+
+// Função para abrir WhatsApp diretamente
+function openWhatsAppChat() {
+    const whatsappNumber = '5511941716617';
+    const message = 'Olá! Estou entrando em contato através da gestão de pedidos da Adega Premium. Como posso ajudá-lo?';
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+}
+
+// Tornar função global
+window.openWhatsAppChat = openWhatsAppChat;
+

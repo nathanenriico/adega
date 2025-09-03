@@ -34,6 +34,9 @@
     <link rel="stylesheet" href="css/pix-payment.css">
     <link rel="stylesheet" href="css/mobile-app.css">
     <link rel="stylesheet" href="css/mobile-cards.css">
+    <link rel="stylesheet" href="css/bot-control.css">
+    <link rel="stylesheet" href="css/mobile-layout.css">
+    <link rel="stylesheet" href="css/product-details.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
@@ -46,8 +49,86 @@
     <script src="js/navigation-fix-final.js"></script>
     <script src="js/script.js"></script>
     <script src="js/products-final.js"></script>
+    <script src="js/bot-controller.js"></script>
+    <script src="js/mobile-layout.js"></script>
+    <script src="js/product-details.js"></script>
 </head>
 <body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="mobile-header-left">
+            <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+            <div class="mobile-logo">🍷 Adega do Tio Pancho</div>
+        </div>
+        <div class="mobile-header-right">
+            <button class="mobile-user-btn" onclick="toggleAccountMenu()">👤</button>
+            <button class="mobile-cart-btn" onclick="toggleCart()">
+                🛒
+                <span class="mobile-cart-badge" id="mobile-cart-count">0</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mobile Search -->
+    <div class="mobile-search">
+        <input type="text" placeholder="Pesquisar bebidas ou categorias..." id="mobile-search-input">
+        <button class="mobile-search-btn" onclick="searchProducts()">🔍</button>
+    </div>
+    
+    <!-- Mobile Banner -->
+    <div class="mobile-banner">
+        <div class="mobile-banner-content">
+            <h2>🍷 Bebidas Premium</h2>
+            <p>Entrega rápida em Atibaia</p>
+            <div class="mobile-banner-price">A partir de R$ 4,50</div>
+        </div>
+    </div>
+    
+    <!-- Mobile Categories -->
+    <div class="mobile-categories">
+        <h3>Categorias</h3>
+        <div class="mobile-categories-grid">
+            <div class="mobile-category-item" onclick="filterProducts('cervejas')">
+                <div class="mobile-category-icon">🍺</div>
+                <div class="mobile-category-name">Cervejas</div>
+            </div>
+            <div class="mobile-category-item" onclick="filterProducts('vinhos')">
+                <div class="mobile-category-icon">🍷</div>
+                <div class="mobile-category-name">Vinhos</div>
+            </div>
+            <div class="mobile-category-item" onclick="filterProducts('destilados')">
+                <div class="mobile-category-icon">🥃</div>
+                <div class="mobile-category-name">Destilados</div>
+            </div>
+            <div class="mobile-category-item" onclick="filterProducts('drinks')">
+                <div class="mobile-category-icon">🥤</div>
+                <div class="mobile-category-name">Drinks</div>
+            </div>
+            <div class="mobile-category-item" onclick="filterProducts('aguas')">
+                <div class="mobile-category-icon">💧</div>
+                <div class="mobile-category-name">Águas</div>
+            </div>
+            <div class="mobile-category-item" onclick="filterProducts('all')">
+                <div class="mobile-category-icon">🛒</div>
+                <div class="mobile-category-name">Todos</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Products -->
+    <div class="mobile-products">
+        <h3>Produtos em Destaque</h3>
+        <div class="mobile-products-grid" id="mobile-products-grid">
+            <!-- Produtos serão carregados aqui -->
+        </div>
+    </div>
+    
+    <!-- Mobile Delivery Info -->
+    <div class="mobile-delivery-info">
+        <div class="mobile-delivery-icon">🚚</div>
+        <div>Entregamos para todo Brasil • Taxa: R$ 8,90</div>
+    </div>
+
     <!-- Menu Superior Fixo -->
     <nav class="top-nav">
         <div class="nav-container">
@@ -525,6 +606,17 @@
                 </div>
             </div>
             
+            <!-- Controle do Bot WhatsApp -->
+            <div class="admin-section">
+                <h4>🤖 Bot WhatsApp</h4>
+                <div class="bot-control">
+                    <button id="bot-control-btn" class="bot-btn start" onclick="startBot()">
+                        🤖 Iniciar Atendimento Bot
+                    </button>
+                    <p class="bot-info">Inicie o bot para atendimento automático via WhatsApp</p>
+                </div>
+            </div>
+            
             <!-- Banco de Dados -->
             <div class="admin-section">
                 <h4>💾 Status do Banco de Dados</h4>
@@ -664,11 +756,11 @@
     
     <!-- Menu Inferior Mobile -->
     <div class="mobile-bottom-nav">
-        <div class="mobile-nav-item" onclick="goToHome()">
+        <div class="mobile-nav-item" onclick="showMobileSection('home')">
             <div class="mobile-nav-icon">🏠</div>
             <span>Início</span>
         </div>
-        <div class="mobile-nav-item" onclick="showSection('products')">
+        <div class="mobile-nav-item" onclick="showMobileSection('products')">
             <div class="mobile-nav-icon">🍷</div>
             <span>Produtos</span>
         </div>
@@ -676,7 +768,7 @@
             <div class="mobile-nav-icon">🛒</div>
             <span>Carrinho</span>
         </div>
-        <div class="mobile-nav-item" onclick="toggleChatBot()">
+        <div class="mobile-nav-item" onclick="toggleMobileChatBot()">
             <div class="mobile-nav-icon">🤖</div>
             <span>Chat</span>
         </div>
@@ -1085,16 +1177,22 @@
             
             if (userData.nome) {
                 const firstName = userData.nome.split(' ')[0];
-                document.getElementById('account-name').textContent = firstName;
-                document.getElementById('dropdown-name').textContent = firstName;
-                document.getElementById('dropdown-full-name').textContent = userData.nome;
+                const accountName = document.getElementById('account-name');
+                const dropdownName = document.getElementById('dropdown-name');
+                const dropdownFullName = document.getElementById('dropdown-full-name');
+                
+                if (accountName) accountName.textContent = firstName;
+                if (dropdownName) dropdownName.textContent = firstName;
+                if (dropdownFullName) dropdownFullName.textContent = userData.nome;
             }
             
             if (userData.whatsapp) {
-                document.getElementById('dropdown-whatsapp').textContent = userData.whatsapp;
+                const dropdownWhatsapp = document.getElementById('dropdown-whatsapp');
+                if (dropdownWhatsapp) dropdownWhatsapp.textContent = userData.whatsapp;
             }
             
-            document.getElementById('dropdown-points').textContent = userPoints + ' pontos';
+            const dropdownPoints = document.getElementById('dropdown-points');
+            if (dropdownPoints) dropdownPoints.textContent = userPoints + ' pontos';
         }
         
         // Tornar funções globais

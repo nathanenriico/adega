@@ -1,0 +1,16 @@
+CHATBOT TEMPORARIAMENTE DESABILITADO
+
+O chatbot está funcional mas removido do checkout para testes futuros.
+
+Para reativar:
+1. Adicionar botão no checkout.js:
+   <button onclick="sendOrderToChatbot()">🤖 Chatbot IA</button>
+
+2. Adicionar script no checkout.html:
+   <script src="js/whatsapp-integration.js"></script>
+
+3. Executar chatbot:
+   cd chatbot
+   npm start
+
+Sistema mantido para ativação futura.

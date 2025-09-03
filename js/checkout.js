@@ -71,6 +71,8 @@ function showPixModal(orderId) {
                 <button onclick="checkPixPaymentManually()" style="background: #d4af37; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">
                     Já paguei
                 </button>
+
+
             </div>
         </div>
     `;

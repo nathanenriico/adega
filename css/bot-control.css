@@ -1,0 +1,48 @@
+/* Bot Control Styles */
+.bot-control {
+    text-align: center;
+    padding: 20px;
+}
+
+.bot-btn {
+    padding: 15px 30px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.bot-btn.start {
+    background: linear-gradient(45deg, #25D366, #128c7e);
+    color: white;
+}
+
+.bot-btn.start:hover {
+    background: linear-gradient(45deg, #128c7e, #0d7377);
+    transform: translateY(-2px);
+}
+
+.bot-btn.stop {
+    background: linear-gradient(45deg, #dc3545, #c82333);
+    color: white;
+}
+
+.bot-btn.stop:hover {
+    background: linear-gradient(45deg, #c82333, #bd2130);
+    transform: translateY(-2px);
+}
+
+.bot-btn.loading {
+    background: #6c757d;
+    color: white;
+    cursor: not-allowed;
+}
+
+.bot-info {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}

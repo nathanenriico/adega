@@ -1,0 +1,16 @@
+{
+  "name": "adega-chatbot",
+  "version": "1.0.0",
+  "description": "Chatbot WhatsApp com ChatGPT para Adega do Tio Pancho",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.23.0",
+    "openai": "^4.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "qrcode-terminal": "^0.12.0",
+    "express": "^4.18.0"
+  }
+}

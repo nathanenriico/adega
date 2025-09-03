@@ -2,6 +2,9 @@
 const SUPABASE_URL = 'https://vtrgtorablofhmhizrjr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmd0b3JhYmxvZmhtaGl6cmpyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzI3OTQ3NSwiZXhwIjoyMDY4ODU1NDc1fQ.lq8BJEn9HVeyQl6SUCdVXgxdWsveDS07kQUhktko8B4';
 
+// Configuração do WhatsApp
+const WHATSAPP_NUMBER = '5511999968124';
+
 // Inicializar cliente Supabase - usar instância única
 let supabase;
 
